@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"context"
-	"github.com/lightningnetwork/lnd/lnwire"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,6 +10,7 @@ import (
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/stretchr/testify/require"
 )
 
@@ -166,6 +167,108 @@ func assertEqualAccounts(t *testing.T, expected,
 	expected.LastUpdate = expectedUpdate
 	actual.ExpirationDate = actualExpiry
 	actual.LastUpdate = actualUpdate
+}
+
+// TestAccountReadConcurrentWrite verifies that Account() returns correct data
+// when the database is under concurrent write pressure. This is a regression
+// test for a use-after-free on bbolt's mmap: bucket.Get() returns a slice
+// pointing into the mmap'd file, and if that slice escapes the read
+// transaction, a concurrent write can trigger a remap that invalidates the
+// pointer — causing a segfault or silent data corruption.
+func TestAccountReadConcurrentWrite(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	clk := clock.NewTestClock(time.Now())
+	store := NewTestDB(t, clk)
+
+	// Create the account we'll keep reading throughout the test.
+	targetAcct, err := store.NewAccount(
+		ctx, 42_000, time.Time{}, "target",
+	)
+	require.NoError(t, err)
+
+	// Also store initial indexes so LastIndexes reads have data.
+	err = store.StoreLastIndexes(ctx, 100, 200)
+	require.NoError(t, err)
+
+	// Number of concurrent writers. Each creates accounts in a tight
+	// loop, growing the database and forcing bbolt to remap.
+	const (
+		numWriters = 4
+		numWrites  = 50
+		numReaders = 4
+		numReads   = 200
+	)
+
+	var wg sync.WaitGroup
+
+	// Spawn writers that grow the database.
+	for w := 0; w < numWriters; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numWrites; i++ {
+				_, wErr := store.NewAccount(
+					ctx,
+					lnwire.MilliSatoshi(1_000_000+i),
+					time.Time{},
+					"",
+				)
+				require.NoError(t, wErr)
+
+				// Also update indexes to exercise
+				// LastIndexes' code path.
+				wErr = store.StoreLastIndexes(
+					ctx,
+					uint64(100+i),
+					uint64(200+i),
+				)
+				require.NoError(t, wErr)
+			}
+		}()
+	}
+
+	// Spawn readers that continuously read the target account and
+	// the last indexes while writers are growing the DB.
+	for r := 0; r < numReaders; r++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numReads; i++ {
+				// Read single account (the crash site).
+				acct, rErr := store.Account(
+					ctx, targetAcct.ID,
+				)
+				require.NoError(t, rErr)
+
+				// Verify the data is not corrupted.
+				require.Equal(t,
+					lnwire.MilliSatoshi(42_000),
+					acct.InitialBalance,
+					"corrupted balance",
+				)
+				require.Equal(t,
+					"target", acct.Label,
+					"corrupted label",
+				)
+
+				// Read last indexes.
+				add, settle, rErr := store.LastIndexes(ctx)
+				require.NoError(t, rErr)
+				require.GreaterOrEqual(t, add,
+					uint64(100),
+					"corrupted add index",
+				)
+				require.GreaterOrEqual(t, settle,
+					uint64(200),
+					"corrupted settle index",
+				)
+			}
+		}()
+	}
+
+	wg.Wait()
 }
 
 // TestAccountUpdateMethods tests that all the Store methods that update an

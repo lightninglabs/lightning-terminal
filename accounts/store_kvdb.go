@@ -457,10 +457,16 @@ func (s *BoltStore) Account(_ context.Context, id AccountID) (
 			return ErrAccountBucketNotFound
 		}
 
-		accountBinary = bucket.Get(id[:])
-		if len(accountBinary) == 0 {
+		v := bucket.Get(id[:])
+		if len(v) == 0 {
 			return ErrAccNotFound
 		}
+
+		// Copy the value since bbolt's Get returns a slice into
+		// the mmap'd file that is only valid for the lifetime of
+		// the transaction.
+		accountBinary = make([]byte, len(v))
+		copy(accountBinary, v)
 
 		return nil
 	}, func() {
@@ -560,15 +566,23 @@ func (s *BoltStore) LastIndexes(_ context.Context) (uint64, uint64, error) {
 			return ErrAccountBucketNotFound
 		}
 
-		addValue = bucket.Get(lastAddIndexKey)
-		if len(addValue) == 0 {
+		av := bucket.Get(lastAddIndexKey)
+		if len(av) == 0 {
 			return ErrNoInvoiceIndexKnown
 		}
 
-		settleValue = bucket.Get(lastSettleIndexKey)
-		if len(settleValue) == 0 {
+		sv := bucket.Get(lastSettleIndexKey)
+		if len(sv) == 0 {
 			return ErrNoInvoiceIndexKnown
 		}
+
+		// Copy values since bbolt's Get returns slices into the
+		// mmap'd file, only valid within the transaction.
+		addValue = make([]byte, len(av))
+		copy(addValue, av)
+
+		settleValue = make([]byte, len(sv))
+		copy(settleValue, sv)
 
 		return nil
 	}, func() {
