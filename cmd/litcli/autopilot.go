@@ -17,7 +17,7 @@ import (
 
 var autopilotCommands = cli.Command{
 	Name:     "autopilot",
-	Usage:    "Manage autopilot sessions",
+	Usage:    "Manage Autopilot sessions",
 	Category: "LNC",
 	Subcommands: []cli.Command{
 		listAutopilotFeaturesCmd,
@@ -25,7 +25,7 @@ var autopilotCommands = cli.Command{
 		revokeAutopilotSessionCmd,
 		listAutopilotSessionsCmd,
 	},
-	Description: "Manage autopilot sessions.",
+	Description: "Manage Autopilot sessions.",
 }
 
 var listAutopilotFeaturesCmd = cli.Command{

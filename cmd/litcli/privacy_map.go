@@ -13,7 +13,7 @@ var privacyMapCommands = cli.Command{
 	Name:      "privacy",
 	ShortName: "p",
 	Usage: "Access the real-pseudo string pairs of the " +
-		"privacy mapper.",
+		"privacy mapper",
 	Category: "Firewall",
 	Flags: []cli.Flag{
 		cli.StringFlag{
