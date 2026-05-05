@@ -449,8 +449,8 @@ func checkLabel(label string) error {
 	if len(label) == hex.EncodedLen(AccountIDLen) {
 		_, err := hex.DecodeString(label)
 		if err == nil {
-			return fmt.Errorf("the label '%s'"+
-				" is not allowed as it "+
+			return fmt.Errorf("the label '%s' "+
+				"is not allowed as it "+
 				"can be mistaken for an account ID", label)
 		}
 	}
