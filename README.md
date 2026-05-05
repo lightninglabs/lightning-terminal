@@ -104,6 +104,10 @@ our [troubleshooting guide](./docs/troubleshooting.md).
 If you’d prefer to compile from source code please
 follow [these instructions](./docs/compile.md).
 
+**Note for FreeBSD users:** the `Makefile` requires GNU Make. Install it with
+`pkg install gmake` and use `gmake` in place of `make` (for example,
+`gmake install`).
+
 ## Component Compatibility
 
 This section describes version and mode compatibility across Lightning Terminal
