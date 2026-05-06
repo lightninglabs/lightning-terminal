@@ -30,20 +30,22 @@ COPY --from=nodejsbuilder /go/src/github.com/lightninglabs/lightning-terminal /g
 # queries required to connect to linked containers succeed.
 ENV GODEBUG netdns=cgo
 
-# Allow forcing a specific lnd, taproot-assets, taprpc, and/or loop repo so that
-# commits referenced by LND_VERSION, TAPROOT_ASSETS_VERSION, TAPRPC_VERSION, and
-# LOOP_VERSION don't have to exist in the default repository. If any of these
-# build arguments are not defined, the build continues using the default
-# repository for that module. NOTE: If these arguments ARE defined then the
-# corresponding `_VERSION` argument MUST also be defined, otherwise the build
-# continues using the default repository defined for that module.
+# Allow forcing a specific lnd, taproot-assets, taprpc, loop, and/or faraday
+# repo so that commits referenced by LND_VERSION, TAPROOT_ASSETS_VERSION,
+# TAPRPC_VERSION, LOOP_VERSION, and FARADAY_VERSION don't have to exist in the
+# default repository. If any of these build arguments are not defined, the
+# build continues using the default repository for that module. NOTE: If these
+# arguments ARE defined then the corresponding `_VERSION` argument MUST also be
+# defined, otherwise the build continues using the default repository defined
+# for that module.
 ARG LND_REPO
 ARG TAPROOT_ASSETS_REPO
 ARG TAPRPC_REPO
 ARG LOOP_REPO
+ARG FARADAY_REPO
 
-# Allow forcing a specific lnd, taproot-assets, taprpc, and/or loop version
-# through a build argument.
+# Allow forcing a specific lnd, taproot-assets, taprpc, loop, and/or faraday
+# version through a build argument.
 # Please see https://go.dev/ref/mod#version-queries for the types of
 # queries that can be used to define a version.
 # If any of these build arguments are not defined then build uses the version
@@ -59,6 +61,7 @@ ARG LND_VERSION
 ARG TAPROOT_ASSETS_VERSION
 ARG TAPRPC_VERSION
 ARG LOOP_VERSION
+ARG FARADAY_VERSION
 
 # Need to restate this since running in a new container from above.
 ARG NO_UI
@@ -115,6 +118,16 @@ RUN --mount=type=cache,target=/go/pkg/mod \
       go mod edit -replace=github.com/lightninglabs/loop=$LOOP_REPO@$LOOP_VERSION; \
     else \
       go get -v github.com/lightninglabs/loop@$LOOP_VERSION; \
+    fi \
+    && go mod tidy; \
+  fi \
+  # If a custom faraday version is supplied, force it now.
+  && if [ -n "$FARADAY_VERSION" ]; then \
+    # If a custom faraday repo is supplied, force it now.
+    if [ -n "$FARADAY_REPO" ]; then \
+      go mod edit -replace=github.com/lightninglabs/faraday=$FARADAY_REPO@$FARADAY_VERSION; \
+    else \
+      go get -v github.com/lightninglabs/faraday@$FARADAY_VERSION; \
     fi \
     && go mod tidy; \
   fi \
