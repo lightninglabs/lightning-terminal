@@ -82,7 +82,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgtype v1.14.4 // indirect
 	github.com/jackc/pgx/v4 v4.18.3 // indirect
-	github.com/jackc/pgx/v5 v5.7.4 // indirect
+	github.com/jackc/pgx/v5 v5.9.2 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jackpal/gateway v1.0.5 // indirect
 	github.com/jackpal/go-nat-pmp v0.0.0-20170405195558-28a68d0c24ad // indirect
