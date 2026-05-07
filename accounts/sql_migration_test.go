@@ -134,9 +134,10 @@ func TestAccountStoreMigration(t *testing.T) {
 				require.NoError(t, err)
 				require.False(t, acct1.HasExpired())
 
-				err = kvStore.UpdateAccountBalanceAndExpiry(
+				err = kvStore.UpdateAccount(
 					ctx, acct1.ID, fn.None[int64](),
 					fn.Some(time.Now().Add(time.Minute)),
+					fn.None[string](),
 				)
 				require.NoError(t, err)
 			},

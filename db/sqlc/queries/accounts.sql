@@ -21,6 +21,12 @@ SET last_updated = $1
 WHERE id = $2
 RETURNING id;
 
+-- name: UpdateAccountLabel :one
+UPDATE accounts
+SET label = $1
+WHERE id = $2
+RETURNING id;
+
 -- name: AddAccountInvoice :exec
 INSERT INTO account_invoices (account_id, hash)
 VALUES ($1, $2);
