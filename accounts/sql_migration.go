@@ -27,6 +27,8 @@ var (
 		"original account")
 )
 
+const migrationProgressLogInterval = 100
+
 // MigrateAccountStoreToSQL runs the migration of all accounts and indices from
 // the KV database to the SQL database. The migration is done in a single
 // transaction to ensure that all accounts are migrated or none at all.
@@ -63,7 +65,10 @@ func migrateAccountsToSQL(ctx context.Context, kvStore kvdb.Backend,
 		return err
 	}
 
-	for _, kvAccount := range kvAccounts {
+	log.Infof("Collected %d accounts for KV to SQL migration",
+		len(kvAccounts))
+
+	for i, kvAccount := range kvAccounts {
 		migratedAccountID, err := migrateSingleAccountToSQL(
 			ctx, tx, kvAccount,
 		)
@@ -101,6 +106,12 @@ func migrateAccountsToSQL(ctx context.Context, kvStore kvdb.Backend,
 
 			return fmt.Errorf("%w: %v.\n%v", ErrMigrationMismatch,
 				kvAccount.ID, diffText)
+		}
+
+		migratedCount := i + 1
+		if migratedCount%migrationProgressLogInterval == 0 {
+			log.Infof("Migrated %d/%d accounts from KV to SQL",
+				migratedCount, len(kvAccounts))
 		}
 	}
 

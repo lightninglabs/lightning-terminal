@@ -31,6 +31,8 @@ var (
 		"original session")
 )
 
+const migrationProgressLogInterval = 100
+
 // MigrateSessionStoreToSQL runs the migration of all sessions from the KV
 // database to the SQL database. The migration is done in a single transaction
 // to ensure that all sessions are migrated or none at all.
@@ -48,21 +50,27 @@ func MigrateSessionStoreToSQL(ctx context.Context, kvStore *bbolt.DB,
 	}
 
 	initialGroupSessions, linkedSessions := filterSessions(kvSessions)
+	total := len(initialGroupSessions) + len(linkedSessions)
+
+	log.Infof("Collected %d sessions for KV to SQL migration", total)
 
 	// Migrate the non-linked sessions first.
-	err = migrateSessionsToSQLAndValidate(ctx, tx, initialGroupSessions)
+	err = migrateSessionsToSQLAndValidate(
+		ctx, tx, initialGroupSessions, 0, total,
+	)
 	if err != nil {
 		return fmt.Errorf("migration of non-linked session failed: %w",
 			err)
 	}
 
 	// Then migrate the linked sessions.
-	err = migrateSessionsToSQLAndValidate(ctx, tx, linkedSessions)
+	err = migrateSessionsToSQLAndValidate(
+		ctx, tx, linkedSessions, len(initialGroupSessions), total,
+	)
 	if err != nil {
 		return fmt.Errorf("migration of linked session failed: %w", err)
 	}
 
-	total := len(initialGroupSessions) + len(linkedSessions)
 	log.Infof("All sessions migrated from KV to SQL. Total number of "+
 		"sessions migrated: %d", total)
 
@@ -177,9 +185,9 @@ func getBBoltSessions(db *bbolt.DB) ([]*Session, error) {
 // from the KV database to the SQL database, and validates that the migrated
 // sessions match the original sessions.
 func migrateSessionsToSQLAndValidate(ctx context.Context, tx *s6.Queries,
-	kvSessions []*Session) error {
+	kvSessions []*Session, migratedOffset, totalCount int) error {
 
-	for _, kvSession := range kvSessions {
+	for i, kvSession := range kvSessions {
 		err := migrateSingleSessionToSQL(ctx, tx, kvSession)
 		if err != nil {
 			return fmt.Errorf("unable to migrate session(%v): %w",
@@ -218,6 +226,12 @@ func migrateSessionsToSQLAndValidate(ctx context.Context, tx *s6.Queries,
 
 			return fmt.Errorf("%w: %v.\n%v", ErrMigrationMismatch,
 				kvSession.ID, diffText)
+		}
+
+		migratedCount := migratedOffset + i + 1
+		if migratedCount%migrationProgressLogInterval == 0 {
+			log.Infof("Migrated %d/%d sessions from KV to SQL",
+				migratedCount, totalCount)
 		}
 	}
 

@@ -81,6 +81,8 @@ func (e *kvEntry) namespacedKey() string {
 // values.
 type privacyPairs = map[int64]map[string]string
 
+const migrationProgressLogInterval = 100
+
 // MigrateFirewallDBToSQL runs the migration of the firwalldb stores from the
 // bbolt database to a SQL database. The migration is done in a single
 // transaction to ensure that all rows in the stores are migrated or none at
@@ -145,10 +147,13 @@ func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 		return fmt.Errorf("collecting all kv pairs failed: %w", err)
 	}
 
+	log.Infof("Collected %d KV store rows for KV to SQL migration",
+		len(pairs))
+
 	var insertedPairs []*sqlKvEntry
 
 	// 2) Insert all collected key-value pairs into the SQL database.
-	for _, entry := range pairs {
+	for i, entry := range pairs {
 		insertedPair, err := insertPair(ctx, sqlTx, sessMap, entry)
 		if err != nil {
 			return fmt.Errorf("inserting kv pair %v failed: %w",
@@ -156,6 +161,12 @@ func migrateKVStoresDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 		}
 
 		insertedPairs = append(insertedPairs, insertedPair)
+
+		migratedCount := i + 1
+		if migratedCount%migrationProgressLogInterval == 0 {
+			log.Infof("Migrated %d/%d KV store rows from KV to SQL",
+				migratedCount, len(pairs))
+		}
 	}
 
 	// 3) Validate the migrated values against the original values.
@@ -566,8 +577,16 @@ func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 			err)
 	}
 
+	totalPairs := 0
+	for _, groupPairs := range privPairs {
+		totalPairs += len(groupPairs)
+	}
+
+	log.Infof("Collected %d privacy mapper rows across %d session "+
+		"groups for KV to SQL migration", totalPairs, len(privPairs))
+
 	// 2) Insert all collected privacy pairs into the SQL database.
-	err = insertPrivacyPairs(ctx, sqlTx, privPairs)
+	err = insertPrivacyPairs(ctx, sqlTx, privPairs, totalPairs)
 	if err != nil {
 		return fmt.Errorf("insertion of privacy pairs failed: %w", err)
 	}
@@ -583,7 +602,7 @@ func migratePrivacyMapperDBToSQL(ctx context.Context, kvStore *bbolt.DB,
 	}
 
 	log.Infof("Migration of the privacy mapper stores to SQL completed. "+
-		"Total number of rows migrated: %d", len(privPairs))
+		"Total number of rows migrated: %d", totalPairs)
 
 	return nil
 }
@@ -735,13 +754,26 @@ func collectPairs(pairsBucket *bbolt.Bucket) (map[string]string, error) {
 
 // insertPrivacyPairs inserts the collected privacy pairs into the SQL database.
 func insertPrivacyPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
-	pairs privacyPairs) error {
+	pairs privacyPairs, totalPairs int) error {
+
+	var (
+		migCount        = 0
+		nextProgressLog = migrationProgressLogInterval
+	)
 
 	for groupId, groupPairs := range pairs {
-		err := insertGroupPairs(ctx, sqlTx, groupId, groupPairs)
+		count, err := insertGroupPairs(ctx, sqlTx, groupId, groupPairs)
 		if err != nil {
 			return fmt.Errorf("inserting group pairs for group "+
 				"id %d failed: %w", groupId, err)
+		}
+
+		migCount += count
+		for migCount >= nextProgressLog {
+			log.Infof("Migrated %d/%d privacy mapper rows from "+
+				"KV to SQL", nextProgressLog, totalPairs)
+
+			nextProgressLog += migrationProgressLogInterval
 		}
 	}
 
@@ -754,7 +786,9 @@ func insertPrivacyPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
 // to pseudo values, where the key is the real value and the value is the
 // corresponding pseudo value.
 func insertGroupPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
-	groupID int64, pairs map[string]string) error {
+	groupID int64, pairs map[string]string) (int, error) {
+
+	insertedCount := 0
 
 	for realVal, pseudoVal := range pairs {
 		err := sqlTx.InsertPrivacyPair(
@@ -765,12 +799,15 @@ func insertGroupPairs(ctx context.Context, sqlTx *sqlcmig6.Queries,
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("inserting privacy pair %s:%s "+
-				"failed: %w", realVal, pseudoVal, err)
+			return insertedCount, fmt.Errorf("inserting privacy "+
+				"pair %s:%s failed: %w", realVal, pseudoVal,
+				err)
 		}
+
+		insertedCount++
 	}
 
-	return nil
+	return insertedCount, nil
 }
 
 // validatePrivacyPairsMigration validates that the migrated privacy pairs
@@ -878,6 +915,9 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 			err)
 	}
 
+	// migCount tracks the number of actions than have been migrated.
+	migCount := 0
+
 	// Iterate over and migrate all actions in the KVDB. Note that this
 	// function migrates each action while iterating over them, instead
 	// of first collecting all actions and storing them in memory before
@@ -964,7 +1004,7 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 						"session %x: %w", macID, err)
 				}
 
-				log.Infof("Migrated Action: Macaroon ID: %x, "+
+				log.Tracef("Migrated Action: Macaroon ID: %x, "+
 					"ActionID: %x, Actor: %s, Feature: %s",
 					macID, actionID, action.ActorName,
 					action.FeatureName)
@@ -981,6 +1021,12 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 						"to SQL failed: %w", err)
 				}
 
+				migCount++
+				if migCount%migrationProgressLogInterval == 0 {
+					log.Infof("Migrated %d actions from "+
+						"KV to SQL", migCount)
+				}
+
 				return nil
 			})
 		})
@@ -989,8 +1035,7 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 		return fmt.Errorf("iterating over actions failed: %w", err)
 	}
 
-	log.Infof("Finished iterating actions in KV store " +
-		"(no persistence yet).")
+	log.Infof("Finished migration of %d actions from KV to SQL.", migCount)
 
 	return nil
 }
