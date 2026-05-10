@@ -16,6 +16,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -316,18 +317,32 @@ func testAccountRestrictions(ctxa context.Context, t *harnessTest,
 func assertChannelBalance(ctx context.Context, t *testing.T,
 	client lnrpc.LightningClient, localBalance, remoteBalance uint64) {
 
-	channelBalanceResp, err := client.ChannelBalance(
-		ctx, &lnrpc.ChannelBalanceRequest{},
-	)
+	t.Helper()
+
+	err := wait.NoError(func() error {
+		channelBalanceResp, err := client.ChannelBalance(
+			ctx, &lnrpc.ChannelBalanceRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		local := uint64(channelBalanceResp.LocalBalance.Sat)
+		remote := uint64(channelBalanceResp.RemoteBalance.Sat)
+
+		if local != localBalance {
+			return fmt.Errorf("expected local balance %d, got %d",
+				localBalance, local)
+		}
+
+		if remote != remoteBalance {
+			return fmt.Errorf("expected remote balance %d, got %d",
+				remoteBalance, remote)
+		}
+
+		return nil
+	}, defaultTimeout)
 	require.NoError(t, err)
-	require.Equal(
-		t, int(localBalance),
-		int(channelBalanceResp.LocalBalance.Sat),
-	)
-	require.Equal(
-		t, int(remoteBalance),
-		int(channelBalanceResp.RemoteBalance.Sat),
-	)
 }
 
 func assertWalletBalance(ctx context.Context, t *testing.T,
