@@ -370,7 +370,7 @@ func defaultConfig() *Config {
 		LetsEncryptListen:  defaultLetsEncryptListen,
 		LetsEncryptDir:     defaultLetsEncryptDir,
 		MacaroonPath:       DefaultMacaroonPath,
-		DatabaseBackend:    DatabaseBackendBbolt,
+		DatabaseBackend:    DatabaseBackendSqlite,
 		Sqlite: &db.SqliteConfig{
 			DatabaseFileName: defaultSqliteDatabasePath,
 		},
