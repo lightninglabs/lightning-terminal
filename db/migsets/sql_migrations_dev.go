@@ -64,17 +64,14 @@ func MakeMigrationSets(ctx context.Context,
 		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {
 
-			// Any Callbacks added to this map will be executed when
-			// after the dev migration number for the uint key in
-			// the map has been applied. If no entry exists for a
-			// given uint, then no callback will be executed for
-			// that migration number. This is useful for adding a
-			// code migration step as a callback to be run
-			// after a specific migration of a given number has been
-			// applied.
+			// Any programmatic migrations added to this map will be
+			// executed when the dev migration number for the uint
+			// key is applied. If no entry exists for a
+			// given uint, then no programmatic migration will be
+			// executed for that migration number.
 			res := make(map[uint]migrate.ProgrammaticMigrEntry)
 
-			res[KVDBtoSQLMigVersion] = MakePostStepCallbacksMig6(
+			res[KVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
 				ctx, basicClient, db, macPath, clock,
 				KVDBtoSQLMigVersion,
 			)

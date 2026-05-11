@@ -22,11 +22,9 @@ import (
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
-// MakePostStepCallbacksMig6 turns the post migration checks into a map of post
-// step callbacks that can be used with the migrate package. The keys of the map
-// are the migration versions, and the values are the callbacks that will be
-// executed after the migration with the corresponding version is applied.
-func MakePostStepCallbacksMig6(ctx context.Context,
+// Mig6ProgrammaticMigration generates and returns the ProgrammaticMigrEntry
+// containing the kvdb to SQL migration for all of litd's database stores.
+func Mig6ProgrammaticMigration(ctx context.Context,
 	basicClient lnrpc.LightningClient, db *sqldb.BaseDB,
 	macPath string, clock clock.Clock,
 	migVersion uint) migrate.ProgrammaticMigrEntry {
@@ -46,10 +44,10 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 		err := mig6executor.ExecTx(
 			ctx, sqldb.WriteTxOpt(),
 			func(q6 *sqlcmig6.Queries) error {
-				log.Infof("Running post migration callback "+
+				log.Infof("Running the programmatic migration "+
 					"for migration version %d", migVersion)
 
-				return kvdbToSqlMigrationCallback(
+				return kvdbToSqlProgrammaticMigration(
 					ctx, basicClient, macPath, db, clock,
 					q6,
 				)
@@ -88,7 +86,7 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 	}
 }
 
-func kvdbToSqlMigrationCallback(ctx context.Context,
+func kvdbToSqlProgrammaticMigration(ctx context.Context,
 	basicClient lnrpc.LightningClient, macPath string, _ *sqldb.BaseDB,
 	clock clock.Clock, q *sqlcmig6.Queries) error {
 
