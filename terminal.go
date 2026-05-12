@@ -729,8 +729,8 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not start LND")
 	}
 
-	g.stores, err = NewStores(
-		ctx, g.cfg, g.basicClient, clock.NewDefaultClock(),
+	g.stores, err = g.cfg.NewStores(
+		ctx, g.basicClient, clock.NewDefaultClock(),
 	)
 	if err != nil {
 		return fmt.Errorf("could not create stores: %v", err)
