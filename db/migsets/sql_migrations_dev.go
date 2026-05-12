@@ -14,13 +14,9 @@ import (
 )
 
 const (
-	// KVDBtoSQLMigVersion is the version of the migration that migrates the
-	// kvdb to the sql database.
-	//
-	// TODO: When this the kvdb to sql migration goes live into prod, this
-	// should be moved to non dev db/migrations.go file, and this constant
-	// value should be updated to reflect the real migration number.
-	KVDBtoSQLMigVersion = 1
+	// DevKVDBtoSQLMigVersion is the dev version of the migration that
+	// migrates the kvdb to the sql database.
+	DevKVDBtoSQLMigVersion = 1
 )
 
 // MakeMigrationSets creates the migration sets for the dev environments.
@@ -41,10 +37,22 @@ func MakeMigrationSets(ctx context.Context,
 		// NOTE: This MUST be updated when a new migration is added.
 		LatestMigrationVersion: db.LatestMigrationVersion,
 
-		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
+		MakeProgrammaticMigrations: func(baseDB *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {
 
-			return make(map[uint]migrate.ProgrammaticMigrEntry), nil
+			// Any programmatic migrations added to this map will be
+			// executed when the migration number for the uint key
+			// is applied. If no entry exists for a given uint, then
+			// no programmatic migration will be executed for that
+			// migration number.
+			res := make(map[uint]migrate.ProgrammaticMigrEntry)
+
+			res[db.KVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
+				ctx, basicClient, baseDB, macPath, clock,
+				db.KVDBtoSQLMigVersion,
+			)
+
+			return res, nil
 		},
 	}
 
@@ -61,7 +69,7 @@ func MakeMigrationSets(ctx context.Context,
 		// NOTE: This MUST be updated when a new dev migration is added.
 		LatestMigrationVersion: db.LatestDevMigrationVersion,
 
-		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
+		MakeProgrammaticMigrations: func(baseDB *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {
 
 			// Any programmatic migrations added to this map will be
@@ -71,9 +79,9 @@ func MakeMigrationSets(ctx context.Context,
 			// executed for that migration number.
 			res := make(map[uint]migrate.ProgrammaticMigrEntry)
 
-			res[KVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
-				ctx, basicClient, db, macPath, clock,
-				KVDBtoSQLMigVersion,
+			res[DevKVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
+				ctx, basicClient, baseDB, macPath, clock,
+				DevKVDBtoSQLMigVersion,
 			)
 
 			return res, nil
