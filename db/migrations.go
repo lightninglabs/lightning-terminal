@@ -12,7 +12,14 @@ const (
 	// daemon.
 	//
 	// NOTE: This MUST be updated when a new migration is added.
-	LatestMigrationVersion = 5
+	LatestMigrationVersion = 6
+
+	// KVDBtoSQLMigVersion is the version of the migration that migrates the
+	// kvdb to the sql database.
+	//
+	// NOTE: This version value should not be updated when a new migration
+	// is added, as this represents a specific migration.
+	KVDBtoSQLMigVersion = 6
 
 	// LatestDevMigrationVersion is the latest dev migration version of the
 	// database. This is used to implement downgrade protection for the
