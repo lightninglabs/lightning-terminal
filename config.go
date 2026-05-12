@@ -283,6 +283,151 @@ type Config struct {
 	*DevConfig
 }
 
+// NewStores creates a new stores instance based on the chosen database
+// backend.
+func (c *Config) NewStores(ctx context.Context,
+	basicClient lnrpc.LightningClient, clock clock.Clock) (*stores, error) {
+
+	var (
+		networkDir = filepath.Join(c.LitDir, c.Network)
+		stores     = &stores{
+			closeFns: make(map[string]func() error),
+		}
+	)
+
+	switch c.DatabaseBackend {
+	case DatabaseBackendSqlite:
+		// Before we initialize the SQLite store, we'll make sure that
+		// the directory where we will store the database file exists.
+		err := makeDirectories(networkDir)
+		if err != nil {
+			return stores, err
+		}
+
+		sqlStore, err := sqldb.NewSqliteStore(&sqldb.SqliteConfig{
+			SkipMigrations:        c.Sqlite.SkipMigrations,
+			SkipMigrationDbBackup: c.Sqlite.SkipMigrationDbBackup,
+		}, c.Sqlite.DatabaseFileName)
+		if err != nil {
+			return stores, err
+		}
+
+		if !c.Sqlite.SkipMigrations {
+			err = sqldb.ApplyAllMigrations(
+				sqlStore,
+				migsets.MakeMigrationSets(
+					ctx, basicClient, c.MacaroonPath,
+					clock,
+				),
+			)
+			if err != nil {
+				return stores, fmt.Errorf("error applying "+
+					"migrations to SQLite store: %w", err,
+				)
+			}
+		}
+
+		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
+
+		acctStore := accounts.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		firewallStore := firewalldb.NewSQLDB(
+			sqlStore.BaseDB, queries, clock,
+		)
+
+		stores.accounts = acctStore
+		stores.sessions = sessStore
+		stores.firewall = firewalldb.NewDB(firewallStore)
+		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
+
+	case DatabaseBackendPostgres:
+		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
+			Dsn:                c.Postgres.DSN(false),
+			MaxOpenConnections: c.Postgres.MaxOpenConnections,
+			MaxIdleConnections: c.Postgres.MaxIdleConnections,
+			ConnMaxLifetime:    c.Postgres.ConnMaxLifetime,
+			ConnMaxIdleTime:    c.Postgres.ConnMaxIdleTime,
+			RequireSSL:         c.Postgres.RequireSSL,
+			SkipMigrations:     c.Postgres.SkipMigrations,
+		})
+		if err != nil {
+			return stores, err
+		}
+
+		if !c.Postgres.SkipMigrations {
+			err = sqldb.ApplyAllMigrations(
+				sqlStore,
+				migsets.MakeMigrationSets(
+					ctx, basicClient, c.MacaroonPath,
+					clock,
+				),
+			)
+			if err != nil {
+				return stores, fmt.Errorf("error applying "+
+					"migrations to Postgres store: %w", err,
+				)
+			}
+		}
+
+		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
+
+		acctStore := accounts.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		firewallStore := firewalldb.NewSQLDB(
+			sqlStore.BaseDB, queries, clock,
+		)
+
+		stores.accounts = acctStore
+		stores.sessions = sessStore
+		stores.firewall = firewalldb.NewDB(firewallStore)
+		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
+
+	default:
+		accountStore, err := accounts.NewBoltStore(
+			filepath.Dir(c.MacaroonPath), accounts.DBFilename,
+			clock,
+		)
+		if err != nil {
+			return stores, err
+		}
+
+		stores.accounts = accountStore
+		stores.closeFns["bbolt-accounts"] = accountStore.Close
+
+		sessionStore, err := session.NewDB(
+			networkDir, session.DBFilename, clock, accountStore,
+		)
+		if err != nil {
+			return stores, err
+		}
+
+		stores.sessions = sessionStore
+		stores.closeFns["bbolt-sessions"] = sessionStore.Close
+
+		firewallBoltDB, err := firewalldb.NewBoltDB(
+			networkDir, firewalldb.DBFilename, stores.sessions,
+			stores.accounts, clock,
+		)
+		if err != nil {
+			return stores, fmt.Errorf("error creating firewall "+
+				"BoltDB: %v", err)
+		}
+
+		stores.firewall = firewalldb.NewDB(firewallBoltDB)
+		stores.closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
+	}
+
+	return stores, nil
+}
+
 // lndConnectParams returns the connection parameters to connect to the local
 // lnd instance.
 func (c *Config) lndConnectParams() (string, lndclient.Network, string,
@@ -1115,148 +1260,4 @@ func parseNetwork(addr net.Addr) string {
 	default:
 		return addr.Network()
 	}
-}
-
-// NewStores creates a new stores instance based on the chosen database backend.
-func NewStores(ctx context.Context, cfg *Config,
-	basicClient lnrpc.LightningClient, clock clock.Clock) (*stores, error) {
-
-	var (
-		networkDir = filepath.Join(cfg.LitDir, cfg.Network)
-		stores     = &stores{
-			closeFns: make(map[string]func() error),
-		}
-	)
-
-	switch cfg.DatabaseBackend {
-	case DatabaseBackendSqlite:
-		// Before we initialize the SQLite store, we'll make sure that
-		// the directory where we will store the database file exists.
-		err := makeDirectories(networkDir)
-		if err != nil {
-			return stores, err
-		}
-
-		sqlStore, err := sqldb.NewSqliteStore(&sqldb.SqliteConfig{
-			SkipMigrations:        cfg.Sqlite.SkipMigrations,
-			SkipMigrationDbBackup: cfg.Sqlite.SkipMigrationDbBackup,
-		}, cfg.Sqlite.DatabaseFileName)
-		if err != nil {
-			return stores, err
-		}
-
-		if !cfg.Sqlite.SkipMigrations {
-			err = sqldb.ApplyAllMigrations(
-				sqlStore,
-				migsets.MakeMigrationSets(
-					ctx, basicClient, cfg.MacaroonPath,
-					clock,
-				),
-			)
-			if err != nil {
-				return stores, fmt.Errorf("error applying "+
-					"migrations to SQLite store: %w", err,
-				)
-			}
-		}
-
-		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
-
-		acctStore := accounts.NewSQLStore(
-			sqlStore.BaseDB, queries, clock,
-		)
-		sessStore := session.NewSQLStore(
-			sqlStore.BaseDB, queries, clock,
-		)
-		firewallStore := firewalldb.NewSQLDB(
-			sqlStore.BaseDB, queries, clock,
-		)
-
-		stores.accounts = acctStore
-		stores.sessions = sessStore
-		stores.firewall = firewalldb.NewDB(firewallStore)
-		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
-
-	case DatabaseBackendPostgres:
-		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
-			Dsn:                cfg.Postgres.DSN(false),
-			MaxOpenConnections: cfg.Postgres.MaxOpenConnections,
-			MaxIdleConnections: cfg.Postgres.MaxIdleConnections,
-			ConnMaxLifetime:    cfg.Postgres.ConnMaxLifetime,
-			ConnMaxIdleTime:    cfg.Postgres.ConnMaxIdleTime,
-			RequireSSL:         cfg.Postgres.RequireSSL,
-			SkipMigrations:     cfg.Postgres.SkipMigrations,
-		})
-		if err != nil {
-			return stores, err
-		}
-
-		if !cfg.Postgres.SkipMigrations {
-			err = sqldb.ApplyAllMigrations(
-				sqlStore,
-				migsets.MakeMigrationSets(
-					ctx, basicClient, cfg.MacaroonPath,
-					clock,
-				),
-			)
-			if err != nil {
-				return stores, fmt.Errorf("error applying "+
-					"migrations to Postgres store: %w", err,
-				)
-			}
-		}
-
-		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
-
-		acctStore := accounts.NewSQLStore(
-			sqlStore.BaseDB, queries, clock,
-		)
-		sessStore := session.NewSQLStore(
-			sqlStore.BaseDB, queries, clock,
-		)
-		firewallStore := firewalldb.NewSQLDB(
-			sqlStore.BaseDB, queries, clock,
-		)
-
-		stores.accounts = acctStore
-		stores.sessions = sessStore
-		stores.firewall = firewalldb.NewDB(firewallStore)
-		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
-
-	default:
-		accountStore, err := accounts.NewBoltStore(
-			filepath.Dir(cfg.MacaroonPath), accounts.DBFilename,
-			clock,
-		)
-		if err != nil {
-			return stores, err
-		}
-
-		stores.accounts = accountStore
-		stores.closeFns["bbolt-accounts"] = accountStore.Close
-
-		sessionStore, err := session.NewDB(
-			networkDir, session.DBFilename, clock, accountStore,
-		)
-		if err != nil {
-			return stores, err
-		}
-
-		stores.sessions = sessionStore
-		stores.closeFns["bbolt-sessions"] = sessionStore.Close
-
-		firewallBoltDB, err := firewalldb.NewBoltDB(
-			networkDir, firewalldb.DBFilename, stores.sessions,
-			stores.accounts, clock,
-		)
-		if err != nil {
-			return stores, fmt.Errorf("error creating firewall "+
-				"BoltDB: %v", err)
-		}
-
-		stores.firewall = firewalldb.NewDB(firewallBoltDB)
-		stores.closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
-	}
-
-	return stores, nil
 }
