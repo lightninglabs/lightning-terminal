@@ -551,7 +551,7 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		)
 	}
 
-	err = cfg.DevConfig.Validate(litDir, cfg.Network)
+	err = cfg.DevConfig.Validate()
 	if err != nil {
 		return nil, err
 	}

@@ -15,8 +15,7 @@ func defaultDevConfig() *DevConfig {
 	return &DevConfig{}
 }
 
-// Validate checks that all the values set in our DevConfig are valid and uses
-// the passed parameters to override any defaults if necessary.
-func (c *DevConfig) Validate(dbDir, network string) error {
+// Validate checks that all the values set in our DevConfig are valid.
+func (c *DevConfig) Validate() error {
 	return nil
 }
