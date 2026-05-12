@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+shopt -s nullglob
 
 # restore_files is a function to restore original schema files.
 restore_files() {
