@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -49,7 +52,7 @@ jobs:
 
       - name: install dependencies
         working-directory: ./app
-        run: yarn
+        run: yarn install --frozen-lockfile
 
       - name: lint code
         working-directory: ./app
@@ -153,7 +156,7 @@ jobs:
 
       - name: install dependencies
         working-directory: ./app
-        run: yarn
+        run: yarn install --frozen-lockfile
 
       - name: run check
         run: make rpc-js-compile && make protos-check
@@ -183,15 +186,20 @@ jobs:
           go-version: '${{ env.GO_VERSION }}'
 
       - name: fetch and rebase on ${{ github.base_ref }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          git remote add upstream https://github.com/${{ github.repository }}
+          git remote add upstream "https://github.com/${REPOSITORY}"
           git fetch upstream
           export GIT_COMMITTER_EMAIL="litd-ci@example.com"
           export GIT_COMMITTER_NAME="LiT CI"
-          git rebase upstream/${{ github.base_ref }}
+          git rebase "upstream/${BASE_REF}"
 
       - name: check commits
-        run: scripts/check-each-commit.sh upstream/${{ github.base_ref }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: scripts/check-each-commit.sh "upstream/${BASE_REF}"
 
   #######################
   # sql model generation
@@ -201,7 +209,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: setup go ${{ env.GO_VERSION }}
         uses: ./.github/actions/setup-go
@@ -209,7 +217,7 @@ jobs:
           go-version: '${{ env.GO_VERSION }}'
 
       - name: docker image cache
-        uses: jpribyl/action-docker-layer-caching@v0.1.1
+        uses: jpribyl/action-docker-layer-caching@c632825d12ec837065f49726ea27ddd40bcc7894 # v0.1.1
         continue-on-error: true
 
       - name: Generate sql models
@@ -329,7 +337,7 @@ jobs:
 
       - name: install dependencies
         working-directory: ./app
-        run: yarn
+        run: yarn install --frozen-lockfile
 
       - name: run itest ${{ matrix.name }}
         run: make ${{ matrix.args }}
