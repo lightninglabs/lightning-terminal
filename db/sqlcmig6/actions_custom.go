@@ -85,7 +85,7 @@ func (q *Queries) CountActions(ctx context.Context,
 	arg ActionQueryParams) (int64, error) {
 
 	query, args := buildActionsQuery(arg, true)
-	row := q.db.QueryRowContext(ctx, query, args...)
+	row := q.db.QueryRowContext(ctx, fillPlaceHolders(query), args...)
 
 	var count int64
 	err := row.Scan(&count)
