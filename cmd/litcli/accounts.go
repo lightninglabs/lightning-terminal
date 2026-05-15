@@ -146,7 +146,7 @@ var updateAccountCommand = cli.Command{
 	Name:      "update",
 	ShortName: "u",
 	Usage:     "Update an existing off-chain account.",
-	ArgsUsage: "[id | label] new_expiration_date",
+	ArgsUsage: "[id | label] [new_expiration_date]",
 	Description: "Updates an existing off-chain account and sets " +
 		"a new expiration date and optionally a new label.",
 	Flags: []cli.Flag{
@@ -167,10 +167,10 @@ var updateAccountCommand = cli.Command{
 		},
 		cli.Int64Flag{
 			Name: "new_expiration_date",
-			Usage: "The new expiration date of the account " +
-				"expressed in seconds since the unix epoch; " +
-				"-1 means do not update the expiration date; " +
-				"0 means it does not expire.",
+			Usage: "(optional) The new expiration date of " +
+				"the account expressed in seconds since the " +
+				"unix epoch; -1 means do not update the " +
+				"expiration date; 0 means it does not expire.",
 			Value: -1,
 		},
 	},
@@ -196,7 +196,7 @@ func updateAccount(cli *cli.Context) error {
 	}
 
 	var (
-		expirationDate int64
+		expirationDate int64 = -1
 	)
 	switch {
 	case cli.IsSet("new_expiration_date"):
@@ -209,6 +209,9 @@ func updateAccount(cli *cli.Context) error {
 			)
 		}
 		args = args.Tail()
+	}
+	if args.Present() {
+		return fmt.Errorf("too many arguments provided")
 	}
 
 	req := &litrpc.UpdateAccountRequest{
