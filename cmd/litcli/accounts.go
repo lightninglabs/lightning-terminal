@@ -146,10 +146,9 @@ var updateAccountCommand = cli.Command{
 	Name:      "update",
 	ShortName: "u",
 	Usage:     "Update an existing off-chain account.",
-	ArgsUsage: "[id | label] new_balance new_expiration_date",
+	ArgsUsage: "[id | label] new_expiration_date",
 	Description: "Updates an existing off-chain account and sets " +
-		"a new balance, new expiration date and " +
-		"optionally a new label.",
+		"a new expiration date and optionally a new label.",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: idName,
@@ -165,13 +164,6 @@ var updateAccountCommand = cli.Command{
 		cli.StringFlag{
 			Name:  "new_label",
 			Usage: "(optional) The new label of the account.",
-		},
-		cli.Int64Flag{
-			Name: "new_balance",
-			Usage: "(deprecated) The new balance of the account; " +
-				"-1 means do not update the balance.",
-			Value:  -1,
-			Hidden: true,
 		},
 		cli.Int64Flag{
 			Name: "new_expiration_date",
@@ -204,20 +196,8 @@ func updateAccount(cli *cli.Context) error {
 	}
 
 	var (
-		newBalance     int64
 		expirationDate int64
 	)
-	switch {
-	case cli.IsSet("new_balance"):
-		newBalance = cli.Int64("new_balance")
-	case args.Present():
-		newBalance, err = strconv.ParseInt(args.First(), 10, 64)
-		if err != nil {
-			return fmt.Errorf("unable to decode balance %v", err)
-		}
-		args = args.Tail()
-	}
-
 	switch {
 	case cli.IsSet("new_expiration_date"):
 		expirationDate = cli.Int64("new_expiration_date")
@@ -234,7 +214,7 @@ func updateAccount(cli *cli.Context) error {
 	req := &litrpc.UpdateAccountRequest{
 		Id:             id,
 		Label:          label,
-		AccountBalance: newBalance,
+		AccountBalance: -1,
 		ExpirationDate: expirationDate,
 		NewLabel:       cli.String("new_label"),
 	}
