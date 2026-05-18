@@ -421,7 +421,7 @@ func unmarshalAction(ctx context.Context, db SQLActionQueries,
 			RPCMethod:          dbAction.RpcMethod,
 			RPCParamsJson:      dbAction.RpcParamsJson,
 		},
-		AttemptedAt: dbAction.CreatedAt,
+		AttemptedAt: dbAction.CreatedAt.UTC(),
 		State:       ActionState(dbAction.ActionState),
 		ErrorReason: dbAction.ErrorReason.String,
 	}, nil
