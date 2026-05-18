@@ -290,6 +290,28 @@ func TestSessionsStoreMigration(t *testing.T) {
 			},
 		},
 		{
+			name: "one session with empty caveat verification id",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				rCaveats := []macaroon.Caveat{
+					{
+						Id:             []byte("id"),
+						VerificationId: []byte{},
+					},
+				}
+
+				_, err := store.NewSession(
+					ctx, "test", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "foo.bar.baz:1234",
+					WithMacaroonRecipe(rCaveats, perms),
+				)
+				require.NoError(t, err)
+
+				return getBoltStoreSessions(t, store)
+			},
+		},
+		{
 			name: "one session with macaroon recipe nil perms",
 			populateDB: func(t *testing.T, store *BoltStore,
 				_ accounts.Store) []*Session {

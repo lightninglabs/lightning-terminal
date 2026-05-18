@@ -678,6 +678,33 @@ func overrideMacaroonRecipe(kvSession *Session, migratedSession *Session) {
 			})
 		}
 
+		// Empty caveat verification IDs can be persisted as nil by SQL
+		// backends, while the KV store can retain them as empty slices.
+		// After sorting, we only normalize caveats that still line up
+		// by ID. If the lengths or IDs differ, we leave the slices
+		// as-is and let the subsequent DeepEqual report the migration
+		// mismatch, hence let the migration fail.
+		if len(kvCaveats) == len(sqlCaveats) {
+			for i := range kvCaveats {
+				IDMatches := bytes.Equal(
+					kvCaveats[i].Id, sqlCaveats[i].Id,
+				)
+
+				if !IDMatches {
+					break
+				}
+
+				// Override the VerificationId if it's an empty
+				// slice in the KV store, but nil in SQL.
+				if len(kvCaveats[i].VerificationId) == 0 &&
+					kvCaveats[i].VerificationId != nil &&
+					sqlCaveats[i].VerificationId == nil {
+
+					sqlCaveats[i].VerificationId = []byte{}
+				}
+			}
+		}
+
 		// Similarly, we sort the macaroon permissions for both the kv
 		// and sql sessions, so that we can compare them in a
 		// deterministic way.
