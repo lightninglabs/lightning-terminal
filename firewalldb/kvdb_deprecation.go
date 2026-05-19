@@ -49,6 +49,30 @@ func DeprecateKVDB(path string) error {
 	})
 }
 
+// RemoveKVDBDeprecation removes the rules kvdb deprecation marker.
+func RemoveKVDBDeprecation(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
+	db, err := bbolt.Open(path, dbFilePermission, &bbolt.Options{
+		Timeout: DefaultRulesDBTimeout,
+	})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	return db.Update(func(tx *bbolt.Tx) error {
+		metadataBucket := tx.Bucket(metadataBucketKey)
+		if metadataBucket == nil {
+			return nil
+		}
+
+		return setDBVersion(metadataBucket, latestDBVersion)
+	})
+}
+
 // CheckKVDBDeprecated returns a clear error if the rules kvdb file was marked
 // as deprecated.
 func CheckKVDBDeprecated(path string) error {

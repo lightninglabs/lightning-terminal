@@ -59,6 +59,12 @@ type DevConfig struct {
 
 	// Postgres holds the configuration options for a Postgres database
 	Postgres *db.PostgresConfig `group:"postgres" namespace:"postgres"`
+
+	// UnsafeRemoveDeprecatedKVDBMarkers removes the kvdb deprecation
+	// markers from the legacy bbolt database files before opening them.
+	// This should only be used if the caller fully understands the
+	// consequences of reusing kvdb files that were already migrated to SQL.
+	UnsafeRemoveDeprecatedKVDBMarkers bool `long:"unsafe-remove-kvdb-deprecation" description:"Remove the kvdb deprecation markers if set from accounts.db, session.db and rules.db before opening the bbolt backend. Only set this if you know fully understands the consequences of reusing kvdb files that were already migrated to SQL."`
 }
 
 // Validate checks that all the values set in our DevConfig are valid and uses
@@ -195,6 +201,13 @@ func NewStores(ctx context.Context, cfg *Config,
 		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
 
 	default:
+		err := clearDeprecatedKVDBMarkers(
+			filepath.Dir(cfg.MacaroonPath), networkDir, cfg,
+		)
+		if err != nil {
+			return stores, err
+		}
+
 		accountStore, err := accounts.NewBoltStore(
 			filepath.Dir(cfg.MacaroonPath), accounts.DBFilename,
 			clock,
@@ -230,4 +243,40 @@ func NewStores(ctx context.Context, cfg *Config,
 	}
 
 	return stores, nil
+}
+
+// clearDeprecatedKVDBMarkers removes the kvdb deprecation markers when the
+// explicit unsafe override is set.
+func clearDeprecatedKVDBMarkers(accountsDir, networkDir string,
+	cfg *Config) error {
+
+	if !cfg.UnsafeRemoveDeprecatedKVDBMarkers {
+		return nil
+	}
+
+	err := accounts.RemoveKVDBDeprecation(
+		filepath.Join(accountsDir, accounts.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("error clearing accounts kvdb deprecation "+
+			"marker: %w", err)
+	}
+
+	err = session.RemoveKVDBDeprecation(
+		filepath.Join(networkDir, session.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("error clearing session kvdb deprecation "+
+			"marker: %w", err)
+	}
+
+	err = firewalldb.RemoveKVDBDeprecation(
+		filepath.Join(networkDir, firewalldb.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("error clearing firewall kvdb deprecation "+
+			"marker: %w", err)
+	}
+
+	return nil
 }
