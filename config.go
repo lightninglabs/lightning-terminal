@@ -299,7 +299,10 @@ func (c *Config) NewStores(ctx context.Context,
 	case DatabaseBackendSqlite:
 		// Before we initialize the SQLite store, we'll make sure that
 		// the directory where we will store the database file exists.
-		err := makeDirectories(networkDir)
+		// Note that the c.Sqlite.DatabaseFileName may already have
+		// overwritten in loadAndValidateConfig, so that the correct
+		// network folder has been chosen.
+		err := makeDirectories(filepath.Dir(c.Sqlite.DatabaseFileName))
 		if err != nil {
 			return stores, err
 		}
