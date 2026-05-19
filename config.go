@@ -312,6 +312,8 @@ func (c *Config) NewStores(ctx context.Context,
 			return stores, err
 		}
 
+		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
+
 		if !c.Sqlite.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
 				sqlStore,
@@ -342,7 +344,6 @@ func (c *Config) NewStores(ctx context.Context,
 		stores.accounts = acctStore
 		stores.sessions = sessStore
 		stores.firewall = firewalldb.NewDB(firewallStore)
-		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
 
 	case DatabaseBackendPostgres:
 		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
@@ -357,6 +358,8 @@ func (c *Config) NewStores(ctx context.Context,
 		if err != nil {
 			return stores, err
 		}
+
+		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
 
 		if !c.Postgres.SkipMigrations {
 			err = sqldb.ApplyAllMigrations(
@@ -388,7 +391,6 @@ func (c *Config) NewStores(ctx context.Context,
 		stores.accounts = acctStore
 		stores.sessions = sessStore
 		stores.firewall = firewalldb.NewDB(firewallStore)
-		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
 
 	default:
 		accountStore, err := accounts.NewBoltStore(
