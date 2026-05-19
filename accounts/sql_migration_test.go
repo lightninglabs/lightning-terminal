@@ -2,18 +2,17 @@ package accounts
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
 	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
-	"github.com/lightningnetwork/lnd/sqldb"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/rand"
 	"pgregory.net/rapid"
@@ -35,9 +34,7 @@ func TestAccountStoreMigration(t *testing.T) {
 		t.Skipf("Skipping account store migration test for kvdb build")
 	}
 
-	makeSQLDB := func(t *testing.T) (*SQLStore,
-		*db.TransactionExecutor[SQLQueries]) {
-
+	makeSQLDB := func(t *testing.T) (*SQLStore, *sqlcmig6.TxExecutor) {
 		testDBStore := NewTestDB(t, clock)
 
 		store, ok := testDBStore.(*SQLStore)
@@ -45,13 +42,9 @@ func TestAccountStoreMigration(t *testing.T) {
 
 		baseDB := store.BaseDB
 
-		genericExecutor := db.NewTransactionExecutor(
-			baseDB, func(tx *sql.Tx) SQLQueries {
-				return baseDB.WithTx(tx)
-			},
-		)
+		queries := sqlcmig6.NewForType(baseDB, baseDB.BackendType)
 
-		return store, genericExecutor
+		return store, sqlcmig6.NewTxExecutor(baseDB, queries)
 	}
 
 	assertMigrationResults := func(t *testing.T, sqlStore *SQLStore,
@@ -307,7 +300,7 @@ func TestAccountStoreMigration(t *testing.T) {
 			)
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				require.NoError(t, kvStore.db.Close())
+				require.NoError(t, kvStore.DB.Close())
 			})
 
 			// Populate the kv store.
@@ -340,11 +333,11 @@ func TestAccountStoreMigration(t *testing.T) {
 			// Perform the migration.
 			err = txEx.ExecTx(
 				ctx, sqldb.WriteTxOpt(),
-				func(tx SQLQueries) error {
+				func(tx *sqlcmig6.Queries) error {
 					return MigrateAccountStoreToSQL(
-						ctx, kvStore.db, tx,
+						ctx, kvStore.DB, tx,
 					)
-				},
+				}, sqldb.NoOpReset,
 			)
 			require.NoError(t, err)
 
@@ -446,7 +439,7 @@ func rapidRandomizeAccounts(t *testing.T, kvStore *BoltStore) {
 		acct := makeAccountGen().Draw(t, "account")
 
 		// Then proceed to insert the account with its invoices and
-		// payments into the db
+		// payments into the DB
 		newAcct, err := kvStore.NewAccount(
 			ctx, acct.balance, acct.expiry, acct.label,
 		)

@@ -58,6 +58,8 @@ type Querier interface {
 	InsertSessionPrivacyFlag(ctx context.Context, arg InsertSessionPrivacyFlagParams) error
 	ListAccountInvoices(ctx context.Context, accountID int64) ([]AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, accountID int64) ([]AccountPayment, error)
+	ListAllAccountInvoices(ctx context.Context) ([]AccountInvoice, error)
+	ListAllAccountPayments(ctx context.Context) ([]AccountPayment, error)
 	ListAllAccounts(ctx context.Context) ([]Account, error)
 	ListAllKVStoresRecords(ctx context.Context) ([]Kvstore, error)
 	ListSessions(ctx context.Context) ([]Session, error)
@@ -68,8 +70,6 @@ type Querier interface {
 	SetSessionGroupID(ctx context.Context, arg SetSessionGroupIDParams) error
 	SetSessionRemotePublicKey(ctx context.Context, arg SetSessionRemotePublicKeyParams) error
 	SetSessionRevokedAt(ctx context.Context, arg SetSessionRevokedAtParams) error
-	// NOTE: This query is only intended for testing purposes.
-	UpdateAccountAliasForTests(ctx context.Context, arg UpdateAccountAliasForTestsParams) (int64, error)
 	UpdateAccountBalance(ctx context.Context, arg UpdateAccountBalanceParams) (int64, error)
 	UpdateAccountExpiry(ctx context.Context, arg UpdateAccountExpiryParams) (int64, error)
 	UpdateAccountLabel(ctx context.Context, arg UpdateAccountLabelParams) (int64, error)

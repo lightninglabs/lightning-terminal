@@ -3,14 +3,19 @@
 package terminal
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/migsets"
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
+	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 const (
@@ -84,7 +89,9 @@ func defaultDevConfig() *DevConfig {
 }
 
 // NewStores creates a new stores instance based on the chosen database backend.
-func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
+func NewStores(ctx context.Context, cfg *Config,
+	basicClient lnrpc.LightningClient, clock clock.Clock) (*stores, error) {
+
 	var (
 		networkDir = filepath.Join(cfg.LitDir, cfg.Network)
 		stores     = &stores{
@@ -101,14 +108,40 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 			return stores, err
 		}
 
-		sqlStore, err := db.NewSqliteStore(cfg.Sqlite)
+		sqlStore, err := sqldb.NewSqliteStore(&sqldb.SqliteConfig{
+			SkipMigrations:        cfg.Sqlite.SkipMigrations,
+			SkipMigrationDbBackup: cfg.Sqlite.SkipMigrationDbBackup,
+		}, cfg.Sqlite.DatabaseFileName)
 		if err != nil {
 			return stores, err
 		}
 
-		acctStore := accounts.NewSQLStore(sqlStore.BaseDB, clock)
-		sessStore := session.NewSQLStore(sqlStore.BaseDB, clock)
-		firewallStore := firewalldb.NewSQLDB(sqlStore.BaseDB, clock)
+		if !cfg.Sqlite.SkipMigrations {
+			err = sqldb.ApplyAllMigrations(
+				sqlStore,
+				migsets.MakeMigrationSets(
+					ctx, basicClient, cfg.MacaroonPath,
+					clock,
+				),
+			)
+			if err != nil {
+				return stores, fmt.Errorf("error applying "+
+					"migrations to SQLite store: %w", err,
+				)
+			}
+		}
+
+		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
+
+		acctStore := accounts.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		firewallStore := firewalldb.NewSQLDB(
+			sqlStore.BaseDB, queries, clock,
+		)
 
 		stores.accounts = acctStore
 		stores.sessions = sessStore
@@ -116,14 +149,45 @@ func NewStores(cfg *Config, clock clock.Clock) (*stores, error) {
 		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
 
 	case DatabaseBackendPostgres:
-		sqlStore, err := db.NewPostgresStore(cfg.Postgres)
+		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
+			Dsn:                cfg.Postgres.DSN(false),
+			MaxOpenConnections: cfg.Postgres.MaxOpenConnections,
+			MaxIdleConnections: cfg.Postgres.MaxIdleConnections,
+			ConnMaxLifetime:    cfg.Postgres.ConnMaxLifetime,
+			ConnMaxIdleTime:    cfg.Postgres.ConnMaxIdleTime,
+			RequireSSL:         cfg.Postgres.RequireSSL,
+			SkipMigrations:     cfg.Postgres.SkipMigrations,
+		})
 		if err != nil {
 			return stores, err
 		}
 
-		acctStore := accounts.NewSQLStore(sqlStore.BaseDB, clock)
-		sessStore := session.NewSQLStore(sqlStore.BaseDB, clock)
-		firewallStore := firewalldb.NewSQLDB(sqlStore.BaseDB, clock)
+		if !cfg.Postgres.SkipMigrations {
+			err = sqldb.ApplyAllMigrations(
+				sqlStore,
+				migsets.MakeMigrationSets(
+					ctx, basicClient, cfg.MacaroonPath,
+					clock,
+				),
+			)
+			if err != nil {
+				return stores, fmt.Errorf("error applying "+
+					"migrations to Postgres store: %w", err,
+				)
+			}
+		}
+
+		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
+
+		acctStore := accounts.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		firewallStore := firewalldb.NewSQLDB(
+			sqlStore.BaseDB, queries, clock,
+		)
 
 		stores.accounts = acctStore
 		stores.sessions = sessStore

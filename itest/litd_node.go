@@ -721,15 +721,29 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 		defer hn.wg.Done()
 
 		err := hn.cmd.Wait()
-		if err != nil {
-			litdError <- fmt.Errorf("%v\n%v\n", err, errb.String())
-		}
+		// Note: we intentionally keep the Wait result in a local err
+		// variable and only inspect it after we have signaled process
+		// exit and finalized the logfile below. That ordering lets
+		// failed-start paths observe that the process is gone and
+		// ensures the forwarded error includes the complete captured
+		// stderr output.
 
 		// Signal any onlookers that this process has exited.
 		close(hn.processExit)
 
 		// Make sure log file is closed and renamed if necessary.
 		finalizeLogfile()
+
+		// We intentionally handle the Wait error only after the two
+		// steps above. The harness provides a buffered litdError
+		// channel, so the first fatal process error is preserved even
+		// if no receiver is waiting yet. But because that channel is
+		// shared across the whole harness, it can still fill, so we
+		// keep processExit signaling and logfile finalization ahead of
+		// the send.
+		if err != nil {
+			litdError <- fmt.Errorf("%v\n%v\n", err, errb.String())
+		}
 	}()
 
 	// We may want to skip waiting for the node to come up (eg. the node

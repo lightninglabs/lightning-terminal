@@ -15,6 +15,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
 const (
@@ -32,6 +33,8 @@ const (
 //
 //nolint:ll
 type SQLQueries interface {
+	sqldb.BaseQuerier
+
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
@@ -41,6 +44,8 @@ type SQLQueries interface {
 	GetAccountIndex(ctx context.Context, name string) (int64, error)
 	GetAccountPayment(ctx context.Context, arg sqlc.GetAccountPaymentParams) (sqlc.AccountPayment, error)
 	InsertAccount(ctx context.Context, arg sqlc.InsertAccountParams) (int64, error)
+	ListAllAccountInvoices(ctx context.Context) ([]sqlc.AccountInvoice, error)
+	ListAllAccountPayments(ctx context.Context) ([]sqlc.AccountPayment, error)
 	ListAccountInvoices(ctx context.Context, id int64) ([]sqlc.AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, id int64) ([]sqlc.AccountPayment, error)
 	ListAllAccounts(ctx context.Context) ([]sqlc.Account, error)
@@ -48,20 +53,18 @@ type SQLQueries interface {
 	UpdateAccountBalance(ctx context.Context, arg sqlc.UpdateAccountBalanceParams) (int64, error)
 	UpdateAccountExpiry(ctx context.Context, arg sqlc.UpdateAccountExpiryParams) (int64, error)
 	UpdateAccountLastUpdate(ctx context.Context, arg sqlc.UpdateAccountLastUpdateParams) (int64, error)
-	// UpdateAccountAliasForTests is a query intended only for testing
-	// purposes, to change the account alias.
-	UpdateAccountAliasForTests(ctx context.Context, arg sqlc.UpdateAccountAliasForTestsParams) (int64, error)
 	UpdateAccountLabel(ctx context.Context, arg sqlc.UpdateAccountLabelParams) (int64, error)
 	UpsertAccountPayment(ctx context.Context, arg sqlc.UpsertAccountPaymentParams) error
 	GetAccountInvoice(ctx context.Context, arg sqlc.GetAccountInvoiceParams) (sqlc.AccountInvoice, error)
 }
 
-// BatchedSQLQueries is a version of the SQLQueries that's capable
-// of batched database operations.
+// BatchedSQLQueries combines the SQLQueries interface with the BatchedTx
+// interface, allowing for multiple queries to be executed in single SQL
+// transaction.
 type BatchedSQLQueries interface {
 	SQLQueries
 
-	db.BatchedTx[SQLQueries]
+	sqldb.BatchedTx[SQLQueries]
 }
 
 // SQLStore represents a storage backend.
@@ -71,19 +74,37 @@ type SQLStore struct {
 	db BatchedSQLQueries
 
 	// BaseDB represents the underlying database connection.
-	*db.BaseDB
+	*sqldb.BaseDB
 
 	clock clock.Clock
 }
 
-// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
-// storage backend.
-func NewSQLStore(sqlDB *db.BaseDB, clock clock.Clock) *SQLStore {
-	executor := db.NewTransactionExecutor(
-		sqlDB, func(tx *sql.Tx) SQLQueries {
-			return sqlDB.WithTx(tx)
+type sqlQueriesExecutor[T sqldb.BaseQuerier] struct {
+	*sqldb.TransactionExecutor[T]
+
+	SQLQueries
+}
+
+func newSQLQueriesExecutor(baseDB *sqldb.BaseDB,
+	queries *sqlc.Queries) *sqlQueriesExecutor[SQLQueries] {
+
+	executor := sqldb.NewTransactionExecutor(
+		baseDB, func(tx *sql.Tx) SQLQueries {
+			return queries.WithTx(tx)
 		},
 	)
+	return &sqlQueriesExecutor[SQLQueries]{
+		TransactionExecutor: executor,
+		SQLQueries:          queries,
+	}
+}
+
+// NewSQLStore creates a new SQLStore instance given an open BatchedSQLQueries
+// storage backend.
+func NewSQLStore(sqlDB *sqldb.BaseDB, queries *sqlc.Queries,
+	clock clock.Clock) *SQLStore {
+
+	executor := newSQLQueriesExecutor(sqlDB, queries)
 
 	return &SQLStore{
 		db:     executor,
@@ -155,7 +176,7 @@ func (s *SQLStore) NewAccount(ctx context.Context, balance lnwire.MilliSatoshi,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 	if err != nil {
 		return nil, err
 	}
@@ -181,6 +202,23 @@ func getAndMarshalAccount(ctx context.Context, db SQLQueries, id int64) (
 func marshalDBAccount(ctx context.Context, db SQLQueries,
 	dbAcct sqlc.Account) (*OffChainBalanceAccount, error) {
 
+	invoices, err := db.ListAccountInvoices(ctx, dbAcct.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	payments, err := db.ListAccountPayments(ctx, dbAcct.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return marshalDBAccountWithLinkedData(dbAcct, invoices, payments)
+}
+
+func marshalDBAccountWithLinkedData(dbAcct sqlc.Account,
+	invoices []sqlc.AccountInvoice,
+	payments []sqlc.AccountPayment) (*OffChainBalanceAccount, error) {
+
 	alias, err := AccountIDFromInt64(dbAcct.Alias)
 	if err != nil {
 		return nil, err
@@ -198,19 +236,10 @@ func marshalDBAccount(ctx context.Context, db SQLQueries,
 		Label:          dbAcct.Label.String,
 	}
 
-	invoices, err := db.ListAccountInvoices(ctx, dbAcct.ID)
-	if err != nil {
-		return nil, err
-	}
 	for _, invoice := range invoices {
 		var hash lntypes.Hash
 		copy(hash[:], invoice.Hash)
 		account.Invoices[hash] = struct{}{}
-	}
-
-	payments, err := db.ListAccountPayments(ctx, dbAcct.ID)
-	if err != nil {
-		return nil, err
 	}
 
 	for _, payment := range payments {
@@ -297,7 +326,7 @@ func (s *SQLStore) AddAccountInvoice(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, acctID)
-	})
+	}, sqldb.NoOpReset)
 }
 
 func getAccountIDByAlias(ctx context.Context, db SQLQueries, alias AccountID) (
@@ -422,7 +451,7 @@ func (s *SQLStore) UpdateAccount(ctx context.Context,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // CreditAccount increases the balance of the account with the given alias by
@@ -457,7 +486,7 @@ func (s *SQLStore) CreditAccount(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DebitAccount decreases the balance of the account with the given alias by the
@@ -498,7 +527,7 @@ func (s *SQLStore) DebitAccount(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // Account retrieves an account from the SQL store and un-marshals it. If the
@@ -520,7 +549,7 @@ func (s *SQLStore) Account(ctx context.Context, alias AccountID) (
 
 		account, err = getAndMarshalAccount(ctx, db, id)
 		return err
-	})
+	}, sqldb.NoOpReset)
 
 	return account, err
 }
@@ -541,9 +570,36 @@ func (s *SQLStore) Accounts(ctx context.Context) ([]*OffChainBalanceAccount,
 			return err
 		}
 
+		dbInvoices, err := db.ListAllAccountInvoices(ctx)
+		if err != nil {
+			return err
+		}
+
+		dbPayments, err := db.ListAllAccountPayments(ctx)
+		if err != nil {
+			return err
+		}
+
+		accountInvoices := make(map[int64][]sqlc.AccountInvoice)
+		for _, invoice := range dbInvoices {
+			accountInvoices[invoice.AccountID] = append(
+				accountInvoices[invoice.AccountID], invoice,
+			)
+		}
+
+		accountPayments := make(map[int64][]sqlc.AccountPayment)
+		for _, payment := range dbPayments {
+			accountPayments[payment.AccountID] = append(
+				accountPayments[payment.AccountID], payment,
+			)
+		}
+
 		accounts = make([]*OffChainBalanceAccount, len(dbAccounts))
 		for i, dbAccount := range dbAccounts {
-			account, err := marshalDBAccount(ctx, db, dbAccount)
+			account, err := marshalDBAccountWithLinkedData(
+				dbAccount, accountInvoices[dbAccount.ID],
+				accountPayments[dbAccount.ID],
+			)
 			if err != nil {
 				return err
 			}
@@ -552,7 +608,7 @@ func (s *SQLStore) Accounts(ctx context.Context) ([]*OffChainBalanceAccount,
 		}
 
 		return nil
-	})
+	}, sqldb.NoOpReset)
 
 	return accounts, err
 }
@@ -569,7 +625,7 @@ func (s *SQLStore) RemoveAccount(ctx context.Context, alias AccountID) error {
 		}
 
 		return db.DeleteAccount(ctx, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // UpsertAccountPayment updates or inserts a payment entry for the given
@@ -679,7 +735,7 @@ func (s *SQLStore) UpsertAccountPayment(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // DeleteAccountPayment removes a payment entry from the account with the given
@@ -722,7 +778,7 @@ func (s *SQLStore) DeleteAccountPayment(ctx context.Context, alias AccountID,
 		}
 
 		return s.markAccountUpdated(ctx, db, id)
-	})
+	}, sqldb.NoOpReset)
 }
 
 // LastIndexes returns the last invoice add and settle index or
@@ -749,7 +805,7 @@ func (s *SQLStore) LastIndexes(ctx context.Context) (uint64, uint64, error) {
 		}
 
 		return err
-	})
+	}, sqldb.NoOpReset)
 
 	return uint64(addIndex), uint64(settleIndex), err
 }
@@ -774,7 +830,7 @@ func (s *SQLStore) StoreLastIndexes(ctx context.Context, addIndex,
 			Name:  settleIndexName,
 			Value: int64(settleIndex),
 		})
-	})
+	}, sqldb.NoOpReset)
 }
 
 // Close closes the underlying store.

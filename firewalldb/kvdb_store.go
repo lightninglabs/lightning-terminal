@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightningnetwork/lnd/clock"
 	"go.etcd.io/bbolt"
 )
@@ -49,6 +50,35 @@ type BoltDB struct {
 func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB,
 	accountsDB AccountsDB, clock clock.Clock) (*BoltDB, error) {
 
+	return newBoltDB(
+		dir, fileName, sessionIDIndex, accountsDB, clock, false,
+	)
+}
+
+// NewBoltDBForMigration opens the rules kvdb store even if it was already
+// marked as deprecated. This is only intended for rerunning the kvdb to SQL
+// migration after the SQL database was removed or downgraded.
+func NewBoltDBForMigration(dir, fileName string, sessionIDIndex SessionDB,
+	accountsDB AccountsDB, clock clock.Clock) (*BoltDB, error) {
+
+	return newBoltDB(
+		dir, fileName, sessionIDIndex, accountsDB, clock, true,
+	)
+}
+
+// DeprecateKVDB marks the rules kvdb file in the given db directory as
+// deprecated after a successful SQL migration.
+func DeprecateKVDB(dbDir string) error {
+	return tombstone.DeprecateKVDB(
+		filepath.Join(dbDir, DBFilename), DefaultRulesDBTimeout,
+		rulesBucketKey,
+	)
+}
+
+func newBoltDB(dir, fileName string, sessionIDIndex SessionDB,
+	accountsDB AccountsDB, clock clock.Clock,
+	allowDeprecated bool) (*BoltDB, error) {
+
 	firstInit := false
 	path := filepath.Join(dir, fileName)
 
@@ -60,6 +90,15 @@ func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB,
 		firstInit = true
 	}
 
+	if !allowDeprecated {
+		err := tombstone.CheckKVDBDeprecated(
+			path, rulesBucketKey, DefaultRulesDBTimeout,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	db, err := initDB(path, firstInit)
 	if err != nil {
 		return nil, err
@@ -67,8 +106,10 @@ func NewBoltDB(dir, fileName string, sessionIDIndex SessionDB,
 
 	// Attempt to sync the database's current version with the latest known
 	// version available.
-	if err := syncVersions(db); err != nil {
-		return nil, err
+	if !allowDeprecated {
+		if err := syncVersions(db); err != nil {
+			return nil, err
+		}
 	}
 
 	return &BoltDB{

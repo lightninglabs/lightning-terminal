@@ -31,13 +31,6 @@ RETURNING id;
 INSERT INTO account_invoices (account_id, hash)
 VALUES ($1, $2);
 
--- name: UpdateAccountAliasForTests :one
--- NOTE: This query is only intended for testing purposes.
-UPDATE accounts
-SET alias = $1
-WHERE id = $2
-    RETURNING id;
-
 -- name: DeleteAccountPayment :exec
 DELETE FROM account_payments
 WHERE hash = $1
@@ -83,10 +76,18 @@ SELECT *
 FROM account_payments
 WHERE account_id = $1;
 
+-- name: ListAllAccountPayments :many
+SELECT *
+FROM account_payments;
+
 -- name: ListAccountInvoices :many
 SELECT *
 FROM account_invoices
 WHERE account_id = $1;
+
+-- name: ListAllAccountInvoices :many
+SELECT *
+FROM account_invoices;
 
 -- name: GetAccountInvoice :one
 SELECT *
