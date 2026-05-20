@@ -45,6 +45,12 @@
 
 ### Pool
 
+* Updated [`pool` to
+  `v0.7.0-beta`](https://github.com/lightninglabs/lightning-terminal/pull/1313),
+  which includes a fix for the auctioneer subscription stream silently
+  dying on EOF, jittered reconnect backoff, and a fix for stream
+  handling in the pending-open-channel consumer.
+
 ### Faraday
 
 ### Taproot Assets
