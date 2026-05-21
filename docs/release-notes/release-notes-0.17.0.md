@@ -22,6 +22,11 @@
   without negotiated ALPN, restoring LNC session establishment and the
   `lnc_auth` flow after the `grpc-go` `v1.67.0` upgrade.
 
+* [Fix default account update expiration](https://github.com/lightninglabs/lightning-terminal/pull/1303):
+  Fixed a bug in the `litcli accounts update` command where omitting the new
+  expiration date would overwrite it to 0 (never expires). It now correctly
+  defaults to -1 (no change).
+
 ### Functional Changes/Additions
 
 * [Show asset information on
@@ -32,6 +37,12 @@
 * [Renaming off-chain accounts](https://github.com/lightninglabs/lightning-terminal/pull/1274):
   Added the ability to rename off-chain accounts using the `litcli accounts
   update` command with a new `--new_label` flag.
+
+* [Removal of deprecated `--new_balance`](https://github.com/lightninglabs/lightning-terminal/pull/1303):
+  Removed the deprecated `--new_balance` flag and positional parameter logic from
+  the `litcli accounts update` command. Users should instead use the
+  `litcli accounts update debit` and `litcli accounts update credit` commands
+  to modify an account's balance.
 
 ### Technical and Architectural Updates
 
@@ -58,4 +69,5 @@
 # Contributors (Alphabetical Order)
 
 * Boris Nagaev
+* Cyberguru1
 * darioAnongba
