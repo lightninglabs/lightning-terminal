@@ -3,6 +3,7 @@
 package itest
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -123,6 +124,11 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 	rawConn.Close()
 
 	// Step 4: Restart with configured backend to trigger migration.
+	//
+	// During the startup, the user will be prompted to confirm the
+	// migration by typing yes. We therefore buffer yes to std-in.
+	migNode.stdin = bytes.NewBufferString("yes\n")
+
 	err = net.RestartNode(
 		migNode, func() error { return nil }, []LitArgOption{
 			WithLitArg("databasebackend", *litDBBackend),
@@ -183,6 +189,9 @@ func testKvdbSQLMigration(ctx context.Context, net *NetworkHarness,
 
 	// Step 9: Delete the SQL database and verify that starting with the
 	// selected SQL backend reruns the kvdb -> SQL migration successfully.
+	//
+	// Note that we do not buffer yes to std-in again, as the prompt will
+	// not be shown when the bbolt db has already been tombstoned.
 	rerunSQLMigrationAndAssert(
 		t, net, migNode, newStepCtx, newAdminCtx, beforeMigration,
 		migrationRefs,

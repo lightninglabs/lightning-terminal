@@ -85,6 +85,31 @@ func CheckKVDBDeprecated(path string, bucketKey []byte,
 	return nil
 }
 
+// HasActiveKVDB reports whether the legacy bbolt database at the given path
+// exists and has not yet been tombstoned by a SQL migration in the specified
+// top-level bucket. A missing file or a tombstoned database is reported as
+// inactive, so callers can use this to detect kvdb state that is still pending
+// migration to SQL.
+func HasActiveKVDB(path string, bucketKey []byte,
+	timeout time.Duration) (bool, error) {
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false, nil
+	}
+
+	err := CheckKVDBDeprecated(path, bucketKey, timeout)
+	switch {
+	case errors.Is(err, ErrKVDBDeprecated):
+		return false, nil
+
+	case err != nil:
+		return false, err
+
+	default:
+		return true, nil
+	}
+}
+
 // IsMigrationTombstoneKey returns true if the given key is the kvdb migration
 // tombstone marker.
 func IsMigrationTombstoneKey(key []byte) bool {

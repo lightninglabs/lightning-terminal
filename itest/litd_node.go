@@ -342,6 +342,7 @@ type HarnessNode struct {
 	cmd     *exec.Cmd
 	pidFile string
 	logFile *os.File
+	stdin   io.Reader
 
 	// processExit is a channel that's closed once it's detected that the
 	// process this instance of HarnessNode is bound to has exited.
@@ -636,6 +637,7 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 
 	args := hn.Cfg.GenArgs(litArgOpts...)
 	hn.cmd = exec.Command(litdBinary, args...)
+	hn.cmd.Stdin = hn.stdin
 
 	// Redirect stderr output to buffer
 	var errb bytes.Buffer

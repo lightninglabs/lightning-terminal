@@ -118,6 +118,15 @@ func DeprecateKVDB(dbDir string) error {
 	)
 }
 
+// HasActiveKVDB reports whether the session kvdb file in the given db
+// directory still holds data that is pending migration to SQL.
+func HasActiveKVDB(dbDir string) (bool, error) {
+	return tombstone.HasActiveKVDB(
+		filepath.Join(dbDir, DBFilename), sessionBucketKey,
+		DefaultSessionDBTimeout,
+	)
+}
+
 func newDB(dir, fileName string, clock clock.Clock, store accounts.Store,
 	allowDeprecated bool) (*BoltStore, error) {
 
