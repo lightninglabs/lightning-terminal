@@ -16,6 +16,12 @@
 
 ### Bug Fixes
 
+* [Fix `dev.Dockerfile` build failure on git
+  worktree checkouts](https://github.com/lightninglabs/lightning-terminal/pull/1311):
+  The web UI `postbuild` step no longer aborts when the build context lacks a
+  reachable git directory, which previously broke `dev.Dockerfile` builds for
+  contributors using `git worktree`.
+
 * [Restore LNC session setup for mailbox
   links](https://github.com/lightninglabs/lightning-terminal/pull/1254):
   Mailbox-specific TLS transport credentials now allow mailbox links to proceed
