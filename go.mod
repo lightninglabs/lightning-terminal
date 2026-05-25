@@ -29,7 +29,7 @@ require (
 	github.com/lightninglabs/loop v0.31.8-beta
 	github.com/lightninglabs/loop/looprpc v1.0.13
 	github.com/lightninglabs/loop/swapserverrpc v1.0.20
-	github.com/lightninglabs/pool v0.7.0-beta
+	github.com/lightninglabs/pool v0.7.1-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.7.1
