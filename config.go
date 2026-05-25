@@ -373,6 +373,9 @@ func defaultConfig() *Config {
 		DatabaseBackend:    DatabaseBackendSqlite,
 		Sqlite: &db.SqliteConfig{
 			DatabaseFileName: defaultSqliteDatabasePath,
+			// TODO: Change this to false when next SQL migration
+			// version is added.
+			SkipMigrationDbBackup: true,
 		},
 		Postgres: &db.PostgresConfig{
 			Host:               "localhost",

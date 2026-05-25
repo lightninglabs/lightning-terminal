@@ -14,6 +14,10 @@ const (
 	// daemon.
 	//
 	// NOTE: This MUST be updated when a new migration is added.
+	//
+	// TODO: On the next update, when the migration version is updated
+	// be beyond version 6, make sure that the default
+	// `SkipMigrationDbBackup` value for Sqlite is set to false.
 	LatestMigrationVersion = 6
 
 	// KVDBtoSQLMigVersion is the version of the migration that migrates the
