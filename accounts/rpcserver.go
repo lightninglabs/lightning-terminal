@@ -5,16 +5,41 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
+	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon-bakery.v2/bakery/checkers"
 	"gopkg.in/macaroon.v2"
+)
+
+const (
+	// DefaultMaxPayments is the default page size for listing payments.
+	DefaultMaxPayments = 20
+
+	// MaxPaymentsLimit is the maximum page size allowed for listing
+	// payments.
+	MaxPaymentsLimit = 50
+
+	// MaxIndexOffset is the maximum index offset allowed.
+	MaxIndexOffset = 0x7fffffff
+
+	// DefaultTrackPaymentTimeout is the timeout for track payment RPC
+	// calls.
+	DefaultTrackPaymentTimeout = 8 * time.Second
+
+	// MaxConcurrentTrackPayments is the maximum number of concurrent track
+	// payment requests.
+	MaxConcurrentTrackPayments = 10
 )
 
 var (
@@ -370,4 +395,224 @@ func marshalAccount(acct *OffChainBalanceAccount) *litrpc.Account {
 	}
 
 	return rpcAccount
+}
+
+// AccountPayments returns the detailed payment history for the given account.
+func (s *RPCServer) AccountPayments(ctx context.Context,
+	req *litrpc.AccountPaymentsRequest) (
+	*litrpc.AccountPaymentsResponse, error) {
+
+	if req.GetAccount() == nil {
+		return nil, fmt.Errorf("account param must be specified")
+	}
+
+	var id, label string
+	switch idType := req.Account.Identifier.(type) {
+	case *litrpc.AccountIdentifier_Id:
+		id = idType.Id
+	case *litrpc.AccountIdentifier_Label:
+		label = idType.Label
+	}
+
+	log.Infof("[accountpayments] id=%s, label=%v, max_payments=%d, "+
+		"index_offset=%d, count_total_payments=%v",
+		id, label, req.MaxPayments, req.IndexOffset,
+		req.CountTotalPayments)
+
+	accountID, err := s.findAccount(ctx, id, label)
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine limits.
+	limit := req.MaxPayments
+	if limit == 0 {
+		limit = DefaultMaxPayments
+	} else if limit > MaxPaymentsLimit {
+		return nil, fmt.Errorf(
+			"max_payments cannot exceed %d", MaxPaymentsLimit,
+		)
+	}
+
+	if req.IndexOffset > MaxIndexOffset {
+		return nil, fmt.Errorf("index_offset out of range")
+	}
+	offset := req.IndexOffset
+
+	// Fetch the paginated payment entries from the store.
+	paymentsFromStore, err := s.service.store.ListAccountPayments(
+		ctx, accountID, int32(offset), int32(limit),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"unable to list account payments: %w", err,
+		)
+	}
+
+	// Fetch total payment count if requested.
+	var totalNumPayments uint64
+	if req.CountTotalPayments {
+		total, err := s.service.store.CountAccountPayments(
+			ctx, accountID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to count account payments: %w", err,
+			)
+		}
+
+		totalNumPayments = total
+	}
+
+	// Fetch the detailed payments concurrently from LND.
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		payments = make(map[lntypes.Hash]*lnrpc.Payment)
+		errs     []error
+		sem      = make(chan struct{}, MaxConcurrentTrackPayments)
+	)
+
+	rawCtx, _, client := s.service.routerClient.RawClientWithMacAuth(ctx)
+
+	for _, entry := range paymentsFromStore {
+		entry := entry
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Bounded concurrency using semaphore.
+			select {
+			case sem <- struct{}{}:
+			case <-rawCtx.Done():
+				return
+			}
+			defer func() { <-sem }()
+
+			// Add a timeout to prevent hanging streaming calls.
+			trackCtx, trackCancel := context.WithTimeout(
+				rawCtx, DefaultTrackPaymentTimeout,
+			)
+			defer trackCancel()
+
+			stream, err := client.TrackPaymentV2(
+				trackCtx, &routerrpc.TrackPaymentRequest{
+					PaymentHash:       entry.Hash[:],
+					NoInflightUpdates: false,
+				},
+			)
+			if err != nil {
+				// Skip error logging and recording if the
+				// parent context was cancelled or timed out.
+				if rawCtx.Err() != nil {
+					return
+				}
+
+				sErr, ok := status.FromError(err)
+				if ok && sErr.Code() == codes.NotFound {
+					log.Warnf("Payment %x not found in "+
+						"lnd, creating placeholder: %v",
+						entry.Hash[:], err)
+
+					mu.Lock()
+					payments[entry.Hash] =
+						notFoundPayment(entry.Hash)
+					mu.Unlock()
+
+					return
+				}
+
+				log.Errorf("Failed to track payment %x: %v",
+					entry.Hash[:], err)
+
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+
+				return
+			}
+
+			payment, err := stream.Recv()
+			if err != nil {
+				// Skip error logging and recording if the
+				// parent context was cancelled or timed out.
+				if rawCtx.Err() != nil {
+					return
+				}
+
+				sErr, ok := status.FromError(err)
+				if ok && sErr.Code() == codes.NotFound {
+					log.Warnf("Payment %x not found in "+
+						"lnd, creating placeholder: %v",
+						entry.Hash[:], err)
+
+					mu.Lock()
+					payments[entry.Hash] =
+						notFoundPayment(entry.Hash)
+					mu.Unlock()
+
+					return
+				}
+
+				log.Errorf("Failed to receive payment "+
+					"update for %x: %v", entry.Hash[:], err)
+
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+
+				return
+			}
+
+			mu.Lock()
+			payments[entry.Hash] = payment
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	// Return immediately if the parent context was cancelled or timed out.
+	if err := rawCtx.Err(); err != nil {
+		return nil, err
+	}
+
+	// If there were any errors tracking the payments, return the
+	// error.
+	if len(errs) > 0 {
+		return nil, fmt.Errorf(
+			"failed to fetch payment details: %w", errs[0],
+		)
+	}
+
+	var finalPayments []*lnrpc.Payment
+	for _, entry := range paymentsFromStore {
+		if p, ok := payments[entry.Hash]; ok {
+			finalPayments = append(finalPayments, p)
+		}
+	}
+
+	var firstIndexOffset, lastIndexOffset uint64
+	if len(finalPayments) > 0 {
+		firstIndexOffset = offset
+		lastIndexOffset = offset + uint64(len(finalPayments))
+	}
+
+	return &litrpc.AccountPaymentsResponse{
+		Payments:         finalPayments,
+		FirstIndexOffset: firstIndexOffset,
+		LastIndexOffset:  lastIndexOffset,
+		TotalNumPayments: totalNumPayments,
+	}, nil
+}
+
+// notFoundPayment creates a placeholder payment for a desynced entry.
+func notFoundPayment(hash lntypes.Hash) *lnrpc.Payment {
+	return &lnrpc.Payment{
+		PaymentHash: hex.EncodeToString(hash[:]),
+		Status:      lnrpc.Payment_UNKNOWN,
+		FailureReason: lnrpc.
+			PaymentFailureReason_FAILURE_REASON_NONE,
+	}
 }
