@@ -2,8 +2,11 @@ package itest
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -14,8 +17,10 @@ import (
 	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntest"
+	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -164,6 +169,225 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 		ctxa, t, rawConn, charlie, acctBalance,
 	)
 
+	// Initiate a HODL payment (which remains IN_FLIGHT) and a FAILED
+	// payment to verify that the AccountPayments RPC correctly retrieves
+	// and reports payments across all potential lifecycles (SUCCEEDED,
+	// IN_FLIGHT, FAILED).
+	testCtx, testCancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer testCancel()
+
+	routerClient := routerrpc.NewRouterClient(rawConn)
+
+	// 1. Initiate HODL payment (IN_FLIGHT)
+	var preimage lntypes.Preimage
+	_, err = rand.Read(preimage[:])
+	require.NoError(t.t, err)
+	holdHash := preimage.Hash()
+
+	holdInv, err := charlie.AddHoldInvoice(
+		testCtx, &invoicesrpc.AddHoldInvoiceRequest{
+			Hash:  holdHash[:],
+			Value: 2222,
+		},
+	)
+	require.NoError(t.t, err)
+
+	sendReqHold := &routerrpc.SendPaymentRequest{
+		PaymentRequest: holdInv.PaymentRequest,
+		TimeoutSeconds: 2,
+		FeeLimitMsat:   1000,
+	}
+	holdStream, err := routerClient.SendPaymentV2(ctxa, sendReqHold)
+	require.NoError(t.t, err)
+
+	holdPayment, err := getPaymentResult(holdStream, true)
+	require.NoError(t.t, err)
+	require.Equal(t.t, lnrpc.Payment_IN_FLIGHT, holdPayment.Status)
+
+	// Wait for the hold invoice to be accepted by Charlie.
+	require.Eventually(t.t, func() bool {
+		inv, err := charlie.LookupInvoice(
+			testCtx, &lnrpc.PaymentHash{
+				RHash: holdHash[:],
+			},
+		)
+
+		return err == nil &&
+			inv.State == lnrpc.Invoice_ACCEPTED
+	}, defaultTimeout, 100*time.Millisecond)
+
+	// 2. Initiate a FAILED payment
+	var failedHash lntypes.Hash
+	_, err = rand.Read(failedHash[:])
+	require.NoError(t.t, err)
+
+	var fakePubKey [33]byte
+	fakePubKey[0] = 0x02
+	sendReqFailed := &routerrpc.SendPaymentRequest{
+		Dest:           fakePubKey[:],
+		Amt:            1111,
+		PaymentHash:    failedHash[:],
+		TimeoutSeconds: 2,
+		FeeLimitMsat:   1000,
+	}
+	failedStream, err := routerClient.SendPaymentV2(ctxa, sendReqFailed)
+	require.NoError(t.t, err)
+
+	failedPayment, err := getPaymentResult(failedStream, false)
+	require.NoError(t.t, err)
+	require.Equal(t.t, lnrpc.Payment_FAILED, failedPayment.Status)
+
+	// Test AccountPayments RPC with all 3 payments (succeeded,
+	// in-flight, failed).
+	paymentsResp, err := acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			CountTotalPayments: true,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, paymentsResp.Payments, 3)
+
+	// Sort the payments by value descending to ensure index-based
+	// assertions are deterministic regardless of database sorting by hash.
+	sort.Slice(paymentsResp.Payments, func(i, j int) bool {
+		valI := paymentsResp.Payments[i].ValueSat
+		valJ := paymentsResp.Payments[j].ValueSat
+
+		return valI > valJ
+	})
+
+	// Check the succeeded payment. This corresponds to the 4444 sat
+	// payment initiated earlier in testAccountRestrictions using this
+	// account.
+	require.Equal(
+		t.t, uint64(4444),
+		uint64(paymentsResp.Payments[0].ValueSat),
+	)
+	require.Equal(
+		t.t, lnrpc.Payment_SUCCEEDED,
+		paymentsResp.Payments[0].Status,
+	)
+
+	// Check In-flight payment
+	require.Equal(
+		t.t, uint64(2222),
+		uint64(paymentsResp.Payments[1].ValueSat),
+	)
+	require.Equal(
+		t.t, lnrpc.Payment_IN_FLIGHT,
+		paymentsResp.Payments[1].Status,
+	)
+
+	// Check Failed payment
+	require.Equal(
+		t.t, uint64(1111),
+		uint64(paymentsResp.Payments[2].ValueSat),
+	)
+	require.Equal(
+		t.t, lnrpc.Payment_FAILED,
+		paymentsResp.Payments[2].Status,
+	)
+
+	require.EqualValues(t.t, 3, paymentsResp.TotalNumPayments)
+	require.EqualValues(t.t, 0, paymentsResp.FirstIndexOffset)
+	require.EqualValues(t.t, 3, paymentsResp.LastIndexOffset)
+
+	// Query by label.
+	paymentsResp, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Label{
+					Label: acctLabel,
+				},
+			},
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, paymentsResp.Payments, 3)
+
+	// Query with pagination limit.
+	paymentsResp, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			MaxPayments: 2,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, paymentsResp.Payments, 2)
+	require.EqualValues(t.t, 0, paymentsResp.FirstIndexOffset)
+	require.EqualValues(t.t, 2, paymentsResp.LastIndexOffset)
+
+	// Query with pagination offset out of bounds.
+	paymentsResp, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			IndexOffset: 3,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Empty(t.t, paymentsResp.Payments)
+	require.EqualValues(t.t, 0, paymentsResp.FirstIndexOffset)
+	require.EqualValues(t.t, 0, paymentsResp.LastIndexOffset)
+
+	// Query with pagination offset inside bounds, where the number of
+	// payments returned is fewer than MaxPayments.
+	paymentsResp, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			IndexOffset: 2,
+			MaxPayments: 2,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, paymentsResp.Payments, 1)
+	require.EqualValues(t.t, 2, paymentsResp.FirstIndexOffset)
+	require.EqualValues(t.t, 3, paymentsResp.LastIndexOffset)
+
+	// Query with invalid pagination max_payments (exceeding 50).
+	_, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			MaxPayments: 51,
+		},
+	)
+	require.Error(t.t, err)
+	require.Contains(t.t, err.Error(), "max_payments cannot exceed 50")
+
+	// Query with invalid pagination index_offset (exceeding 31-bit int).
+	_, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			IndexOffset: 0x80000000,
+		},
+	)
+	require.Error(t.t, err)
+	require.Contains(t.t, err.Error(), "index_offset out of range")
+
 	// Test the same account restrictions with an LNC session that is bound
 	// to the account.
 	testAccountRestrictionsLNC(
@@ -176,6 +400,84 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 		ctxa, t, rawConn, charlie, newAcctBalance,
 	)
 
+	// Settle the HODL invoice to clean up node state.
+	_, err = charlie.SettleInvoice(testCtx, &invoicesrpc.SettleInvoiceMsg{
+		Preimage: preimage[:],
+	})
+	require.NoError(t.t, err)
+
+	// Delete a single failed payment from LND to simulate a desync case
+	// where this payment exists in LiT's account database but is
+	// deleted/absent in LND.
+	_, err = node.LightningClient.DeletePayment(
+		testCtx, &lnrpc.DeletePaymentRequest{
+			PaymentHash: failedHash[:],
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Now call AccountPayments. It should find all 3 payments in the local
+	// store, returning a placeholder entry with status Payment_UNKNOWN for
+	// the deleted payment that was not found in LND.
+	paymentsResp, err = acctClient.AccountPayments(
+		ctxm, &litrpc.AccountPaymentsRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			CountTotalPayments: true,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, paymentsResp.Payments, 3)
+
+	// Sort the payments by value descending to ensure index-based
+	// assertions are deterministic regardless of database sorting by hash.
+	sort.Slice(paymentsResp.Payments, func(i, j int) bool {
+		valI := paymentsResp.Payments[i].ValueSat
+		valJ := paymentsResp.Payments[j].ValueSat
+
+		return valI > valJ
+	})
+
+	// Succeeded payment
+	require.Equal(
+		t.t, uint64(4444),
+		uint64(paymentsResp.Payments[0].ValueSat),
+	)
+	require.Equal(
+		t.t, lnrpc.Payment_SUCCEEDED,
+		paymentsResp.Payments[0].Status,
+	)
+
+	// Settled hold payment
+	require.Equal(
+		t.t, uint64(2222),
+		uint64(paymentsResp.Payments[1].ValueSat),
+	)
+	require.Equal(
+		t.t, lnrpc.Payment_SUCCEEDED,
+		paymentsResp.Payments[1].Status,
+	)
+
+	// Placeholder payment for the desynced/deleted payment
+	require.Equal(
+		t.t, hex.EncodeToString(failedHash[:]),
+		paymentsResp.Payments[2].PaymentHash,
+	)
+	require.Equal(
+		t.t, lnrpc.Payment_UNKNOWN,
+		paymentsResp.Payments[2].Status,
+	)
+	require.Equal(
+		t.t, lnrpc.PaymentFailureReason_FAILURE_REASON_NONE,
+		paymentsResp.Payments[2].FailureReason,
+	)
+
+	require.EqualValues(t.t, 3, paymentsResp.TotalNumPayments)
+	require.EqualValues(t.t, 0, paymentsResp.FirstIndexOffset)
+	require.EqualValues(t.t, 3, paymentsResp.LastIndexOffset)
 	// Clean up our channel and payments, so we can start the next test
 	// iteration with a clean slate.
 	closeChannelAndAssert(t, net, node, channelOp, false)
@@ -246,7 +548,7 @@ func testAccountRestrictionsLNC(ctxm context.Context, t *harnessTest,
 	// There should be invoices and payments from the previous test over RPC
 	// directly.
 	assertNumInvoices(ctxt, t.t, lightningClient, 1)
-	assertNumPayments(ctxt, t.t, lightningClient, 1)
+	assertNumPayments(ctxt, t.t, lightningClient, 3)
 }
 
 // testAccountRestrictions tests the different scenarios in which the account
