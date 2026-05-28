@@ -2,6 +2,7 @@
 // file: lit-accounts.proto
 
 import * as jspb from "google-protobuf";
+import * as lnd_pb from "./lnd_pb";
 
 export class CreateAccountRequest extends jspb.Message {
   getAccountBalance(): string;
@@ -429,6 +430,74 @@ export namespace AccountIdentifier {
     IDENTIFIER_NOT_SET = 0,
     ID = 1,
     LABEL = 2,
+  }
+}
+
+export class AccountPaymentsRequest extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): AccountIdentifier | undefined;
+  setAccount(value?: AccountIdentifier): void;
+
+  getMaxPayments(): string;
+  setMaxPayments(value: string): void;
+
+  getIndexOffset(): string;
+  setIndexOffset(value: string): void;
+
+  getCountTotalPayments(): boolean;
+  setCountTotalPayments(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountPaymentsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountPaymentsRequest): AccountPaymentsRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountPaymentsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountPaymentsRequest;
+  static deserializeBinaryFromReader(message: AccountPaymentsRequest, reader: jspb.BinaryReader): AccountPaymentsRequest;
+}
+
+export namespace AccountPaymentsRequest {
+  export type AsObject = {
+    account?: AccountIdentifier.AsObject,
+    maxPayments: string,
+    indexOffset: string,
+    countTotalPayments: boolean,
+  }
+}
+
+export class AccountPaymentsResponse extends jspb.Message {
+  clearPaymentsList(): void;
+  getPaymentsList(): Array<lnd_pb.Payment>;
+  setPaymentsList(value: Array<lnd_pb.Payment>): void;
+  addPayments(value?: lnd_pb.Payment, index?: number): lnd_pb.Payment;
+
+  getFirstIndexOffset(): string;
+  setFirstIndexOffset(value: string): void;
+
+  getLastIndexOffset(): string;
+  setLastIndexOffset(value: string): void;
+
+  getTotalNumPayments(): string;
+  setTotalNumPayments(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountPaymentsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountPaymentsResponse): AccountPaymentsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountPaymentsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountPaymentsResponse;
+  static deserializeBinaryFromReader(message: AccountPaymentsResponse, reader: jspb.BinaryReader): AccountPaymentsResponse;
+}
+
+export namespace AccountPaymentsResponse {
+  export type AsObject = {
+    paymentsList: Array<lnd_pb.Payment.AsObject>,
+    firstIndexOffset: string,
+    lastIndexOffset: string,
+    totalNumPayments: string,
   }
 }
 

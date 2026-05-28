@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package litrpc;
 
+import "proto/lnd.proto";
+
 option go_package = "github.com/lightninglabs/lightning-terminal/litrpc";
 
 service Accounts {
@@ -52,6 +54,12 @@ service Accounts {
     RemoveAccount removes the given account from the account database.
     */
     rpc RemoveAccount (RemoveAccountRequest) returns (RemoveAccountResponse);
+
+    /* litcli: `accounts payments`
+    AccountPayments returns the detailed payment history for the given account.
+    */
+    rpc AccountPayments (AccountPaymentsRequest)
+        returns (AccountPaymentsResponse);
 }
 
 message CreateAccountRequest {
@@ -244,4 +252,57 @@ message AccountIdentifier {
         // The label of the account.
         string label = 2;
     }
+}
+
+message AccountPaymentsRequest {
+    /*
+    The identifier of the account to query payments for.
+    */
+    AccountIdentifier account = 1;
+
+    /*
+    The maximum number of payments to return. If set to 0, it will default
+    to 20. Capped at 50.
+    */
+    uint64 max_payments = 2;
+
+    /*
+    The index of a payment that will be used as the start of a query to
+    determine which payments should be returned in the response, where the
+    index_offset is excluded. The payments are returned in ascending
+    lexicographical order of their payment hash.
+    */
+    uint64 index_offset = 3;
+
+    /*
+    If set, the total number of payments matching the query will be returned
+    in the response.
+    */
+    bool count_total_payments = 6;
+}
+
+message AccountPaymentsResponse {
+    /*
+    The detailed payments associated with the account, sorted in ascending
+    lexicographical order of their payment hash.
+    */
+    repeated lnrpc.Payment payments = 1;
+
+    /*
+    The index of the first payment returned. This can be used as the
+    index_offset in a subsequent query to paginate backwards.
+    */
+    uint64 first_index_offset = 2;
+
+    /*
+    The index of the last payment returned. This can be used as the index_offset
+    in a subsequent query to paginate forwards.
+    */
+    uint64 last_index_offset = 3;
+
+    /*
+    The total number of payments matching the query (only set if
+    count_total_payments was true in the request).
+    */
+    uint64 total_num_payments = 4;
 }
