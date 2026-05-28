@@ -11,6 +11,48 @@ import (
 	"time"
 )
 
+const accountPaymentsPaginated = `-- name: AccountPaymentsPaginated :many
+SELECT account_id, hash, status, full_amount_msat
+FROM account_payments
+WHERE account_id = $1
+ORDER BY hash ASC
+LIMIT $2 OFFSET $3
+`
+
+type AccountPaymentsPaginatedParams struct {
+	AccountID int64
+	Limit     int32
+	Offset    int32
+}
+
+func (q *Queries) AccountPaymentsPaginated(ctx context.Context, arg AccountPaymentsPaginatedParams) ([]AccountPayment, error) {
+	rows, err := q.db.QueryContext(ctx, accountPaymentsPaginated, arg.AccountID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountPayment
+	for rows.Next() {
+		var i AccountPayment
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Hash,
+			&i.Status,
+			&i.FullAmountMsat,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const addAccountInvoice = `-- name: AddAccountInvoice :exec
 INSERT INTO account_invoices (account_id, hash)
 VALUES ($1, $2)
@@ -24,6 +66,19 @@ type AddAccountInvoiceParams struct {
 func (q *Queries) AddAccountInvoice(ctx context.Context, arg AddAccountInvoiceParams) error {
 	_, err := q.db.ExecContext(ctx, addAccountInvoice, arg.AccountID, arg.Hash)
 	return err
+}
+
+const countAccountPayments = `-- name: CountAccountPayments :one
+SELECT COUNT(*)
+FROM account_payments
+WHERE account_id = $1
+`
+
+func (q *Queries) CountAccountPayments(ctx context.Context, accountID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAccountPayments, accountID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const deleteAccount = `-- name: DeleteAccount :exec
