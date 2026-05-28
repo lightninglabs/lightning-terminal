@@ -48,6 +48,8 @@ type SQLQueries interface {
 	ListAllAccountPayments(ctx context.Context) ([]sqlc.AccountPayment, error)
 	ListAccountInvoices(ctx context.Context, id int64) ([]sqlc.AccountInvoice, error)
 	ListAccountPayments(ctx context.Context, id int64) ([]sqlc.AccountPayment, error)
+	AccountPaymentsPaginated(ctx context.Context, arg sqlc.AccountPaymentsPaginatedParams) ([]sqlc.AccountPayment, error)
+	CountAccountPayments(ctx context.Context, accountID int64) (int64, error)
 	ListAllAccounts(ctx context.Context) ([]sqlc.Account, error)
 	SetAccountIndex(ctx context.Context, arg sqlc.SetAccountIndexParams) error
 	UpdateAccountBalance(ctx context.Context, arg sqlc.UpdateAccountBalanceParams) (int64, error)
@@ -779,6 +781,80 @@ func (s *SQLStore) DeleteAccountPayment(ctx context.Context, alias AccountID,
 
 		return s.markAccountUpdated(ctx, db, id)
 	}, sqldb.NoOpReset)
+}
+
+// ListAccountPayments returns a paginated list of payments
+// associated with the given account, sorted in ascending lexicographical
+// order of their payment hash.
+func (s *SQLStore) ListAccountPayments(ctx context.Context, alias AccountID,
+	offset, limit int32) ([]*AccountPaymentEntry, error) {
+
+	var (
+		readTxOpts = db.NewQueryReadTx()
+		payments   []*AccountPaymentEntry
+	)
+	err := s.db.ExecTx(ctx, &readTxOpts, func(db SQLQueries) error {
+		id, err := getAccountIDByAlias(ctx, db, alias)
+		if err != nil {
+			return err
+		}
+
+		var dbPayments []sqlc.AccountPayment
+		dbPayments, err = db.AccountPaymentsPaginated(
+			ctx, sqlc.AccountPaymentsPaginatedParams{
+				AccountID: id,
+				Limit:     limit,
+				Offset:    offset,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		payments = make([]*AccountPaymentEntry, len(dbPayments))
+		for i, p := range dbPayments {
+			var hash lntypes.Hash
+			copy(hash[:], p.Hash)
+			payments[i] = &AccountPaymentEntry{
+				Hash: hash,
+				PaymentEntry: &PaymentEntry{
+					Status: lnrpc.Payment_PaymentStatus(
+						p.Status,
+					),
+					FullAmount: lnwire.MilliSatoshi(
+						p.FullAmountMsat,
+					),
+				},
+			}
+		}
+
+		return nil
+	}, sqldb.NoOpReset)
+
+	return payments, err
+}
+
+// CountAccountPayments returns the total number of payments associated with
+// the given account.
+func (s *SQLStore) CountAccountPayments(ctx context.Context,
+	alias AccountID) (uint64, error) {
+
+	var (
+		readTxOpts = db.NewQueryReadTx()
+		count      int64
+	)
+	err := s.db.ExecTx(ctx, &readTxOpts, func(db SQLQueries) error {
+		id, err := getAccountIDByAlias(ctx, db, alias)
+		if err != nil {
+			return err
+		}
+
+		count, err = db.CountAccountPayments(ctx, id)
+
+		return err
+	}, sqldb.NoOpReset)
+
+	return uint64(count), err
 }
 
 // LastIndexes returns the last invoice add and settle index or
