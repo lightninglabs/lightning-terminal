@@ -30,6 +30,7 @@ var accountsCommands = []cli.Command{
 			listAccountsCommand,
 			accountInfoCommand,
 			removeAccountCommand,
+			accountPaymentsCommand,
 		},
 		Description: "Manage accounts.",
 	},
@@ -540,4 +541,85 @@ func parseIDOrLabel(ctx *cli.Context) (string, string, cli.Args, error) {
 	}
 
 	return accountID, label, args, nil
+}
+
+var accountPaymentsCommand = cli.Command{
+	Name:      "payments",
+	ShortName: "p",
+	Usage: "Show detailed payment history for a single " +
+		"off-chain account.",
+	ArgsUsage: "[id | label]",
+	Description: "Returns the detailed payment history for an " +
+		"account by fetching their stored hashes and querying " +
+		"LND. The results are returned paginated and " +
+		"sorted in ascending lexicographical order of their " +
+		"payment hash.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name: "max_payments",
+			Usage: fmt.Sprintf("The maximum number of payments to "+
+				"return. The default value is %d and "+
+				"the maximum is %d.",
+				accounts.DefaultMaxPayments,
+				accounts.MaxPaymentsLimit),
+			Value: accounts.DefaultMaxPayments,
+		},
+		cli.Uint64Flag{
+			Name: "index_offset",
+			Usage: "The row offset into the list of payments " +
+				"that will be used as the start of the " +
+				"query.",
+		},
+		cli.BoolFlag{
+			Name: "count_total_payments",
+			Usage: "If true, the total number of payments " +
+				"matching the query will be returned.",
+		},
+	},
+	Action: accountPayments,
+}
+
+func accountPayments(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAccountsClient(clientConn)
+
+	account, _, err := parseAccountIdentifier(cli)
+	if err != nil {
+		return err
+	}
+
+	maxPayments := cli.Uint64("max_payments")
+	if maxPayments > accounts.MaxPaymentsLimit {
+		return fmt.Errorf(
+			"max_payments cannot exceed %d",
+			accounts.MaxPaymentsLimit,
+		)
+	}
+
+	req := &litrpc.AccountPaymentsRequest{
+		Account:            account,
+		MaxPayments:        maxPayments,
+		IndexOffset:        cli.Uint64("index_offset"),
+		CountTotalPayments: cli.Bool("count_total_payments"),
+	}
+	resp, err := client.AccountPayments(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	printRespJSON(resp)
+	return nil
 }
