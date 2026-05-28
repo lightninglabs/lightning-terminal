@@ -285,6 +285,16 @@ type Store interface {
 	DeleteAccountPayment(_ context.Context, id AccountID,
 		hash lntypes.Hash) error
 
+	// ListAccountPayments returns a paginated list of payments
+	// associated with the given account, sorted in ascending
+	// lexicographical order of their payment hash.
+	ListAccountPayments(ctx context.Context, id AccountID, offset,
+		limit int32) ([]*AccountPaymentEntry, error)
+
+	// CountAccountPayments returns the total number of payments associated
+	// with the given account.
+	CountAccountPayments(ctx context.Context, id AccountID) (uint64, error)
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error
