@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lightninglabs/lightning-terminal/litrpc"
@@ -85,6 +86,20 @@ var addSessionCommand = cli.Command{
 				"For example, '/lnrpc\\..*' will result in " +
 				"all `lnrpc` permissions being included.",
 		},
+		cli.StringSliceFlag{
+			Name: "permission",
+			Usage: "A permission that should be included in the " +
+				"macaroon of a custom session, in the " +
+				"format entity:action (e.g. info:read), " +
+				"similar to lncli bakemacaroon. " +
+				"Note that this flag will only be used if " +
+				"the 'type' flag is set to 'custom'. " +
+				"This flag can be specified multiple times, " +
+				"comma-separated, or mixed (e.g., " +
+				"'info:read,onchain:write' or " +
+				"--permission info:read --permission " +
+				"onchain:write).",
+		},
 		cli.StringFlag{
 			Name: "account_id",
 			Usage: "The account id that should be used for " +
@@ -109,12 +124,12 @@ func addSession(cli *cli.Context) error {
 		return err
 	}
 
-	var macPerms []*litrpc.MacaroonPermission
-	for _, uri := range cli.StringSlice("uri") {
-		macPerms = append(macPerms, &litrpc.MacaroonPermission{
-			Entity: macaroons.PermissionEntityCustomURI,
-			Action: uri,
-		})
+	macPerms, err := parseCustomPermissions(
+		cli.StringSlice("uri"),
+		cli.StringSlice("permission"),
+	)
+	if err != nil {
+		return err
 	}
 
 	sessionLength := time.Second * time.Duration(cli.Uint64("expiry"))
@@ -303,4 +318,52 @@ func revokeSession(cli *cli.Context) error {
 	printRespJSON(resp)
 
 	return nil
+}
+
+func parseCustomPermissions(uris, permissions []string) (
+	[]*litrpc.MacaroonPermission, error) {
+
+	var macPerms []*litrpc.MacaroonPermission
+
+	for _, uri := range uris {
+		macPerms = append(macPerms, &litrpc.MacaroonPermission{
+			Entity: macaroons.PermissionEntityCustomURI,
+			Action: uri,
+		})
+	}
+
+	for _, perm := range permissions {
+		parts := strings.Split(perm, ",")
+
+		for _, part := range parts {
+			part = strings.TrimSpace(part)
+
+			if part == "" {
+				continue
+			}
+
+			subParts := strings.Split(part, ":")
+			if len(subParts) != 2 {
+				return nil, fmt.Errorf("invalid permission "+
+					"format '%s', must be entity:action",
+					part)
+			}
+
+			entity := strings.TrimSpace(subParts[0])
+			action := strings.TrimSpace(subParts[1])
+
+			if entity == "" || action == "" {
+				return nil, fmt.Errorf("invalid permission "+
+					"format '%s', entity and action "+
+					"must not be empty", part)
+			}
+
+			macPerms = append(macPerms, &litrpc.MacaroonPermission{
+				Entity: entity,
+				Action: action,
+			})
+		}
+	}
+
+	return macPerms, nil
 }
