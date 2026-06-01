@@ -7,12 +7,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 )
+
+const autoMigrateKVDBEnvVar = "LIT_AUTO_MIGRATE_TO_SQL"
 
 var kvdbToSQLMigrationPromptLines = []string{
 	"",
@@ -39,6 +42,11 @@ var kvdbToSQLMigrationPromptLines = []string{
 		"deprecated, and support for it will be removed in a future " +
 		"release. Migration to SQL will at that point be mandatory.",
 	"",
+	"If your system cannot enter input here, restart litd with the " +
+		"config option `auto-migrate-to-sql=true` or environment " +
+		"variable `LIT_AUTO_MIGRATE_TO_SQL=true` set to approve the " +
+		"migration automatically.",
+	"",
 }
 
 // confirmPendingKVDBToSQLMigration blocks startup until the user explicitly
@@ -55,6 +63,12 @@ func (c *Config) confirmPendingKVDBToSQLMigration() error {
 func (c *Config) confirmPendingKVDBToSQLMigrationWithInput(
 	input io.Reader, output io.Writer) error {
 
+	// The config layer resolves the prompt bypass setting so startup code
+	// can use the effective value directly.
+	if c.autoMigrateKVDBApproved {
+		return nil
+	}
+
 	hasActiveKVDB, err := hasActiveLegacyKVDB(c)
 	if err != nil {
 		return err
@@ -65,6 +79,23 @@ func (c *Config) confirmPendingKVDBToSQLMigrationWithInput(
 	}
 
 	return promptForKVDBToSQLMigrationConfirmation(input, output)
+}
+
+// autoMigrateKVDBFromEnv reads the local environment override that approves
+// the legacy kvdb to SQL migration without showing the startup prompt.
+func autoMigrateKVDBFromEnv() (bool, error) {
+	content := strings.TrimSpace(os.Getenv(autoMigrateKVDBEnvVar))
+	if content == "" {
+		return false, nil
+	}
+
+	autoMigrate, err := strconv.ParseBool(content)
+	if err != nil {
+		return false, fmt.Errorf("environment variable %s is not a "+
+			"valid boolean: %w", autoMigrateKVDBEnvVar, err)
+	}
+
+	return autoMigrate, nil
 }
 
 // hasActiveLegacyKVDB reports whether any legacy LiT kvdb file exists and was

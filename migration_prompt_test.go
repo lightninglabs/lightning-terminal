@@ -61,6 +61,27 @@ func TestConfirmPendingKVDBToSQLMigration(t *testing.T) {
 			expectErr: "manual confirmation declined",
 		},
 		{
+			name: "skips prompt on auto migration config",
+			setup: func(t *testing.T, cfg *Config, dbDir string) {
+				cfg.AutoMigrateKVDB = true
+				require.NoError(t, readAutoMigrateKVDB(cfg))
+				createActiveAccountsKVDB(t, dbDir)
+			},
+			input:          "no\n",
+			expectNoOutput: true,
+		},
+		{
+			name:    "skips prompt on auto migration environment",
+			setsEnv: true,
+			setup: func(t *testing.T, cfg *Config, dbDir string) {
+				t.Setenv(autoMigrateKVDBEnvVar, "true")
+				require.NoError(t, readAutoMigrateKVDB(cfg))
+				createActiveAccountsKVDB(t, dbDir)
+			},
+			input:          "no\n",
+			expectNoOutput: true,
+		},
+		{
 			name: "skips prompt when no legacy kvdb exists",
 		},
 		{
@@ -138,6 +159,16 @@ func TestConfirmPendingKVDBToSQLMigration(t *testing.T) {
 
 	// The remaining subtests don't exercise the prompt path, so they
 	// don't fit the table above.
+	t.Run("rejects invalid auto migration env value", func(t *testing.T) {
+		// Note we intentionally don't use t.Parallel() here as that
+		// panics with t.Setenv.
+
+		cfg, _ := testMigrationPromptConfig(t)
+		t.Setenv(autoMigrateKVDBEnvVar, "definitely-not-bool")
+		err := readAutoMigrateKVDB(cfg)
+		require.ErrorContains(t, err, "not a valid boolean")
+	})
+
 	t.Run("logs migration prompt text", func(t *testing.T) {
 		// Note we intentionally don't use t.Parallel() here as the
 		// subtest calls UseLogger(...), which mutates the
