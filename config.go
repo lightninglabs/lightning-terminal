@@ -297,6 +297,11 @@ func (c *Config) NewStores(ctx context.Context,
 
 	switch c.DatabaseBackend {
 	case DatabaseBackendSqlite:
+		if c.Sqlite == nil {
+			return stores, errors.New("sqlite configuration is " +
+				"missing")
+		}
+
 		// Before we initialize the SQLite store, we'll make sure that
 		// the directory where we will store the database file exists.
 		// Note that the c.Sqlite.DatabaseFileName may already have
@@ -349,6 +354,11 @@ func (c *Config) NewStores(ctx context.Context,
 		stores.firewall = firewalldb.NewDB(firewallStore)
 
 	case DatabaseBackendPostgres:
+		if c.Postgres == nil {
+			return stores, errors.New("postgres configuration is " +
+				"missing")
+		}
+
 		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
 			Dsn:                c.Postgres.DSN(false),
 			MaxOpenConnections: c.Postgres.MaxOpenConnections,
@@ -698,7 +708,9 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 	// final LiT directory and network. This keeps the default aligned
 	// with any user overrides that changed lit-dir or network during
 	// config loading.
-	if cfg.Sqlite.DatabaseFileName == defaultSqliteDatabasePath {
+	if cfg.Sqlite != nil &&
+		cfg.Sqlite.DatabaseFileName == defaultSqliteDatabasePath {
+
 		cfg.Sqlite.DatabaseFileName = filepath.Join(
 			litDir, cfg.Network, defaultSqliteDatabaseFileName,
 		)
