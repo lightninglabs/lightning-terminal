@@ -327,7 +327,7 @@ func (c *Config) NewStores(ctx context.Context,
 				sqlStore,
 				migsets.MakeMigrationSets(
 					ctx, basicClient, c.MacaroonPath,
-					clock,
+					c.LitDir, c.Network, clock,
 				),
 			)
 			if err != nil {
@@ -379,7 +379,7 @@ func (c *Config) NewStores(ctx context.Context,
 				sqlStore,
 				migsets.MakeMigrationSets(
 					ctx, basicClient, c.MacaroonPath,
-					clock,
+					c.LitDir, c.Network, clock,
 				),
 			)
 			if err != nil {
