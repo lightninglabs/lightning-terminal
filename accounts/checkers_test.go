@@ -243,50 +243,41 @@ func TestAccountCheckers(t *testing.T) {
 			RHash: testHash[:],
 		},
 	}, {
-		name:    "send payment, not enough balance",
-		fullURI: "/lnrpc.Lightning/SendPaymentSync",
-		originalRequest: &lnrpc.SendRequest{
+		name:    "send payment v2, not enough balance",
+		fullURI: "/routerrpc.Router/SendPaymentV2",
+		originalRequest: &routerrpc.SendPaymentRequest{
 			AmtMsat:     5000,
 			PaymentHash: testHash[:],
 		},
 		requestErr: "error validating account balance: invalid balance",
 	}, {
-		name:    "send payment, not enough balance because of fee",
-		fullURI: "/lnrpc.Lightning/SendPaymentSync",
+		name:    "send payment v2, not enough balance because of fee",
+		fullURI: "/routerrpc.Router/SendPaymentV2",
 		setup: func(s *mockService, acct *OffChainBalanceAccount) {
 			s.acctBalanceMsat = 5000
 		},
-		originalRequest: &lnrpc.SendRequest{
-			AmtMsat: 5000,
-			FeeLimit: &lnrpc.FeeLimit{
-				Limit: &lnrpc.FeeLimit_Percent{
-					Percent: 1,
-				},
-			},
-			PaymentHash: testHash[:],
+		originalRequest: &routerrpc.SendPaymentRequest{
+			AmtMsat:      5000,
+			FeeLimitMsat: 50,
+			PaymentHash:  testHash[:],
 		},
 		requestErr: "error validating account balance: invalid balance",
 	}, {
-		name:    "send payment, exact balance",
-		fullURI: "/lnrpc.Lightning/SendPaymentSync",
+		name:    "send payment v2, exact balance",
+		fullURI: "/routerrpc.Router/SendPaymentV2",
 		setup: func(s *mockService, acct *OffChainBalanceAccount) {
 			s.acctBalanceMsat = 5123
 		},
-		originalRequest: &lnrpc.SendRequest{
-			AmtMsat: 5000,
-			FeeLimit: &lnrpc.FeeLimit{
-				Limit: &lnrpc.FeeLimit_FixedMsat{
-					FixedMsat: 123,
-				},
-			},
-			PaymentHash: testHash[:],
+		originalRequest: &routerrpc.SendPaymentRequest{
+			AmtMsat:      5000,
+			FeeLimitMsat: 123,
+			PaymentHash:  testHash[:],
 		},
-		originalResponse: &lnrpc.SendResponse{
-			PaymentHash: testHash[:],
-			PaymentRoute: &lnrpc.Route{
-				TotalAmtMsat:  5000,
-				TotalFeesMsat: 123,
-			},
+		originalResponse: &lnrpc.Payment{
+			PaymentHash: hex.EncodeToString(testHash[:]),
+			ValueMsat:   5000,
+			FeeMsat:     123,
+			Status:      lnrpc.Payment_IN_FLIGHT,
 		},
 		validate: func(t *testing.T, s *mockService,
 			acct *OffChainBalanceAccount) {
@@ -294,12 +285,6 @@ func TestAccountCheckers(t *testing.T) {
 			require.Contains(t, s.trackedPayments, testHash)
 			payment := s.trackedPayments[testHash]
 			require.EqualValues(t, 5123, payment.FullAmount)
-
-			// We start tracking the payment and don't look at the
-			// payment state reported by the response.
-			require.Equal(
-				t, lnrpc.Payment_UNKNOWN, payment.Status,
-			)
 		},
 	}, {
 		name:            "list payments, not mapped to account",
@@ -503,217 +488,6 @@ func TestAccountCheckers(t *testing.T) {
 			}
 		})
 	}
-}
-
-// TestSendPaymentCalls performs test coverage on the SendPayment and
-// SendPaymentSync checkers.
-func TestSendPaymentCalls(t *testing.T) {
-	t.Run("SendPayment", func(t *testing.T) {
-		testSendPayment(t, "/lnrpc.Lightning/SendPayment")
-	})
-
-	t.Run("SendPaymentSync", func(t *testing.T) {
-		testSendPayment(t, "/lnrpc.Lightning/SendPaymentSync")
-	})
-}
-
-func testSendPayment(t *testing.T, uri string) {
-	var (
-		ctx     = context.Background()
-		zeroFee = &lnrpc.FeeLimit{Limit: &lnrpc.FeeLimit_Fixed{
-			Fixed: 0,
-		}}
-		requestID uint64
-	)
-
-	nextRequestID := func() uint64 {
-		requestID++
-
-		return requestID
-	}
-
-	lndMock := newMockLnd()
-	routerMock := newMockRouter()
-	errFunc := func(err error) {
-		lndMock.mainErrChan <- err
-	}
-	clock := clock.NewTestClock(time.Now())
-	store := NewTestDB(t, clock)
-	service, err := NewService(store, errFunc)
-	require.NoError(t, err)
-
-	err = service.Start(ctx, lndMock, routerMock, chainParams)
-	require.NoError(t, err)
-
-	assertBalance := func(id AccountID, expectedBalance int64) {
-		acct, err := service.Account(ctx, id)
-		require.NoError(t, err)
-
-		require.Equal(t, expectedBalance,
-			calcAvailableAccountBalance(acct))
-	}
-
-	// This should error because there is no account in the context.
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{},
-	)
-	require.ErrorContains(t, err, "no account found in context")
-
-	// Create an account and add it to the context.
-	acct, err := service.NewAccount(
-		ctx, 5000, clock.Now().Add(time.Hour), "test",
-	)
-	require.NoError(t, err)
-
-	ctxWithAcct := AddAccountToContext(ctx, acct)
-
-	// This should error because there is no request ID in the context.
-	err = service.checkers.checkIncomingRequest(
-		ctxWithAcct, uri, &lnrpc.SendRequest{},
-	)
-	require.ErrorContains(t, err, "no request ID found in context")
-
-	reqID1 := nextRequestID()
-	ctx = AddRequestIDToContext(ctxWithAcct, reqID1)
-
-	// This should error because no payment hash is provided.
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{},
-	)
-	require.ErrorContains(t, err, "a payment hash is required")
-
-	// This should error because of an insufficient account balance.
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{
-			Amt:         1000,
-			PaymentHash: testHash[:],
-		},
-	)
-	require.ErrorContains(t, err, "account balance insufficient")
-
-	// Assert that the balance of the account is still un-changed since none
-	// of the requests have gone through yet.
-	assertBalance(acct.ID, 5000)
-
-	// This should work.
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{
-			AmtMsat:     1000,
-			PaymentHash: testHash[:],
-			FeeLimit:    zeroFee,
-		},
-	)
-	require.NoError(t, err)
-
-	// Alright, now assert that the pending amount has been accounted for.
-	assertBalance(acct.ID, 4000)
-
-	// Try let the same request go through with the same payment hash. This
-	// should fail and the balance should remain unchanged.
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{
-			AmtMsat:     1000,
-			PaymentHash: testHash[:],
-			FeeLimit:    zeroFee,
-		},
-	)
-	require.ErrorContains(t, err, "is already in flight")
-	assertBalance(acct.ID, 4000)
-
-	// Now let the response come through for the first request.
-	_, err = service.checkers.replaceOutgoingResponse(
-		ctx, uri, &lnrpc.SendResponse{
-			PaymentHash: testHash[:],
-		},
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 4000)
-
-	// A repeated response should have no impact.
-	_, err = service.checkers.replaceOutgoingResponse(
-		ctx, uri, &lnrpc.SendResponse{
-			PaymentHash: testHash[:],
-		},
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 4000)
-
-	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
-		testHash: {},
-	})
-
-	nextRequestID()
-
-	reqID2 := nextRequestID()
-	ctx = AddRequestIDToContext(ctxWithAcct, reqID2)
-
-	// Ok now we will test an errored request. First send through a valid
-	// send request and assert that the available balance is reduced.
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{
-			AmtMsat:     1000,
-			PaymentHash: testHash2[:],
-			FeeLimit:    zeroFee,
-		},
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 3000)
-
-	// Now return an error response.
-	_, err = service.checkers.handleErrorResponse(
-		ctx, uri, nil,
-	)
-	require.NoError(t, err)
-
-	// The balance should have gone back to what it was before the payment
-	// was initiated.
-	assertBalance(acct.ID, 4000)
-
-	routerMock.assertNoPaymentRequest(t)
-
-	// The final test we will do is to have two send requests initiated
-	// before the response for the first one has been received.
-	reqID3 := nextRequestID()
-	ctx = AddRequestIDToContext(ctxWithAcct, reqID3)
-
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{
-			AmtMsat:     2000,
-			PaymentHash: testHash3[:],
-			FeeLimit:    zeroFee,
-		},
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 2000)
-
-	reqID4 := nextRequestID()
-	ctx = AddRequestIDToContext(ctxWithAcct, reqID4)
-	err = service.checkers.checkIncomingRequest(
-		ctx, uri, &lnrpc.SendRequest{
-			AmtMsat:     2000,
-			PaymentHash: testHash4[:],
-			FeeLimit:    zeroFee,
-		},
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 0)
-
-	// Ok, now let the response for the second request come through.
-	_, err = service.checkers.replaceOutgoingResponse(
-		ctx, uri, &lnrpc.SendResponse{
-			PaymentHash: testHash4[:],
-		},
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 0)
-
-	// Let the first request error.
-	ctx = AddRequestIDToContext(ctxWithAcct, reqID3)
-	_, err = service.checkers.handleErrorResponse(
-		ctx, uri, nil,
-	)
-	require.NoError(t, err)
-	assertBalance(acct.ID, 2000)
 }
 
 // TestSendPaymentV2 performs test coverage on the SendPaymentV2 checker.

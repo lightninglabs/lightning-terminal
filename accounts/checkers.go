@@ -82,34 +82,6 @@ type AccountChecker struct {
 func NewAccountChecker(service Service,
 	chainParams *chaincfg.Params) *AccountChecker {
 
-	// sendResponseHandler is a response handler function that is used by
-	// multiple RPC checkers for checking an RPC response sent for a payment
-	// attempt.
-	sendResponseHandler := func(ctx context.Context,
-		r *lnrpc.SendResponse) (proto.Message, error) {
-
-		status := lnrpc.Payment_IN_FLIGHT
-		if len(r.PaymentError) > 0 {
-			status = lnrpc.Payment_FAILED
-		}
-
-		hash, err := lntypes.MakeHash(r.PaymentHash)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing payment hash: %v",
-				err)
-		}
-
-		route := r.PaymentRoute
-		totalAmount := int64(0)
-		if route != nil {
-			totalAmount = route.TotalAmtMsat + route.TotalFeesMsat
-		}
-
-		return checkSendResponse(
-			ctx, service, status, hash, totalAmount,
-		)
-	}
-
 	// nolint:ll
 	checkers := CheckerMap{
 		// Invoices:
@@ -178,29 +150,6 @@ func NewAccountChecker(service Service,
 		),
 
 		// Payments:
-		"/lnrpc.Lightning/SendPayment": mid.NewFullChecker(
-			&lnrpc.SendRequest{},
-			&lnrpc.SendResponse{},
-			func(ctx context.Context, r *lnrpc.SendRequest) error {
-				return checkSend(
-					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest,
-					r.PaymentHash, r.FeeLimit,
-				)
-			}, sendResponseHandler, erroredPaymentHandler(service),
-		),
-		"/lnrpc.Lightning/SendPaymentSync": mid.NewFullChecker(
-			&lnrpc.SendRequest{},
-			&lnrpc.SendResponse{},
-			func(ctx context.Context, r *lnrpc.SendRequest) error {
-				return checkSend(
-					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest,
-					r.PaymentHash, r.FeeLimit,
-				)
-			}, sendResponseHandler, erroredPaymentHandler(service),
-		),
-		// routerrpc.Router/SendPayment is deprecated.
 		"/routerrpc.Router/SendPaymentV2": mid.NewFullChecker(
 			&routerrpc.SendPaymentRequest{},
 			&lnrpc.Payment{},
@@ -240,29 +189,6 @@ func NewAccountChecker(service Service,
 				)
 			}, erroredPaymentHandler(service),
 		),
-		"/lnrpc.Lightning/SendToRoute": mid.NewFullChecker(
-			&lnrpc.SendToRouteRequest{},
-			&lnrpc.SendResponse{},
-			func(ctx context.Context,
-				r *lnrpc.SendToRouteRequest) error {
-
-				return checkSendToRoute(
-					ctx, service, r.PaymentHash, r.Route,
-				)
-			}, sendResponseHandler, erroredPaymentHandler(service),
-		),
-		"/lnrpc.Lightning/SendToRouteSync": mid.NewFullChecker(
-			&lnrpc.SendToRouteRequest{},
-			&lnrpc.SendResponse{},
-			func(ctx context.Context,
-				r *lnrpc.SendToRouteRequest) error {
-
-				return checkSendToRoute(
-					ctx, service, r.PaymentHash, r.Route,
-				)
-			}, sendResponseHandler, erroredPaymentHandler(service),
-		),
-		// routerrpc.Router/SendToRoute is deprecated.
 		"/routerrpc.Router/SendToRouteV2": mid.NewFullChecker(
 			&routerrpc.SendToRouteRequest{},
 			&lnrpc.HTLCAttempt{},

@@ -215,19 +215,12 @@ func (n *NetworkHarness) SetUp(t *testing.T, testCase string, lndArgs []string,
 			PkScript: addrScript,
 			Value:    btcutil.SatoshiPerBitcoin,
 		}
-		_, err = n.Miner.SendOutputs(
-			[]*wire.TxOut{output}, 7500,
-		)
-		if err != nil {
-			return err
-		}
+		n.Miner.SendOutput(output, 7500)
 	}
 
 	// We generate several blocks in order to give the outputs created
 	// above a good number of confirmations.
-	if _, err := n.Miner.Client.Generate(10); err != nil {
-		return err
-	}
+	n.Miner.GenerateBlocks(10)
 
 	// Now we want to wait for the nodes to catch up.
 	ctxt, cancel := context.WithTimeout(ctxb, lntest.DefaultTimeout)
@@ -1425,10 +1418,7 @@ func (n *NetworkHarness) sendCoins(amt btcutil.Amount, target *HarnessNode,
 		PkScript: addrScript,
 		Value:    int64(amt),
 	}
-	_, err = n.Miner.SendOutputs([]*wire.TxOut{output}, 7500)
-	if err != nil {
-		return err
-	}
+	n.Miner.SendOutput(output, 7500)
 
 	// Encode the pkScript in hex as this the format that it will be
 	// returned via rpc.
@@ -1477,9 +1467,7 @@ func (n *NetworkHarness) sendCoins(amt btcutil.Amount, target *HarnessNode,
 	// Otherwise, we'll generate 6 new blocks to ensure the output gains a
 	// sufficient number of confirmations and wait for the balance to
 	// reflect what's expected.
-	if _, err := n.Miner.Client.Generate(6); err != nil {
-		return err
-	}
+	n.Miner.GenerateBlocks(6)
 
 	fullInitialBalance := initialBalance.ConfirmedBalance +
 		initialBalance.UnconfirmedBalance
