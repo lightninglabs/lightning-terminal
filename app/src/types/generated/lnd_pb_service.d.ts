@@ -265,42 +265,6 @@ type LightningAbandonChannel = {
   readonly responseType: typeof lnd_pb.AbandonChannelResponse;
 };
 
-type LightningSendPayment = {
-  readonly methodName: string;
-  readonly service: typeof Lightning;
-  readonly requestStream: true;
-  readonly responseStream: true;
-  readonly requestType: typeof lnd_pb.SendRequest;
-  readonly responseType: typeof lnd_pb.SendResponse;
-};
-
-type LightningSendPaymentSync = {
-  readonly methodName: string;
-  readonly service: typeof Lightning;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof lnd_pb.SendRequest;
-  readonly responseType: typeof lnd_pb.SendResponse;
-};
-
-type LightningSendToRoute = {
-  readonly methodName: string;
-  readonly service: typeof Lightning;
-  readonly requestStream: true;
-  readonly responseStream: true;
-  readonly requestType: typeof lnd_pb.SendToRouteRequest;
-  readonly responseType: typeof lnd_pb.SendResponse;
-};
-
-type LightningSendToRouteSync = {
-  readonly methodName: string;
-  readonly service: typeof Lightning;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof lnd_pb.SendToRouteRequest;
-  readonly responseType: typeof lnd_pb.SendResponse;
-};
-
 type LightningAddInvoice = {
   readonly methodName: string;
   readonly service: typeof Lightning;
@@ -607,6 +571,24 @@ type LightningSubscribeCustomMessages = {
   readonly responseType: typeof lnd_pb.CustomMessage;
 };
 
+type LightningSendOnionMessage = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof lnd_pb.SendOnionMessageRequest;
+  readonly responseType: typeof lnd_pb.SendOnionMessageResponse;
+};
+
+type LightningSubscribeOnionMessages = {
+  readonly methodName: string;
+  readonly service: typeof Lightning;
+  readonly requestStream: false;
+  readonly responseStream: true;
+  readonly requestType: typeof lnd_pb.SubscribeOnionMessagesRequest;
+  readonly responseType: typeof lnd_pb.OnionMessageUpdate;
+};
+
 type LightningListAliases = {
   readonly methodName: string;
   readonly service: typeof Lightning;
@@ -656,10 +638,6 @@ export class Lightning {
   static readonly ChannelAcceptor: LightningChannelAcceptor;
   static readonly CloseChannel: LightningCloseChannel;
   static readonly AbandonChannel: LightningAbandonChannel;
-  static readonly SendPayment: LightningSendPayment;
-  static readonly SendPaymentSync: LightningSendPaymentSync;
-  static readonly SendToRoute: LightningSendToRoute;
-  static readonly SendToRouteSync: LightningSendToRouteSync;
   static readonly AddInvoice: LightningAddInvoice;
   static readonly ListInvoices: LightningListInvoices;
   static readonly LookupInvoice: LightningLookupInvoice;
@@ -694,6 +672,8 @@ export class Lightning {
   static readonly RegisterRPCMiddleware: LightningRegisterRPCMiddleware;
   static readonly SendCustomMessage: LightningSendCustomMessage;
   static readonly SubscribeCustomMessages: LightningSubscribeCustomMessages;
+  static readonly SendOnionMessage: LightningSendOnionMessage;
+  static readonly SubscribeOnionMessages: LightningSubscribeOnionMessages;
   static readonly ListAliases: LightningListAliases;
   static readonly LookupHtlcResolution: LightningLookupHtlcResolution;
 }
@@ -942,26 +922,6 @@ export class LightningClient {
   abandonChannel(
     requestMessage: lnd_pb.AbandonChannelRequest,
     callback: (error: ServiceError|null, responseMessage: lnd_pb.AbandonChannelResponse|null) => void
-  ): UnaryResponse;
-  sendPayment(metadata?: grpc.Metadata): BidirectionalStream<lnd_pb.SendRequest, lnd_pb.SendResponse>;
-  sendPaymentSync(
-    requestMessage: lnd_pb.SendRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: lnd_pb.SendResponse|null) => void
-  ): UnaryResponse;
-  sendPaymentSync(
-    requestMessage: lnd_pb.SendRequest,
-    callback: (error: ServiceError|null, responseMessage: lnd_pb.SendResponse|null) => void
-  ): UnaryResponse;
-  sendToRoute(metadata?: grpc.Metadata): BidirectionalStream<lnd_pb.SendToRouteRequest, lnd_pb.SendResponse>;
-  sendToRouteSync(
-    requestMessage: lnd_pb.SendToRouteRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: lnd_pb.SendResponse|null) => void
-  ): UnaryResponse;
-  sendToRouteSync(
-    requestMessage: lnd_pb.SendToRouteRequest,
-    callback: (error: ServiceError|null, responseMessage: lnd_pb.SendResponse|null) => void
   ): UnaryResponse;
   addInvoice(
     requestMessage: lnd_pb.Invoice,
@@ -1229,6 +1189,16 @@ export class LightningClient {
     callback: (error: ServiceError|null, responseMessage: lnd_pb.SendCustomMessageResponse|null) => void
   ): UnaryResponse;
   subscribeCustomMessages(requestMessage: lnd_pb.SubscribeCustomMessagesRequest, metadata?: grpc.Metadata): ResponseStream<lnd_pb.CustomMessage>;
+  sendOnionMessage(
+    requestMessage: lnd_pb.SendOnionMessageRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.SendOnionMessageResponse|null) => void
+  ): UnaryResponse;
+  sendOnionMessage(
+    requestMessage: lnd_pb.SendOnionMessageRequest,
+    callback: (error: ServiceError|null, responseMessage: lnd_pb.SendOnionMessageResponse|null) => void
+  ): UnaryResponse;
+  subscribeOnionMessages(requestMessage: lnd_pb.SubscribeOnionMessagesRequest, metadata?: grpc.Metadata): ResponseStream<lnd_pb.OnionMessageUpdate>;
   listAliases(
     requestMessage: lnd_pb.ListAliasesRequest,
     metadata: grpc.Metadata,

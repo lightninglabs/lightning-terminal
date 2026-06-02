@@ -271,42 +271,6 @@ Lightning.AbandonChannel = {
   responseType: lnd_pb.AbandonChannelResponse
 };
 
-Lightning.SendPayment = {
-  methodName: "SendPayment",
-  service: Lightning,
-  requestStream: true,
-  responseStream: true,
-  requestType: lnd_pb.SendRequest,
-  responseType: lnd_pb.SendResponse
-};
-
-Lightning.SendPaymentSync = {
-  methodName: "SendPaymentSync",
-  service: Lightning,
-  requestStream: false,
-  responseStream: false,
-  requestType: lnd_pb.SendRequest,
-  responseType: lnd_pb.SendResponse
-};
-
-Lightning.SendToRoute = {
-  methodName: "SendToRoute",
-  service: Lightning,
-  requestStream: true,
-  responseStream: true,
-  requestType: lnd_pb.SendToRouteRequest,
-  responseType: lnd_pb.SendResponse
-};
-
-Lightning.SendToRouteSync = {
-  methodName: "SendToRouteSync",
-  service: Lightning,
-  requestStream: false,
-  responseStream: false,
-  requestType: lnd_pb.SendToRouteRequest,
-  responseType: lnd_pb.SendResponse
-};
-
 Lightning.AddInvoice = {
   methodName: "AddInvoice",
   service: Lightning,
@@ -611,6 +575,24 @@ Lightning.SubscribeCustomMessages = {
   responseStream: true,
   requestType: lnd_pb.SubscribeCustomMessagesRequest,
   responseType: lnd_pb.CustomMessage
+};
+
+Lightning.SendOnionMessage = {
+  methodName: "SendOnionMessage",
+  service: Lightning,
+  requestStream: false,
+  responseStream: false,
+  requestType: lnd_pb.SendOnionMessageRequest,
+  responseType: lnd_pb.SendOnionMessageResponse
+};
+
+Lightning.SubscribeOnionMessages = {
+  methodName: "SubscribeOnionMessages",
+  service: Lightning,
+  requestStream: false,
+  responseStream: true,
+  requestType: lnd_pb.SubscribeOnionMessagesRequest,
+  responseType: lnd_pb.OnionMessageUpdate
 };
 
 Lightning.ListAliases = {
@@ -1565,158 +1547,6 @@ LightningClient.prototype.abandonChannel = function abandonChannel(requestMessag
     callback = arguments[1];
   }
   var client = grpc.unary(Lightning.AbandonChannel, {
-    request: requestMessage,
-    host: this.serviceHost,
-    metadata: metadata,
-    transport: this.options.transport,
-    debug: this.options.debug,
-    onEnd: function (response) {
-      if (callback) {
-        if (response.status !== grpc.Code.OK) {
-          var err = new Error(response.statusMessage);
-          err.code = response.status;
-          err.metadata = response.trailers;
-          callback(err, null);
-        } else {
-          callback(null, response.message);
-        }
-      }
-    }
-  });
-  return {
-    cancel: function () {
-      callback = null;
-      client.close();
-    }
-  };
-};
-
-LightningClient.prototype.sendPayment = function sendPayment(metadata) {
-  var listeners = {
-    data: [],
-    end: [],
-    status: []
-  };
-  var client = grpc.client(Lightning.SendPayment, {
-    host: this.serviceHost,
-    metadata: metadata,
-    transport: this.options.transport
-  });
-  client.onEnd(function (status, statusMessage, trailers) {
-    listeners.status.forEach(function (handler) {
-      handler({ code: status, details: statusMessage, metadata: trailers });
-    });
-    listeners.end.forEach(function (handler) {
-      handler({ code: status, details: statusMessage, metadata: trailers });
-    });
-    listeners = null;
-  });
-  client.onMessage(function (message) {
-    listeners.data.forEach(function (handler) {
-      handler(message);
-    })
-  });
-  client.start(metadata);
-  return {
-    on: function (type, handler) {
-      listeners[type].push(handler);
-      return this;
-    },
-    write: function (requestMessage) {
-      client.send(requestMessage);
-      return this;
-    },
-    end: function () {
-      client.finishSend();
-    },
-    cancel: function () {
-      listeners = null;
-      client.close();
-    }
-  };
-};
-
-LightningClient.prototype.sendPaymentSync = function sendPaymentSync(requestMessage, metadata, callback) {
-  if (arguments.length === 2) {
-    callback = arguments[1];
-  }
-  var client = grpc.unary(Lightning.SendPaymentSync, {
-    request: requestMessage,
-    host: this.serviceHost,
-    metadata: metadata,
-    transport: this.options.transport,
-    debug: this.options.debug,
-    onEnd: function (response) {
-      if (callback) {
-        if (response.status !== grpc.Code.OK) {
-          var err = new Error(response.statusMessage);
-          err.code = response.status;
-          err.metadata = response.trailers;
-          callback(err, null);
-        } else {
-          callback(null, response.message);
-        }
-      }
-    }
-  });
-  return {
-    cancel: function () {
-      callback = null;
-      client.close();
-    }
-  };
-};
-
-LightningClient.prototype.sendToRoute = function sendToRoute(metadata) {
-  var listeners = {
-    data: [],
-    end: [],
-    status: []
-  };
-  var client = grpc.client(Lightning.SendToRoute, {
-    host: this.serviceHost,
-    metadata: metadata,
-    transport: this.options.transport
-  });
-  client.onEnd(function (status, statusMessage, trailers) {
-    listeners.status.forEach(function (handler) {
-      handler({ code: status, details: statusMessage, metadata: trailers });
-    });
-    listeners.end.forEach(function (handler) {
-      handler({ code: status, details: statusMessage, metadata: trailers });
-    });
-    listeners = null;
-  });
-  client.onMessage(function (message) {
-    listeners.data.forEach(function (handler) {
-      handler(message);
-    })
-  });
-  client.start(metadata);
-  return {
-    on: function (type, handler) {
-      listeners[type].push(handler);
-      return this;
-    },
-    write: function (requestMessage) {
-      client.send(requestMessage);
-      return this;
-    },
-    end: function () {
-      client.finishSend();
-    },
-    cancel: function () {
-      listeners = null;
-      client.close();
-    }
-  };
-};
-
-LightningClient.prototype.sendToRouteSync = function sendToRouteSync(requestMessage, metadata, callback) {
-  if (arguments.length === 2) {
-    callback = arguments[1];
-  }
-  var client = grpc.unary(Lightning.SendToRouteSync, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
@@ -2811,6 +2641,76 @@ LightningClient.prototype.subscribeCustomMessages = function subscribeCustomMess
     status: []
   };
   var client = grpc.invoke(Lightning.SubscribeCustomMessages, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onMessage: function (responseMessage) {
+      listeners.data.forEach(function (handler) {
+        handler(responseMessage);
+      });
+    },
+    onEnd: function (status, statusMessage, trailers) {
+      listeners.status.forEach(function (handler) {
+        handler({ code: status, details: statusMessage, metadata: trailers });
+      });
+      listeners.end.forEach(function (handler) {
+        handler({ code: status, details: statusMessage, metadata: trailers });
+      });
+      listeners = null;
+    }
+  });
+  return {
+    on: function (type, handler) {
+      listeners[type].push(handler);
+      return this;
+    },
+    cancel: function () {
+      listeners = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.sendOnionMessage = function sendOnionMessage(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Lightning.SendOnionMessage, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+LightningClient.prototype.subscribeOnionMessages = function subscribeOnionMessages(requestMessage, metadata) {
+  var listeners = {
+    data: [],
+    end: [],
+    status: []
+  };
+  var client = grpc.invoke(Lightning.SubscribeOnionMessages, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
