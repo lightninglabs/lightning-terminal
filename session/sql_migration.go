@@ -656,6 +656,13 @@ func overrideMacaroonRecipe(kvSession *Session, migratedSession *Session) {
 		kvPerms := kvSession.MacaroonRecipe.Permissions
 		kvCaveats := kvSession.MacaroonRecipe.Caveats
 
+		// If the migratedSession.MacaroonRecipe is nil, we set it to
+		// an empty MacaroonRecipe, as that can be correct when both
+		// kvPerms and kvCaveats are nil.
+		if migratedSession.MacaroonRecipe == nil {
+			migratedSession.MacaroonRecipe = &MacaroonRecipe{}
+		}
+
 		// If the kvSession has a MacaroonRecipe with nil set for any
 		// of the fields, we need to override the migratedSession
 		// MacaroonRecipe to match that.
