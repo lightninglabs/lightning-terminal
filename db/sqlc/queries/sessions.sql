@@ -81,25 +81,27 @@ WHERE id = $2;
 
 -- name: InsertSessionMacaroonPermission :exec
 INSERT INTO session_macaroon_permissions (
-    session_id, entity, action
-) VALUES (
-    $1, $2, $3
-);
-
--- name: GetSessionMacaroonPermissions :many
-SELECT * FROM session_macaroon_permissions
-WHERE session_id = $1;
-
--- name: InsertSessionMacaroonCaveat :exec
-INSERT INTO session_macaroon_caveats (
-    session_id, caveat_id, verification_id, location
+    session_id, entity, action, position
 ) VALUES (
     $1, $2, $3, $4
 );
 
+-- name: GetSessionMacaroonPermissions :many
+SELECT * FROM session_macaroon_permissions
+WHERE session_id = $1
+ORDER BY position ASC;
+
+-- name: InsertSessionMacaroonCaveat :exec
+INSERT INTO session_macaroon_caveats (
+    session_id, caveat_id, verification_id, location, position
+) VALUES (
+    $1, $2, $3, $4, $5
+);
+
 -- name: GetSessionMacaroonCaveats :many
 SELECT * FROM session_macaroon_caveats
-WHERE session_id = $1;
+WHERE session_id = $1
+ORDER BY position ASC;
 
 -- name: InsertSessionFeatureConfig :exec
 INSERT INTO session_feature_configs (

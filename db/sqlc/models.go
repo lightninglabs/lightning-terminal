@@ -113,6 +113,7 @@ type SessionMacaroonCaveat struct {
 	CaveatID       []byte
 	VerificationID []byte
 	Location       sql.NullString
+	Position       int32
 }
 
 type SessionMacaroonPermission struct {
@@ -120,6 +121,7 @@ type SessionMacaroonPermission struct {
 	SessionID int64
 	Entity    string
 	Action    string
+	Position  int32
 }
 
 type SessionPrivacyFlag struct {

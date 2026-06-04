@@ -205,8 +205,9 @@ func (q *Queries) GetSessionIDByAlias(ctx context.Context, alias []byte) (int64,
 }
 
 const getSessionMacaroonCaveats = `-- name: GetSessionMacaroonCaveats :many
-SELECT id, session_id, caveat_id, verification_id, location FROM session_macaroon_caveats
+SELECT id, session_id, caveat_id, verification_id, location, position FROM session_macaroon_caveats
 WHERE session_id = $1
+ORDER BY position ASC
 `
 
 func (q *Queries) GetSessionMacaroonCaveats(ctx context.Context, sessionID int64) ([]SessionMacaroonCaveat, error) {
@@ -224,6 +225,7 @@ func (q *Queries) GetSessionMacaroonCaveats(ctx context.Context, sessionID int64
 			&i.CaveatID,
 			&i.VerificationID,
 			&i.Location,
+			&i.Position,
 		); err != nil {
 			return nil, err
 		}
@@ -239,8 +241,9 @@ func (q *Queries) GetSessionMacaroonCaveats(ctx context.Context, sessionID int64
 }
 
 const getSessionMacaroonPermissions = `-- name: GetSessionMacaroonPermissions :many
-SELECT id, session_id, entity, action FROM session_macaroon_permissions
+SELECT id, session_id, entity, action, position FROM session_macaroon_permissions
 WHERE session_id = $1
+ORDER BY position ASC
 `
 
 func (q *Queries) GetSessionMacaroonPermissions(ctx context.Context, sessionID int64) ([]SessionMacaroonPermission, error) {
@@ -257,6 +260,7 @@ func (q *Queries) GetSessionMacaroonPermissions(ctx context.Context, sessionID i
 			&i.SessionID,
 			&i.Entity,
 			&i.Action,
+			&i.Position,
 		); err != nil {
 			return nil, err
 		}
@@ -422,9 +426,9 @@ func (q *Queries) InsertSessionFeatureConfig(ctx context.Context, arg InsertSess
 
 const insertSessionMacaroonCaveat = `-- name: InsertSessionMacaroonCaveat :exec
 INSERT INTO session_macaroon_caveats (
-    session_id, caveat_id, verification_id, location
+    session_id, caveat_id, verification_id, location, position
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5
 )
 `
 
@@ -433,6 +437,7 @@ type InsertSessionMacaroonCaveatParams struct {
 	CaveatID       []byte
 	VerificationID []byte
 	Location       sql.NullString
+	Position       int32
 }
 
 func (q *Queries) InsertSessionMacaroonCaveat(ctx context.Context, arg InsertSessionMacaroonCaveatParams) error {
@@ -441,15 +446,16 @@ func (q *Queries) InsertSessionMacaroonCaveat(ctx context.Context, arg InsertSes
 		arg.CaveatID,
 		arg.VerificationID,
 		arg.Location,
+		arg.Position,
 	)
 	return err
 }
 
 const insertSessionMacaroonPermission = `-- name: InsertSessionMacaroonPermission :exec
 INSERT INTO session_macaroon_permissions (
-    session_id, entity, action
+    session_id, entity, action, position
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4
 )
 `
 
@@ -457,10 +463,16 @@ type InsertSessionMacaroonPermissionParams struct {
 	SessionID int64
 	Entity    string
 	Action    string
+	Position  int32
 }
 
 func (q *Queries) InsertSessionMacaroonPermission(ctx context.Context, arg InsertSessionMacaroonPermissionParams) error {
-	_, err := q.db.ExecContext(ctx, insertSessionMacaroonPermission, arg.SessionID, arg.Entity, arg.Action)
+	_, err := q.db.ExecContext(ctx, insertSessionMacaroonPermission,
+		arg.SessionID,
+		arg.Entity,
+		arg.Action,
+		arg.Position,
+	)
 	return err
 }
 
