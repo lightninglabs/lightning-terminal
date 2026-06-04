@@ -49,4 +49,8 @@ CREATE TABLE IF NOT EXISTS actions(
 CREATE INDEX IF NOT EXISTS actions_state_idx ON actions(action_state);
 CREATE INDEX IF NOT EXISTS actions_session_id_idx ON actions(session_id);
 CREATE INDEX IF NOT EXISTS actions_feature_name_idx ON actions(feature_name);
-CREATE INDEX IF NOT EXISTS actions_created_at_idx ON actions(created_at);
+-- Actions are commonly queried in chronological order. Include the primary key
+-- as a stable tie-breaker so callers can order by (created_at, id) and still
+-- get deterministic results when multiple actions share the same timestamp.
+CREATE INDEX IF NOT EXISTS actions_created_at_id_idx
+    ON actions(created_at, id);

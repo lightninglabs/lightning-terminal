@@ -175,7 +175,7 @@ func buildListActionsQuery(params ListActionsParams) (string, []interface{}) {
 	if params.Reversed {
 		order = "DESC"
 	}
-	query += " ORDER BY a.created_at " + order
+	query += " ORDER BY a.created_at " + order + ", a.id " + order
 
 	// Maybe paginate.
 	if params.Pagination != nil {
