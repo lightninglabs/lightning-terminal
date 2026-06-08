@@ -4,6 +4,7 @@ package migsets
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
@@ -13,20 +14,13 @@ import (
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
-const (
-	// KVDBtoSQLMigVersion is the version of the migration that migrates the
-	// kvdb to the sql database.
-	//
-	// TODO: When this the kvdb to sql migration goes live into prod, this
-	// should be moved to non dev db/migrations.go file, and this constant
-	// value should be updated to reflect the real migration number.
-	KVDBtoSQLMigVersion = 1
-)
-
 // MakeMigrationSets creates the migration sets for the dev environments.
 func MakeMigrationSets(ctx context.Context,
-	basicClient lnrpc.LightningClient, macPath string,
+	basicClient lnrpc.LightningClient, macPath, litDir, network string,
 	clock clock.Clock) []sqldb.MigrationSet {
+
+	accountsDir := filepath.Dir(macPath)
+	networkDir := filepath.Join(litDir, network)
 
 	// Create the prod migration set.
 	migSet := sqldb.MigrationSet{
@@ -41,11 +35,29 @@ func MakeMigrationSets(ctx context.Context,
 		// NOTE: This MUST be updated when a new migration is added.
 		LatestMigrationVersion: db.LatestMigrationVersion,
 
-		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
+		MakeProgrammaticMigrations: func(baseDB *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {
 
-			return make(map[uint]migrate.ProgrammaticMigrEntry), nil
+			// Any programmatic migrations added to this map will be
+			// executed when the migration number for the uint key
+			// is applied. If no entry exists for a given uint, then
+			// no programmatic migration will be executed for that
+			// migration number.
+			res := make(map[uint]migrate.ProgrammaticMigrEntry)
+
+			res[db.KVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
+				ctx, basicClient, baseDB, accountsDir,
+				networkDir, clock, db.KVDBtoSQLMigVersion,
+			)
+
+			return res, nil
 		},
+	}
+
+	// If there are no dev migrations in the sqlc/migrations_dev folder, we
+	// can return early.
+	if !db.HasDevMigrations() {
+		return []sqldb.MigrationSet{migSet}
 	}
 
 	// Create the dev migration set.
@@ -61,25 +73,10 @@ func MakeMigrationSets(ctx context.Context,
 		// NOTE: This MUST be updated when a new dev migration is added.
 		LatestMigrationVersion: db.LatestDevMigrationVersion,
 
-		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
+		MakeProgrammaticMigrations: func(_ *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {
 
-			// Any Callbacks added to this map will be executed when
-			// after the dev migration number for the uint key in
-			// the map has been applied. If no entry exists for a
-			// given uint, then no callback will be executed for
-			// that migration number. This is useful for adding a
-			// code migration step as a callback to be run
-			// after a specific migration of a given number has been
-			// applied.
-			res := make(map[uint]migrate.ProgrammaticMigrEntry)
-
-			res[KVDBtoSQLMigVersion] = MakePostStepCallbacksMig6(
-				ctx, basicClient, db, macPath, clock,
-				KVDBtoSQLMigVersion,
-			)
-
-			return res, nil
+			return make(map[uint]migrate.ProgrammaticMigrEntry), nil
 		},
 	}
 

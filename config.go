@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -19,8 +20,13 @@ import (
 	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
+	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightninglabs/lightning-terminal/db/migsets"
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/firewall"
+	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
+	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightninglabs/lightning-terminal/subservers"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/loop/loopd"
@@ -29,10 +35,12 @@ import (
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/cert"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/signal"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/mwitkow/go-conntrack/connhelpers"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -87,6 +95,19 @@ const (
 	DefaultMacaroonFilename = "lit.macaroon"
 
 	defaultFirstLNCConnTimeout = 10 * time.Minute
+
+	// DatabaseBackendSqlite is the name of the SQLite database backend.
+	DatabaseBackendSqlite = "sqlite"
+
+	// DatabaseBackendPostgres is the name of the Postgres database backend.
+	DatabaseBackendPostgres = "postgres"
+
+	// DatabaseBackendBbolt is the name of the bbolt database backend.
+	DatabaseBackendBbolt = "bbolt"
+
+	// defaultSqliteDatabaseFileName is the default name of the SQLite
+	// database file.
+	defaultSqliteDatabaseFileName = "litd.db"
 )
 
 var (
@@ -140,6 +161,12 @@ var (
 	DefaultMacaroonPath = filepath.Join(
 		DefaultLitDir, DefaultNetwork, DefaultMacaroonFilename,
 	)
+
+	// defaultSqliteDatabasePath is the default path under which we store
+	// the SQLite database file.
+	defaultSqliteDatabasePath = filepath.Join(
+		DefaultLitDir, DefaultNetwork, defaultSqliteDatabaseFileName,
+	)
 )
 
 // Config is the main configuration struct of lightning-terminal. It contains
@@ -175,6 +202,18 @@ type Config struct {
 	MacaroonPath string `long:"macaroonpath" description:"Path to write the macaroon for litd's RPC and REST services if it doesn't exist."`
 
 	FirstLNCConnDeadline time.Duration `long:"firstlncconndeadline" description:"The duration after a new LNC session will be revoked if no connection is made with it. This only applies for the first connection which is made using the pairing phrase. "`
+
+	// DatabaseBackend is the database backend we will use for storing all
+	// account related data.
+	DatabaseBackend string `long:"databasebackend" description:"The database backend to use for storing all account related data." choice:"bbolt" choice:"sqlite" choice:"postgres"`
+
+	// Sqlite holds the configuration options for a SQLite database
+	// backend.
+	Sqlite *db.SqliteConfig `group:"sqlite" namespace:"sqlite"`
+
+	// Postgres holds the configuration options for a Postgres database
+	// backend.
+	Postgres *db.PostgresConfig `group:"postgres" namespace:"postgres"`
 
 	// Network is the Bitcoin network we're running on. This will be parsed
 	// before the configuration is loaded and will set the correct flag on
@@ -242,6 +281,166 @@ type Config struct {
 	// only available in development mode which lets us run itests against
 	// features not yet available in production.
 	*DevConfig
+}
+
+// NewStores creates a new stores instance based on the chosen database
+// backend.
+func (c *Config) NewStores(ctx context.Context,
+	basicClient lnrpc.LightningClient, clock clock.Clock) (*stores, error) {
+
+	var (
+		networkDir = filepath.Join(c.LitDir, c.Network)
+		stores     = &stores{
+			closeFns: make(map[string]func() error),
+		}
+	)
+
+	switch c.DatabaseBackend {
+	case DatabaseBackendSqlite:
+		if c.Sqlite == nil {
+			return stores, errors.New("sqlite configuration is " +
+				"missing")
+		}
+
+		// Before we initialize the SQLite store, we'll make sure that
+		// the directory where we will store the database file exists.
+		// Note that the c.Sqlite.DatabaseFileName may already have
+		// overwritten in loadAndValidateConfig, so that the correct
+		// network folder has been chosen.
+		err := makeDirectories(filepath.Dir(c.Sqlite.DatabaseFileName))
+		if err != nil {
+			return stores, err
+		}
+
+		sqlStore, err := sqldb.NewSqliteStore(&sqldb.SqliteConfig{
+			SkipMigrations:        c.Sqlite.SkipMigrations,
+			SkipMigrationDbBackup: c.Sqlite.SkipMigrationDbBackup,
+		}, c.Sqlite.DatabaseFileName)
+		if err != nil {
+			return stores, err
+		}
+
+		stores.closeFns["sqlite"] = sqlStore.BaseDB.Close
+
+		if !c.Sqlite.SkipMigrations {
+			err = sqldb.ApplyAllMigrations(
+				sqlStore,
+				migsets.MakeMigrationSets(
+					ctx, basicClient, c.MacaroonPath,
+					c.LitDir, c.Network, clock,
+				),
+			)
+			if err != nil {
+				return stores, fmt.Errorf("error applying "+
+					"migrations to SQLite store: %w", err,
+				)
+			}
+		}
+
+		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
+
+		acctStore := accounts.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		firewallStore := firewalldb.NewSQLDB(
+			sqlStore.BaseDB, queries, clock,
+		)
+
+		stores.accounts = acctStore
+		stores.sessions = sessStore
+		stores.firewall = firewalldb.NewDB(firewallStore)
+
+	case DatabaseBackendPostgres:
+		if c.Postgres == nil {
+			return stores, errors.New("postgres configuration is " +
+				"missing")
+		}
+
+		sqlStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
+			Dsn:                c.Postgres.DSN(false),
+			MaxOpenConnections: c.Postgres.MaxOpenConnections,
+			MaxIdleConnections: c.Postgres.MaxIdleConnections,
+			ConnMaxLifetime:    c.Postgres.ConnMaxLifetime,
+			ConnMaxIdleTime:    c.Postgres.ConnMaxIdleTime,
+			RequireSSL:         c.Postgres.RequireSSL,
+			SkipMigrations:     c.Postgres.SkipMigrations,
+		})
+		if err != nil {
+			return stores, err
+		}
+
+		stores.closeFns["postgres"] = sqlStore.BaseDB.Close
+
+		if !c.Postgres.SkipMigrations {
+			err = sqldb.ApplyAllMigrations(
+				sqlStore,
+				migsets.MakeMigrationSets(
+					ctx, basicClient, c.MacaroonPath,
+					c.LitDir, c.Network, clock,
+				),
+			)
+			if err != nil {
+				return stores, fmt.Errorf("error applying "+
+					"migrations to Postgres store: %w", err,
+				)
+			}
+		}
+
+		queries := sqlc.NewForType(sqlStore, sqlStore.BackendType)
+
+		acctStore := accounts.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		sessStore := session.NewSQLStore(
+			sqlStore.BaseDB, queries, clock,
+		)
+		firewallStore := firewalldb.NewSQLDB(
+			sqlStore.BaseDB, queries, clock,
+		)
+
+		stores.accounts = acctStore
+		stores.sessions = sessStore
+		stores.firewall = firewalldb.NewDB(firewallStore)
+
+	default:
+		accountStore, err := accounts.NewBoltStore(
+			filepath.Dir(c.MacaroonPath), accounts.DBFilename,
+			clock,
+		)
+		if err != nil {
+			return stores, err
+		}
+
+		stores.accounts = accountStore
+		stores.closeFns["bbolt-accounts"] = accountStore.Close
+
+		sessionStore, err := session.NewDB(
+			networkDir, session.DBFilename, clock, accountStore,
+		)
+		if err != nil {
+			return stores, err
+		}
+
+		stores.sessions = sessionStore
+		stores.closeFns["bbolt-sessions"] = sessionStore.Close
+
+		firewallBoltDB, err := firewalldb.NewBoltDB(
+			networkDir, firewalldb.DBFilename, stores.sessions,
+			stores.accounts, clock,
+		)
+		if err != nil {
+			return stores, fmt.Errorf("error creating firewall "+
+				"BoltDB: %v", err)
+		}
+
+		stores.firewall = firewalldb.NewDB(firewallBoltDB)
+		stores.closeFns["bbolt-firewalldb"] = firewallBoltDB.Close
+	}
+
+	return stores, nil
 }
 
 // lndConnectParams returns the connection parameters to connect to the local
@@ -322,15 +521,27 @@ func defaultConfig() *Config {
 				TLSCertPath:  tapDefaultConfig.RpcConf.TLSCertPath,
 			},
 		},
-		Network:              DefaultNetwork,
-		LndMode:              DefaultLndMode,
-		Lnd:                  &lndDefaultConfig,
-		LndRPCTimeout:        defaultRPCTimeout,
-		LndConnectInterval:   defaultStartupTimeout,
-		LitDir:               DefaultLitDir,
-		LetsEncryptListen:    defaultLetsEncryptListen,
-		LetsEncryptDir:       defaultLetsEncryptDir,
-		MacaroonPath:         DefaultMacaroonPath,
+		Network:            DefaultNetwork,
+		LndMode:            DefaultLndMode,
+		Lnd:                &lndDefaultConfig,
+		LndRPCTimeout:      defaultRPCTimeout,
+		LndConnectInterval: defaultStartupTimeout,
+		LitDir:             DefaultLitDir,
+		LetsEncryptListen:  defaultLetsEncryptListen,
+		LetsEncryptDir:     defaultLetsEncryptDir,
+		MacaroonPath:       DefaultMacaroonPath,
+		DatabaseBackend:    DatabaseBackendSqlite,
+		Sqlite: &db.SqliteConfig{
+			DatabaseFileName: defaultSqliteDatabasePath,
+			// TODO: Change this to false when next SQL migration
+			// version is added.
+			SkipMigrationDbBackup: true,
+		},
+		Postgres: &db.PostgresConfig{
+			Host:               "localhost",
+			Port:               5432,
+			MaxOpenConnections: 10,
+		},
 		ConfigFile:           defaultConfigFile,
 		FaradayMode:          defaultFaradayMode,
 		Faraday:              &faradayDefaultConfig,
@@ -493,7 +704,19 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		)
 	}
 
-	err = cfg.DevConfig.Validate(litDir, cfg.Network)
+	// If the cfg.Sqlite.DatabaseFileName was not set, rebuild it from the
+	// final LiT directory and network. This keeps the default aligned
+	// with any user overrides that changed lit-dir or network during
+	// config loading.
+	if cfg.Sqlite != nil &&
+		cfg.Sqlite.DatabaseFileName == defaultSqliteDatabasePath {
+
+		cfg.Sqlite.DatabaseFileName = filepath.Join(
+			litDir, cfg.Network, defaultSqliteDatabaseFileName,
+		)
+	}
+
+	err = cfg.DevConfig.Validate()
 	if err != nil {
 		return nil, err
 	}

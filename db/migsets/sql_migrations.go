@@ -4,6 +4,7 @@ package migsets
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
@@ -14,8 +15,12 @@ import (
 )
 
 // MakeMigrationSets creates the migration sets for production environments.
-func MakeMigrationSets(_ context.Context, _ lnrpc.LightningClient, _ string,
-	_ clock.Clock) []sqldb.MigrationSet {
+func MakeMigrationSets(ctx context.Context, basicClient lnrpc.LightningClient,
+	macPath, litDir, network string,
+	clock clock.Clock) []sqldb.MigrationSet {
+
+	accountsDir := filepath.Dir(macPath)
+	networkDir := filepath.Join(litDir, network)
 
 	// migSet defines the SQL migration set used to create and upgrade LiT's
 	// SQL schema.
@@ -31,10 +36,22 @@ func MakeMigrationSets(_ context.Context, _ lnrpc.LightningClient, _ string,
 		// NOTE: This MUST be updated when a new migration is added.
 		LatestMigrationVersion: db.LatestMigrationVersion,
 
-		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
+		MakeProgrammaticMigrations: func(baseDB *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {
 
-			return make(map[uint]migrate.ProgrammaticMigrEntry), nil
+			// Any programmatic migrations added to this map will be
+			// executed when the migration number for the uint key
+			// is applied. If no entry exists for a given uint, then
+			// no programmatic migration will be executed for that
+			// migration number.
+			res := make(map[uint]migrate.ProgrammaticMigrEntry)
+
+			res[db.KVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
+				ctx, basicClient, baseDB, accountsDir,
+				networkDir, clock, db.KVDBtoSQLMigVersion,
+			)
+
+			return res, nil
 		},
 	}
 

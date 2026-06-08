@@ -1,0 +1,3 @@
+-- Comment to ensure the file created and picked up in the migration stream.
+-- NOTE: There's intentionally no corresponding .down file for this migration
+-- to ensure that the KVDB -> SQL migration isn't executed on db downgrades.

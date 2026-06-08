@@ -1,6 +1,8 @@
 package db
 
 import (
+	"io/fs"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/lightningnetwork/lnd/sqldb/v2"
@@ -12,7 +14,18 @@ const (
 	// daemon.
 	//
 	// NOTE: This MUST be updated when a new migration is added.
-	LatestMigrationVersion = 5
+	//
+	// TODO: On the next update, when the migration version is updated
+	// be beyond version 6, make sure that the default
+	// `SkipMigrationDbBackup` value for Sqlite is set to false.
+	LatestMigrationVersion = 6
+
+	// KVDBtoSQLMigVersion is the version of the migration that migrates the
+	// kvdb to the sql database.
+	//
+	// NOTE: This version value should not be updated when a new migration
+	// is added, as this represents a specific migration.
+	KVDBtoSQLMigVersion = 6
 
 	// LatestDevMigrationVersion is the latest dev migration version of the
 	// database. This is used to implement downgrade protection for the
@@ -21,8 +34,20 @@ const (
 	//
 	// NOTE: This MUST be updated when a migration is added or removed, from
 	// the migrations_dev directory.
-	LatestDevMigrationVersion = 1
+	LatestDevMigrationVersion = 0
 )
+
+// HasDevMigrations reports whether any dev SQL migration files are embedded in
+// the current build. This lets dev builds omit the separate dev migration set
+// cleanly when the directory exists but currently contains no migration files.
+func HasDevMigrations() bool {
+	files, err := fs.Glob(SqlSchemas, "sqlc/migrations_dev/*.*.sql")
+	if err != nil {
+		return false
+	}
+
+	return len(files) > 0
+}
 
 // MakeTestMigrationSets creates the migration sets for the unit test
 // environment.
@@ -48,6 +73,12 @@ func MakeTestMigrationSets() []sqldb.MigrationSet {
 
 			return make(map[uint]migrate.ProgrammaticMigrEntry), nil
 		},
+	}
+
+	// If there are no dev migrations in the sqlc/migrations_dev folder, we
+	// can return early.
+	if !HasDevMigrations() {
+		return []sqldb.MigrationSet{migSet}
 	}
 
 	migSetDev := sqldb.MigrationSet{

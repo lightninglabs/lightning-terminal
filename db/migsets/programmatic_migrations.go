@@ -1,5 +1,3 @@
-//go:build dev
-
 package migsets
 
 import (
@@ -8,7 +6,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -22,13 +19,11 @@ import (
 	"github.com/lightningnetwork/lnd/sqldb/v2"
 )
 
-// MakePostStepCallbacksMig6 turns the post migration checks into a map of post
-// step callbacks that can be used with the migrate package. The keys of the map
-// are the migration versions, and the values are the callbacks that will be
-// executed after the migration with the corresponding version is applied.
-func MakePostStepCallbacksMig6(ctx context.Context,
+// Mig6ProgrammaticMigration generates and returns the programmatic migration
+// entry containing the kvdb to SQL migration for all of litd's database stores.
+func Mig6ProgrammaticMigration(ctx context.Context,
 	basicClient lnrpc.LightningClient, db *sqldb.BaseDB,
-	macPath string, clock clock.Clock,
+	accountsDir, networkDir string, clock clock.Clock,
 	migVersion uint) migrate.ProgrammaticMigrEntry {
 
 	mig6queries := sqlcmig6.NewForType(db, db.BackendType)
@@ -46,12 +41,12 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 		err := mig6executor.ExecTx(
 			ctx, sqldb.WriteTxOpt(),
 			func(q6 *sqlcmig6.Queries) error {
-				log.Infof("Running post migration callback "+
+				log.Infof("Running the programmatic migration "+
 					"for migration version %d", migVersion)
 
-				return kvdbToSqlMigrationCallback(
-					ctx, basicClient, macPath, db, clock,
-					q6,
+				return kvdbToSqlProgrammaticMigration(
+					ctx, basicClient, accountsDir,
+					networkDir, db, clock, q6,
 				)
 			}, sqldb.NoOpReset,
 		)
@@ -70,7 +65,7 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 		// We still want the failure to be highly visible because the
 		// legacy bbolt files were not tombstoned and may therefore
 		// still be opened unexpectedly.
-		err = deprecateKVDBStores(filepath.Dir(macPath))
+		err = deprecateKVDBStores(accountsDir, networkDir)
 		if err != nil {
 			log.Errorf("CRITICAL: kvdb -> SQL migration "+
 				"succeeded, but the legacy bbolt databases "+
@@ -88,15 +83,15 @@ func MakePostStepCallbacksMig6(ctx context.Context,
 	}
 }
 
-func kvdbToSqlMigrationCallback(ctx context.Context,
-	basicClient lnrpc.LightningClient, macPath string, _ *sqldb.BaseDB,
-	clock clock.Clock, q *sqlcmig6.Queries) error {
+func kvdbToSqlProgrammaticMigration(ctx context.Context,
+	basicClient lnrpc.LightningClient, accountsDir, networkDir string,
+	_ *sqldb.BaseDB, clock clock.Clock, q *sqlcmig6.Queries) error {
 
 	start := time.Now()
 	log.Infof("Starting KVDB to SQL migration for all stores")
 
 	accountStore, err := accounts.NewBoltStoreForMigration(
-		filepath.Dir(macPath), accounts.DBFilename, clock,
+		accountsDir, accounts.DBFilename, clock,
 	)
 	if err != nil {
 		return err
@@ -117,7 +112,7 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 	}
 
 	sessionStore, err := session.NewDBForMigration(
-		filepath.Dir(macPath), session.DBFilename,
+		networkDir, session.DBFilename,
 		clock, accountStore,
 	)
 	if err != nil {
@@ -139,7 +134,7 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 	}
 
 	firewallStore, err := firewalldb.NewBoltDBForMigration(
-		filepath.Dir(macPath), firewalldb.DBFilename,
+		networkDir, firewalldb.DBFilename,
 		sessionStore, accountStore, clock,
 	)
 	if err != nil {
@@ -222,20 +217,20 @@ func kvdbToSqlMigrationCallback(ctx context.Context,
 // migration committed successfully. We do this after the SQL transaction is
 // committed so a failed SQL migration cannot strand the user with an unusable
 // kvdb backend.
-func deprecateKVDBStores(dbDir string) error {
-	accountsErr := accounts.DeprecateKVDB(dbDir)
+func deprecateKVDBStores(accountsDir, networkDir string) error {
+	accountsErr := accounts.DeprecateKVDB(accountsDir)
 	if accountsErr != nil {
 		accountsErr = fmt.Errorf("error deprecating accounts kvdb: %w",
 			accountsErr)
 	}
 
-	sessionErr := session.DeprecateKVDB(dbDir)
+	sessionErr := session.DeprecateKVDB(networkDir)
 	if sessionErr != nil {
 		sessionErr = fmt.Errorf("error deprecating session kvdb: %w",
 			sessionErr)
 	}
 
-	firewallErr := firewalldb.DeprecateKVDB(dbDir)
+	firewallErr := firewalldb.DeprecateKVDB(networkDir)
 	if firewallErr != nil {
 		firewallErr = fmt.Errorf("error deprecating firewall kvdb: %w",
 			firewallErr)
