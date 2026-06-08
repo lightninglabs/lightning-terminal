@@ -207,6 +207,17 @@ type Config struct {
 	// account related data.
 	DatabaseBackend string `long:"databasebackend" description:"The database backend to use for storing all account related data." choice:"bbolt" choice:"sqlite" choice:"postgres"`
 
+	// AutoMigrateKVDB enables the legacy kvdb to SQL migration without
+	// showing the startup prompt. The same behavior can also be
+	// requested via the environment fallback; if either is true, the
+	// prompt is bypassed.
+	AutoMigrateKVDB bool `long:"auto-migrate-to-sql" description:"Automatically approve a pending migration of legacy kvdb data to the configured SQL backend without showing the startup prompt."`
+
+	// autoMigrateKVDBApproved is the effective startup prompt bypass
+	// setting after the config flag and environment fallback have been
+	// resolved.
+	autoMigrateKVDBApproved bool
+
 	// Sqlite holds the configuration options for a SQLite database
 	// backend.
 	Sqlite *db.SqliteConfig `group:"sqlite" namespace:"sqlite"`
@@ -879,6 +890,11 @@ func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
 		return nil, err
 	}
 
+	err = readAutoMigrateKVDB(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	// Now make sure we create the LiT directory if it doesn't yet exist.
 	if err := makeDirectories(litDir); err != nil {
 		return nil, err
@@ -1112,6 +1128,25 @@ func readUIPassword(config *Config) error {
 	return fmt.Errorf("mandatory password for UI not configured. specify " +
 		"either a password directly or a file or environment " +
 		"variable that contains the password")
+}
+
+// readAutoMigrateKVDB resolves whether the legacy kvdb to SQL migration
+// prompt should be bypassed. The config flag takes precedence; when it is
+// not set, the environment fallback is consulted.
+func readAutoMigrateKVDB(config *Config) error {
+	if config.AutoMigrateKVDB {
+		config.autoMigrateKVDBApproved = true
+		return nil
+	}
+
+	autoMigrateKVDB, err := autoMigrateKVDBFromEnv()
+	if err != nil {
+		return err
+	}
+
+	config.autoMigrateKVDBApproved = autoMigrateKVDB
+
+	return nil
 }
 
 func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {

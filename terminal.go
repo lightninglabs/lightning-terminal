@@ -444,6 +444,15 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not create network directory: %v", err)
 	}
 
+	if g.cfg.DatabaseBackend != DatabaseBackendBbolt &&
+		!g.cfg.sqlMigrationsSkipped() {
+
+		err = g.cfg.confirmPendingKVDBToSQLMigration()
+		if err != nil {
+			return err
+		}
+	}
+
 	// We create a reference to the `accountRpcServer` here before starting
 	// it and prior to setting up the LND connection. This is because when
 	// the LND connection is set up for an integrated LND instance, LND will

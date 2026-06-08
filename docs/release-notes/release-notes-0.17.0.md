@@ -49,6 +49,16 @@
   (`databasebackend=postgres`). If the config option is not set, the database
   backend defaults to SQLite.
 
+* [Add a startup confirmation prompt for the SQL
+  migration](https://github.com/lightninglabs/lightning-terminal/pull/1315):
+  Before the migration of the BBolt database to SQL is started, an explicit
+  confirmation prompt is displayed. The prompt requires that the user
+  explicitly confirms the migration by inputting "yes" via stdin. Any other
+  input will cause the litd startup to be canceled.
+  For non-interactive startup flows, the prompt can be skipped by setting the
+  `auto-migrate-to-sql=true` config flag or by setting the following environment
+  variable:  `LIT_AUTO_MIGRATE_TO_SQL=true`.
+
 * [BBolt databases are
   deprecated](https://github.com/lightninglabs/lightning-terminal/pull/1305):
   Users that explicitly want to continue using the legacy `bbolt` backend must
