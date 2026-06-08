@@ -1,5 +1,7 @@
 -- Drop indexes first.
-DROP INDEX IF EXISTS kvstores_lookup_idx;
+DROP INDEX IF EXISTS kvstores_feature_lookup_idx;
+DROP INDEX IF EXISTS kvstores_group_lookup_idx;
+DROP INDEX IF EXISTS kvstores_global_lookup_idx;
 DROP INDEX IF EXISTS features_name_idx;
 DROP INDEX IF EXISTS rules_name_idx;
 

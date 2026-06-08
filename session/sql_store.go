@@ -240,13 +240,14 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 
 		// Write mac perms and caveats.
 		if sess.MacaroonRecipe != nil {
-			for _, perm := range sess.MacaroonRecipe.Permissions {
+			for i, perm := range sess.MacaroonRecipe.Permissions {
 				// nolint:ll
 				err := db.InsertSessionMacaroonPermission(
 					ctx, sqlc.InsertSessionMacaroonPermissionParams{
 						SessionID: dbID,
 						Entity:    perm.Entity,
 						Action:    perm.Action,
+						Position:  int32(i),
 					},
 				)
 				if err != nil {
@@ -255,7 +256,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 				}
 			}
 
-			for _, caveat := range sess.MacaroonRecipe.Caveats {
+			for i, caveat := range sess.MacaroonRecipe.Caveats {
 				// nolint:ll
 				err := db.InsertSessionMacaroonCaveat(
 					ctx, sqlc.InsertSessionMacaroonCaveatParams{
@@ -268,6 +269,7 @@ func (s *SQLStore) NewSession(ctx context.Context, label string, typ Type,
 							Valid: caveat.
 								Location != "",
 						},
+						Position: int32(i),
 					},
 				)
 				if err != nil {

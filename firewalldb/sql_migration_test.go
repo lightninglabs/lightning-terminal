@@ -480,6 +480,10 @@ func TestFirewallDBMigration(t *testing.T) {
 			populateDB: actionNoSessionOrAccount,
 		},
 		{
+			name:       "actions with same timestamp",
+			populateDB: actionsWithSameTimestamp,
+		},
+		{
 			name:       "action with empty RPCParamsJson",
 			populateDB: actionEmptyRPCParamsJson,
 		},
@@ -1281,6 +1285,36 @@ func actionNoSessionOrAccount(t *testing.T, ctx context.Context,
 	}
 }
 
+// actionsWithSameTimestamp adds multiple actions at the same timestamp and
+// returns them in insertion order. This makes sure migration validation also
+// covers the SQL (created_at, id) tie-breaker.
+func actionsWithSameTimestamp(t *testing.T, ctx context.Context,
+	boltDB *BoltDB, _ session.Store, _ accounts.Store,
+	rStore *rootKeyMockStore) *expectedResult {
+
+	actions := make([]*Action, 0, 3)
+	for i := range 3 {
+		rootKey := rStore.addRandomRootKey()
+
+		actionReq := testActionReq
+		actionReq.MacaroonRootKeyID = fn.Some(rootKey)
+		actionReq.SessionID = fn.None[session.ID]()
+		actionReq.AccountID = fn.None[accounts.AccountID]()
+		actionReq.FeatureName = fmt.Sprintf("same-time-%d", i+1)
+
+		actions = append(
+			actions,
+			addActionAtCurrentTime(t, ctx, boltDB, &actionReq),
+		)
+	}
+
+	return &expectedResult{
+		kvEntries: []*kvEntry{},
+		privPairs: make(privacyPairs),
+		actions:   actions,
+	}
+}
+
 // actionEmptyRPCParamsJson adds an action which has no RPCParamsJson set.
 func actionEmptyRPCParamsJson(t *testing.T, ctx context.Context,
 	boltDB *BoltDB, _ session.Store, _ accounts.Store,
@@ -1985,6 +2019,14 @@ func addAction(t *testing.T, ctx context.Context, boltDB *BoltDB,
 	// ensure that the action timestamp is always after the creation time
 	// of a session or account that it might be linked to.
 	boltDB.clock = clock.NewTestClock(boltDB.clock.Now().Add(time.Second))
+
+	return addActionAtCurrentTime(t, ctx, boltDB, actionReq)
+}
+
+// addActionAtCurrentTime adds an action using the bolt DB's current clock
+// value without advancing it first.
+func addActionAtCurrentTime(t *testing.T, ctx context.Context, boltDB *BoltDB,
+	actionReq *AddActionReq) *Action {
 
 	aLocator, err := boltDB.AddAction(ctx, actionReq)
 	require.NoError(t, err)

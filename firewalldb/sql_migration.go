@@ -930,32 +930,42 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 			return fmt.Errorf("actions bucket not found")
 		}
 
+		actionsIndexBucket := actionsBucket.Bucket(actionsIndex)
+		if actionsIndexBucket == nil {
+			return fmt.Errorf("actions->actions-index bucket not " +
+				"found")
+		}
+
 		sessionsBucket := actionsBucket.Bucket(actionsKey)
 		if sessionsBucket == nil {
 			return fmt.Errorf("actions->sessions bucket not found")
 		}
 
-		// Iterate over session ID buckets (i.e. what we should name
-		// macaroon IDs).
-		//
-		// nolint:ll
-		return sessionsBucket.ForEach(func(macID []byte, v []byte) error {
-			if v != nil {
-				return fmt.Errorf("expected only sub-buckets " +
-					"in sessions bucket")
+		// Iterate over the global actions index so that SQL insertion
+		// order follows the legacy KVDB action order rather than bucket
+		// traversal order.
+		return actionsIndexBucket.ForEach(func(seqNo []byte,
+			locatorBytes []byte) error {
+
+			if locatorBytes == nil {
+				return fmt.Errorf("unexpected nested bucket " +
+					"under actions-index")
 			}
 
-			sessBucket := sessionsBucket.Bucket(macID)
-			if sessBucket == nil {
-				return fmt.Errorf("session bucket for %x not "+
-					"found", macID)
+			locator, err := deserializeActionLocator(
+				bytes.NewReader(locatorBytes),
+			)
+			if err != nil {
+				return fmt.Errorf("unable to deserialize "+
+					"action locator for seq %x: %w",
+					seqNo, err)
 			}
 
 			// fetch the full macaroon root key ID based on the
 			// macaroon identifier for the action (the last 4 bytes
 			// of the root key ID).
 			var macIDArr [4]byte
-			copy(macIDArr[:], macID)
+			copy(macIDArr[:], locator.sessionID[:])
 
 			macRootKeyID, ok := macMap[macIDArr]
 			if !ok {
@@ -970,65 +980,43 @@ func migrateActionsToSQL(ctx context.Context, kvStore *bbolt.DB,
 				// backends.
 				log.Warnf("No macaroon root key ID found for "+
 					"macaroon ID %x, using zeroes for "+
-					"the first 4 bytes", macID)
+					"the first 4 bytes",
+					locator.sessionID[:])
 
 				macRootKeyID = make([]byte, 8)
 				copy(macRootKeyID[4:], macIDArr[:])
 			}
 
-			// Iterate over the actions inside each session/macaroon
-			// ID.
-			return sessBucket.ForEach(func(actionID,
-				actionBytes []byte) error {
+			action, err := getAction(sessionsBucket, locator)
+			if err != nil {
+				return fmt.Errorf("unable to deserialize "+
+					"action for locator %+v: %w",
+					locator, err)
+			}
 
-				if actionBytes == nil {
-					return fmt.Errorf("unexpected nested "+
-						"bucket under session %x",
-						macID)
-				}
+			log.Tracef("Migrated Action: SeqNo: %x, Macaroon ID: "+
+				"%x, ActionID: %d, Actor: %s, Feature: %s",
+				seqNo, locator.sessionID[:], locator.actionID,
+				action.ActorName, action.FeatureName)
 
-				sessionID, err := session.IDFromBytes(macID)
-				if err != nil {
-					// This should be unreachable, as the
-					// macID should always be 4 bytes long.
-					return fmt.Errorf("invalid session ID "+
-						"format %x: %v", macID, err)
-				}
+			// Now proceed to migrate the action, and also validate
+			// that the action was correctly migrated.
+			err = migrateActionToSQL(
+				ctx, sqlTx, acctsMap, sessMap, action,
+				macRootKeyID,
+			)
+			if err != nil {
+				return fmt.Errorf("migrating action to SQL "+
+					"failed: %w", err)
+			}
 
-				action, err := DeserializeAction(
-					bytes.NewReader(actionBytes), sessionID,
-				)
-				if err != nil {
-					return fmt.Errorf("unable to "+
-						"deserialize action in "+
-						"session %x: %w", macID, err)
-				}
+			migCount++
+			if migCount%migrationProgressLogInterval == 0 {
+				log.Infof("Migrated %d actions from KV to SQL",
+					migCount)
+			}
 
-				log.Tracef("Migrated Action: Macaroon ID: %x, "+
-					"ActionID: %x, Actor: %s, Feature: %s",
-					macID, actionID, action.ActorName,
-					action.FeatureName)
-
-				// Now proceed to migrate the action, and also
-				// validate that the action was correctly
-				// migrated.
-				err = migrateActionToSQL(
-					ctx, sqlTx, acctsMap, sessMap, action,
-					macRootKeyID,
-				)
-				if err != nil {
-					return fmt.Errorf("migrating action "+
-						"to SQL failed: %w", err)
-				}
-
-				migCount++
-				if migCount%migrationProgressLogInterval == 0 {
-					log.Infof("Migrated %d actions from "+
-						"KV to SQL", migCount)
-				}
-
-				return nil
-			})
+			return nil
 		})
 	})
 	if err != nil {

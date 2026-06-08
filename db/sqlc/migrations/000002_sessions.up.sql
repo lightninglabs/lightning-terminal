@@ -84,9 +84,13 @@ CREATE TABLE IF NOT EXISTS session_macaroon_permissions (
     entity TEXT NOT NULL,
 
     -- The action that this permission is for.
-    action TEXT NOT NULL
+    action TEXT NOT NULL,
+
+    -- The original position of the permission in the session recipe.
+    position INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS sessions_mac_perms_idx ON session_macaroon_permissions(session_id);
+CREATE INDEX IF NOT EXISTS sessions_mac_perms_idx
+    ON session_macaroon_permissions(session_id, position);
 
 -- The session_macaroon_caveats table contains the macaroon caveats that are
 -- associated with a session.
@@ -105,10 +109,14 @@ CREATE TABLE IF NOT EXISTS session_macaroon_caveats (
     verification_id BLOB,
 
     -- The location hint for third party caveats.
-    location TEXT
+    location TEXT,
+
+    -- The original position of the caveat in the session recipe.
+    position INTEGER NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS sessions_mac_caveats_idx ON session_macaroon_caveats(session_id);
+CREATE INDEX IF NOT EXISTS sessions_mac_caveats_idx
+    ON session_macaroon_caveats(session_id, position);
 
 -- The session_feature_configs table contains the feature configs that are
 -- associated with a session.
