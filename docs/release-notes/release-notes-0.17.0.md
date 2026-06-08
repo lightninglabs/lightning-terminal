@@ -58,6 +58,9 @@
 
 ### LND
 
+* [Bump lnd to v0.21.0-beta and lndclient to
+  v0.21.0-1](https://github.com/lightninglabs/lightning-terminal/pull/1300).
+
 ### Loop
 
 ### Pool
@@ -78,8 +81,12 @@
 
 ### Taproot Assets
 
+* [Bump taproot-assets to v0.8.0 and taprpc to
+  v1.1.0](https://github.com/lightninglabs/lightning-terminal/pull/1300).
+
 # Contributors (Alphabetical Order)
 
 * Boris Nagaev
+* Calvin Zachman
 * Cyberguru1
 * darioAnongba
