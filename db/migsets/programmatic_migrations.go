@@ -152,10 +152,11 @@ func kvdbToSqlProgrammaticMigration(ctx context.Context,
 	// We'll fetch the macaroonIDList from `lnd` next. Note that since lnd's
 	// RPC servers may not have been fully started yet if the execution of
 	// accounts and session migration were really quick, we poll the request
-	// up to 10 times with a 0.5 second delay between the attempts. This
-	// should be a sufficient amount of time for the RPC servers to start.
+	// up to 120 times with a 0.5 second delay between the attempts. This
+	// should be a sufficient amount of time for the wallet to have been
+	// loaded and for the RPC servers to started.
 	const (
-		maxListMacaroonIDAttempts = 10
+		maxListMacaroonIDAttempts = 120
 		listMacaroonIDRetryDelay  = 500 * time.Millisecond
 	)
 
