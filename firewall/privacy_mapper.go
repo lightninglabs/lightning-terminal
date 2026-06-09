@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/lightninglabs/faraday/frdrpc"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	mid "github.com/lightninglabs/lightning-terminal/rpcmiddleware"
 	"github.com/lightninglabs/lightning-terminal/session"
@@ -535,6 +536,13 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags) map[string]mid.RoundTripChecker {
 
 	return map[string]mid.RoundTripChecker{
+		//nolint:ll
+		"/frdrpc.FaradayServer/ForwardingAbility": mid.NewResponseRewriter(
+			&frdrpc.ForwardingAbilityRequest{},
+			&frdrpc.ForwardingAbilityResponse{},
+			handleForwardingAbilityResponse(db, flags),
+			mid.PassThroughErrorHandler,
+		),
 		"/lnrpc.Lightning/GetInfo": mid.NewResponseRewriter(
 			&lnrpc.GetInfoRequest{}, &lnrpc.GetInfoResponse{},
 			handleGetInfoResponse(db, flags),
@@ -585,7 +593,6 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handlePendingChannelsResponse(db, flags, p.randIntn),
 			mid.PassThroughErrorHandler,
 		),
-
 		"/lnrpc.Lightning/BatchOpenChannel": mid.NewFullRewriter(
 			&lnrpc.BatchOpenChannelRequest{},
 			&lnrpc.BatchOpenChannelResponse{},
@@ -600,12 +607,74 @@ func (p *PrivacyMapper) checkers(db firewalldb.PrivacyMapDB,
 			handleChannelOpenResponse(db, flags),
 			mid.PassThroughErrorHandler,
 		),
-
 		"/lnrpc.Lightning/ConnectPeer": mid.NewRequestRewriter(
 			&lnrpc.ConnectPeerRequest{},
 			&lnrpc.ConnectPeerResponse{},
 			handleConnectPeerRequest(db, flags),
 		),
+	}
+}
+
+func handleForwardingAbilityResponse(db firewalldb.PrivacyMapDB,
+	flags session.PrivacyFlags) func(ctx context.Context,
+	r *frdrpc.ForwardingAbilityResponse) (proto.Message, error) {
+
+	return func(ctx context.Context, r *frdrpc.ForwardingAbilityResponse) (
+		proto.Message, error) {
+
+		// When pubkey hiding is disabled or there are no peers to
+		// obfuscate, pass the response through untouched and avoid
+		// opening a write transaction.
+		if flags.Contains(session.ClearPubkeys) || len(r.Peers) == 0 {
+			return r, nil
+		}
+
+		// The response addresses peers by index from a shared peer
+		// list, so obfuscate each peer in place to keep the entries'
+		// packed indices valid. The list need not stay sorted because
+		// decoding resolves peers purely by index.
+		peers := make([][]byte, len(r.Peers))
+
+		err := db.Update(ctx, func(ctx context.Context,
+			tx firewalldb.PrivacyMapTx) error {
+
+			for i, p := range r.Peers {
+				// Skip empty pubkeys to avoid storing a
+				// degenerate empty-to-empty mapping.
+				if len(p) == 0 {
+					peers[i] = p
+
+					continue
+				}
+
+				// Hide the pubkey so a peer maps to the same
+				// pseudonym across RPCs.
+				pseudoBytes, err := firewalldb.HideBytes(
+					ctx, tx, p,
+				)
+				if err != nil {
+					return err
+				}
+
+				peers[i] = pseudoBytes
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Peers are obfuscated in place, so the index-keyed entries and
+		// up-but-idle bitmask stay valid and pass through unchanged.
+		return &frdrpc.ForwardingAbilityResponse{
+			Peers:            peers,
+			Entries:          r.Entries,
+			StartTime:        r.StartTime,
+			EndTime:          r.EndTime,
+			UpButIdleBitmask: r.UpButIdleBitmask,
+			UptimeThreshold:  r.UptimeThreshold,
+		}, nil
 	}
 }
 
