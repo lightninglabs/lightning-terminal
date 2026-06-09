@@ -88,6 +88,7 @@ func TestPrivacyMapper(t *testing.T) {
 		outPoint(clearTxID, 0):  outPoint(obfusTxID0, obfusOut0),
 		outPoint(clearTxID, 1):  outPoint(obfusTxID1, obfusOut1),
 		"01020304":              "c8134495",
+		"05060708":              "a1b2c3d4",
 		"secret-host.com":       "sksiuekalkdoowurekdf",
 	}
 
@@ -154,6 +155,135 @@ func TestPrivacyMapper(t *testing.T) {
 		msg                 proto.Message
 		expectedReplacement proto.Message
 	}{
+		{
+			name:    "ForwardingAbility Response",
+			uri:     "/frdrpc.FaradayServer/ForwardingAbility",
+			msgType: rpcperms.TypeResponse,
+			msg: &frdrpc.ForwardingAbilityResponse{
+				Peers: [][]byte{{0x01, 0x02, 0x03, 0x04}},
+				Entries: []*frdrpc.ForwardingAbilityEntry{{
+					PackedIdx:        0,
+					EffectiveUptimeS: 90,
+					ForwardedMsat:    100,
+					FeeMsat:          10,
+					Forwards:         1,
+				}},
+			},
+			expectedReplacement: &frdrpc.ForwardingAbilityResponse{
+				Peers: [][]byte{{0xc8, 0x13, 0x44, 0x95}},
+				Entries: []*frdrpc.ForwardingAbilityEntry{{
+					PackedIdx:        0,
+					EffectiveUptimeS: 90,
+					ForwardedMsat:    100,
+					FeeMsat:          10,
+					Forwards:         1,
+				}},
+			},
+		},
+		{
+			// Multiple peers, including a repeated one, must map to
+			// the same pseudonym so the index-keyed entries stay
+			// valid.
+			name:    "ForwardingAbility Response multiple peers",
+			uri:     "/frdrpc.FaradayServer/ForwardingAbility",
+			msgType: rpcperms.TypeResponse,
+			msg: &frdrpc.ForwardingAbilityResponse{
+				Peers: [][]byte{
+					{0x01, 0x02, 0x03, 0x04},
+					{0x05, 0x06, 0x07, 0x08},
+					{0x01, 0x02, 0x03, 0x04},
+				},
+				Entries: []*frdrpc.ForwardingAbilityEntry{
+					{
+						PackedIdx:        0,
+						EffectiveUptimeS: 90,
+						ForwardedMsat:    100,
+						FeeMsat:          10,
+						Forwards:         1,
+					},
+					{
+						PackedIdx:        1,
+						EffectiveUptimeS: 80,
+						ForwardedMsat:    200,
+						FeeMsat:          20,
+						Forwards:         2,
+					},
+					{
+						PackedIdx:        2,
+						EffectiveUptimeS: 70,
+						ForwardedMsat:    300,
+						FeeMsat:          30,
+						Forwards:         3,
+					},
+				},
+			},
+			expectedReplacement: &frdrpc.ForwardingAbilityResponse{
+				Peers: [][]byte{
+					{0xc8, 0x13, 0x44, 0x95},
+					{0xa1, 0xb2, 0xc3, 0xd4},
+					{0xc8, 0x13, 0x44, 0x95},
+				},
+				Entries: []*frdrpc.ForwardingAbilityEntry{
+					{
+						PackedIdx:        0,
+						EffectiveUptimeS: 90,
+						ForwardedMsat:    100,
+						FeeMsat:          10,
+						Forwards:         1,
+					},
+					{
+						PackedIdx:        1,
+						EffectiveUptimeS: 80,
+						ForwardedMsat:    200,
+						FeeMsat:          20,
+						Forwards:         2,
+					},
+					{
+						PackedIdx:        2,
+						EffectiveUptimeS: 70,
+						ForwardedMsat:    300,
+						FeeMsat:          30,
+						Forwards:         3,
+					},
+				},
+			},
+		},
+		{
+			// With ClearPubkeys set the peers must pass through
+			// without obfuscation.
+			name:    "ForwardingAbility Response clear pubkey",
+			uri:     "/frdrpc.FaradayServer/ForwardingAbility",
+			msgType: rpcperms.TypeResponse,
+			privacyFlags: session.PrivacyFlags{
+				session.ClearPubkeys,
+			},
+			msg: &frdrpc.ForwardingAbilityResponse{
+				Peers: [][]byte{
+					{0x01, 0x02, 0x03, 0x04},
+					{0x05, 0x06, 0x07, 0x08},
+				},
+				Entries: []*frdrpc.ForwardingAbilityEntry{{
+					PackedIdx:        0,
+					EffectiveUptimeS: 90,
+					ForwardedMsat:    100,
+					FeeMsat:          10,
+					Forwards:         1,
+				}},
+			},
+			expectedReplacement: &frdrpc.ForwardingAbilityResponse{
+				Peers: [][]byte{
+					{0x01, 0x02, 0x03, 0x04},
+					{0x05, 0x06, 0x07, 0x08},
+				},
+				Entries: []*frdrpc.ForwardingAbilityEntry{{
+					PackedIdx:        0,
+					EffectiveUptimeS: 90,
+					ForwardedMsat:    100,
+					FeeMsat:          10,
+					Forwards:         1,
+				}},
+			},
+		},
 		{
 			name:    "GetInfo Response",
 			uri:     "/lnrpc.Lightning/GetInfo",
