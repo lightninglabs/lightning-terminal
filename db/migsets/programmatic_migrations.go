@@ -6,12 +6,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/db/sqlcmig6"
+	"github.com/lightninglabs/lightning-terminal/db/tombstone"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/clock"
@@ -88,6 +90,40 @@ func kvdbToSqlProgrammaticMigration(ctx context.Context,
 	_ *sqldb.BaseDB, clock clock.Clock, q *sqlcmig6.Queries) error {
 
 	start := time.Now()
+
+	accountsActive, err := tombstone.KVDBFileExists(
+		filepath.Join(accountsDir, accounts.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to inspect accounts kvdb: %w", err)
+	}
+
+	sessionsActive, err := tombstone.KVDBFileExists(
+		filepath.Join(networkDir, session.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to inspect session kvdb: %w", err)
+	}
+
+	firewallActive, err := tombstone.KVDBFileExists(
+		filepath.Join(networkDir, firewalldb.DBFilename),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to inspect rules kvdb: %w", err)
+	}
+
+	if !accountsActive && !sessionsActive && !firewallActive {
+		log.Infof("Skipping KVDB to SQL migration for all stores: " +
+			"no legacy database files exist")
+
+		return nil
+	}
+
+	if basicClient == nil {
+		return errors.New("lightning client is required for " +
+			"migration but was nil")
+	}
+
 	log.Infof("Starting KVDB to SQL migration for all stores")
 
 	accountStore, err := accounts.NewBoltStoreForMigration(
