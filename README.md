@@ -89,6 +89,9 @@ configuration settings in `lnd.conf`. Note that any section headers (
 `[ Example ]`) in `lit.conf` should be removed or changed to comments (
 `# Example`).
 
+For a full reference of all litd-native configuration options with descriptions
+and defaults, see [`sample-litd.conf`](./sample-litd.conf) in this repository.
+
 ## Usage
 
 Read the [walkthrough](docs/WALKTHROUGH.md) document to learn more about how to
