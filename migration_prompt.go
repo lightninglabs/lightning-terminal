@@ -17,6 +17,10 @@ import (
 
 const autoMigrateKVDBEnvVar = "LIT_AUTO_MIGRATE_TO_SQL"
 
+var errKVDBToSQLMigrationDeclined = errors.New(
+	"manual confirmation declined",
+)
+
 var kvdbToSQLMigrationPromptLines = []string{
 	"",
 	"CAUTION: litd is about to migrate your existing data to a new SQL " +
@@ -175,8 +179,8 @@ func promptForKVDBToSQLMigrationConfirmation(input io.Reader,
 	}
 
 	if strings.TrimSpace(answer) != "yes" {
-		return errors.New("manual confirmation declined; refusing to " +
-			"continue kvdb-to-SQL migration")
+		return fmt.Errorf("%w; refusing to continue kvdb-to-SQL "+
+			"migration", errKVDBToSQLMigrationDeclined)
 	}
 
 	return nil

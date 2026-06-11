@@ -58,7 +58,7 @@ func TestConfirmPendingKVDBToSQLMigration(t *testing.T) {
 				createActiveAccountsKVDB(t, dbDir)
 			},
 			input:     "no\n",
-			expectErr: "manual confirmation declined",
+			expectErr: errKVDBToSQLMigrationDeclined.Error(),
 		},
 		{
 			name: "skips prompt on auto migration config",

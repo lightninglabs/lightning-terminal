@@ -405,6 +405,19 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		g.statusMgr.SetErrored(
 			subservers.LIT, "could not start Lit: %v", startErr,
 		)
+
+		// If the user has declined the migration prompt, we shut down
+		// Lit fully, and do not keep the status server up and running.
+		// The motivation for this is that the error occurs prior to
+		// Lit being able to accept a `litcli stop` call. Users running
+		// in an env that can't easily kill the daemon therefore need to
+		// be able to shut it down by just declining the migration.
+		// Note that no sub-servers, including `lnd`, have been
+		// started/connected to when the migration prompt is shown. We
+		// can therefore safely shut Lit down without affecting them.
+		if errors.Is(startErr, errKVDBToSQLMigrationDeclined) {
+			shutdownInterceptor.RequestShutdown()
+		}
 	}
 
 	// Now block until we receive an error or the main shutdown
