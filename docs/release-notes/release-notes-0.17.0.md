@@ -31,6 +31,9 @@
   added](https://github.com/lightninglabs/lightning-terminal/pull/1271) to be
   able to apply privacy mapping for non-LND sub-daemon requests (e.g. Faraday)
   within LNC sessions. Non-mapped subservers calls are blocked.
+* The Faraday `ForwardingAbility` endpoint [is enabled and its peer pubkeys
+  obfuscated](https://github.com/lightninglabs/lightning-terminal/pull/1321) in
+  the firewall's privacy mapper.
 
 ## RPC Updates
 
