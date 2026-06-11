@@ -3,6 +3,7 @@ package terminal
 import (
 	"context"
 	"crypto/tls"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/jessevdk/go-flags"
+	"github.com/lib/pq"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/chain"
 	"github.com/lightninglabs/faraday/frdrpcserver"
@@ -727,6 +729,11 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		)
 	}
 
+	err = validateExclusiveSQLBackends(cfg, litDir)
+	if err != nil {
+		return nil, err
+	}
+
 	err = cfg.DevConfig.Validate()
 	if err != nil {
 		return nil, err
@@ -1147,6 +1154,126 @@ func readAutoMigrateKVDB(config *Config) error {
 	config.autoMigrateKVDBApproved = autoMigrateKVDB
 
 	return nil
+}
+
+// validateExclusiveSQLBackends errors and thereby rejects startup when the
+// inactive SQL backend still has data at its default location. This prevents
+// silently switching to a different SQL store and starting against an empty
+// database.
+func validateExclusiveSQLBackends(cfg *Config, litDir string) error {
+	switch cfg.DatabaseBackend {
+	case DatabaseBackendPostgres:
+		sqlitePath := filepath.Join(
+			litDir, cfg.Network, defaultSqliteDatabaseFileName,
+		)
+
+		exists, err := sqliteDatabaseExists(sqlitePath)
+		if err != nil {
+			return fmt.Errorf("unable to check for existing "+
+				"sqlite database file at %s: %w", sqlitePath,
+				err)
+		}
+		if exists {
+			return fmt.Errorf("cannot start litd with postgres "+
+				"backend: sqlite database file already exists "+
+				"at %s. If you really intend to switch to "+
+				"postgres you must delete the sqlite "+
+				"database (effectively deleting all stored "+
+				"data) before restarting with postgres again",
+				sqlitePath)
+		}
+
+	case DatabaseBackendSqlite:
+		exists, err := postgresDatabaseExists(cfg.Postgres)
+		if err != nil {
+			return fmt.Errorf("unable to check for existing "+
+				"postgres database %q at %s:%d for user %q. "+
+				"Note that a postgres configuration is set "+
+				"despite sqlite being set as the "+
+				"databasebackend: %w", cfg.Postgres.DBName,
+				cfg.Postgres.Host, cfg.Postgres.Port,
+				cfg.Postgres.User, err)
+		}
+		if exists {
+			return fmt.Errorf("cannot start litd with sqlite "+
+				"backend: postgres database %q already exists "+
+				"at %s:%d for user %q; If you really intend "+
+				"to switch to sqlite you must delete the "+
+				"postgres database (effectively deleting all "+
+				"stored data) before restarting with sqlite "+
+				"again", cfg.Postgres.DBName, cfg.Postgres.Host,
+				cfg.Postgres.Port, cfg.Postgres.User)
+		}
+	}
+
+	return nil
+}
+
+// sqliteDatabaseExists reports whether a SQLite database file exists at the
+// given path.
+func sqliteDatabaseExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	switch {
+	case err == nil:
+		return true, nil
+
+	case os.IsNotExist(err):
+		return false, nil
+
+	default:
+		return false, err
+	}
+}
+
+// postgresDatabaseExists reports whether a Postgres database can be reached
+// with the configured connection info. If the configuration does not identify
+// a concrete database, the check is skipped.
+func postgresDatabaseExists(cfg *db.PostgresConfig) (bool, error) {
+	if !hasPostgresConnectionInfo(cfg) {
+		return false, nil
+	}
+
+	dbConn, err := sql.Open("postgres", cfg.DSN(false))
+	if err != nil {
+		return false, fmt.Errorf("unable to check for existing "+
+			"postgres database %q: %w", cfg.DBName, err)
+	}
+	defer dbConn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = dbConn.PingContext(ctx)
+	switch {
+	case err == nil:
+		return true, nil
+
+	case isMissingPostgresDatabase(err):
+		return false, nil
+
+	default:
+		return false, fmt.Errorf("unable to check for existing "+
+			"postgres database %q: %w", cfg.DBName, err)
+	}
+}
+
+// hasPostgresConnectionInfo reports whether the config identifies a concrete
+// Postgres database to probe.
+func hasPostgresConnectionInfo(cfg *db.PostgresConfig) bool {
+	return cfg != nil && cfg.Host != "" && cfg.Port != 0 &&
+		cfg.User != "" && cfg.DBName != ""
+}
+
+// isMissingPostgresDatabase reports whether the probe failed because the
+// target database does not exist. The lib/pq driver surfaces that as SQLSTATE
+// 3D000 (invalid_catalog_name).
+func isMissingPostgresDatabase(err error) bool {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		return string(pqErr.Code) == "3D000"
+	}
+
+	return false
 }
 
 func buildTLSConfigForHttp2(config *Config) (*tls.Config, error) {
