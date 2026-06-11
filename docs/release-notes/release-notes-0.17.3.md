@@ -37,6 +37,9 @@
 * [Inbound fees are passed
   through](https://github.com/lightninglabs/lightning-terminal/pull/1382) the
   privacy mapper for the FeeReport endpoint.
+* The Faraday `ForwardingAbility` endpoint [is enabled and its peer pubkeys
+  obfuscated](https://github.com/lightninglabs/lightning-terminal/pull/1321) in
+  the firewall's privacy mapper.
 
 ## Integrated Binary Updates
 
