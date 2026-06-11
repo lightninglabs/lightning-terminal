@@ -34,10 +34,31 @@ const (
 	dbFilePermission = 0600
 )
 
+// KVDBFileExists reports whether the legacy bbolt database file exists at the
+// given path. This only checks file presence and intentionally ignores any
+// tombstone state inside the database.
+func KVDBFileExists(path string) (bool, error) {
+	fi, err := os.Stat(path)
+	switch {
+	case err == nil:
+		return !fi.IsDir(), nil
+
+	case os.IsNotExist(err):
+		return false, nil
+
+	default:
+		return false, err
+	}
+}
+
 // DeprecateKVDB marks the given legacy bbolt database as deprecated by
 // writing the migration tombstone marker into the specified top-level bucket.
 func DeprecateKVDB(path string, timeout time.Duration, bucketKey []byte) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := KVDBFileExists(path)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		return nil
 	}
 
@@ -59,7 +80,11 @@ func DeprecateKVDB(path string, timeout time.Duration, bucketKey []byte) error {
 func CheckKVDBDeprecated(path string, bucketKey []byte,
 	timeout time.Duration) error {
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := KVDBFileExists(path)
+	if err != nil {
+		return err
+	}
+	if !exists {
 		return nil
 	}
 
@@ -93,11 +118,15 @@ func CheckKVDBDeprecated(path string, bucketKey []byte,
 func HasActiveKVDB(path string, bucketKey []byte,
 	timeout time.Duration) (bool, error) {
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := KVDBFileExists(path)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
 		return false, nil
 	}
 
-	err := CheckKVDBDeprecated(path, bucketKey, timeout)
+	err = CheckKVDBDeprecated(path, bucketKey, timeout)
 	switch {
 	case errors.Is(err, ErrKVDBDeprecated):
 		return false, nil
