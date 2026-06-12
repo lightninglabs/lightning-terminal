@@ -668,10 +668,24 @@ func erroredPaymentHandler(service Service) mid.ErrorHandler {
 			return nil, err
 		}
 
+		// If no request values are found for this request ID, then
+		// there is no payment state left for us to clean up. This
+		// happens for the streaming send endpoints (SendPaymentV2/
+		// SendToRouteV2) when lnd delivers a terminal stream error
+		// for a request that no longer has any associated request
+		// values. That can happen either because we already handled
+		// a terminal Payment response and deleted the request
+		// values, or because the request was rejected before any
+		// request values were registered. In either case we pass
+		// the original error through unchanged instead of masking
+		// it with a confusing "no request values found" error.
 		reqVals, ok := service.GetValues(reqID)
 		if !ok {
-			return nil, fmt.Errorf("no request values found for "+
-				"request: %d", reqID)
+			log.Tracef("No request values found for request: %d, "+
+				"passing the response error through unchanged",
+				reqID)
+
+			return nil, nil
 		}
 
 		log.Tracef("Handling payment request error for payment with "+

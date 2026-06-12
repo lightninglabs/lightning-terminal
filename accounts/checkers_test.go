@@ -677,6 +677,42 @@ func TestSendPaymentV2(t *testing.T) {
 	_, err = service.checkers.handleErrorResponse(ctx, uri, nil)
 	require.NoError(t, err)
 	assertBalance(acct.ID, 2000)
+
+	// Finally, replicate the streaming scenario. Since SendPaymentV2 is a
+	// streaming endpoint, the request values are deleted as soon as a
+	// terminal Payment response is handled. If lnd then sends a terminal
+	// error response for the same request, the error handler finds no
+	// request values. It must pass the original error through unchanged
+	// instead of masking it with a confusing "no request values found"
+	// error.
+	reqID5 := nextRequestID()
+	ctx = AddRequestIDToContext(ctxWithAcct, reqID5)
+
+	// Send a valid request so the request values are registered.
+	err = service.checkers.checkIncomingRequest(
+		ctx, uri, &routerrpc.SendPaymentRequest{
+			AmtMsat:     1000,
+			PaymentHash: testHash2[:],
+		},
+	)
+	require.NoError(t, err)
+
+	// A failed Payment response deletes the stored request values.
+	_, err = service.checkers.replaceOutgoingResponse(
+		ctx, uri, &lnrpc.Payment{
+			PaymentHash: hex.EncodeToString(testHash2[:]),
+			Status:      lnrpc.Payment_FAILED,
+		},
+	)
+	require.NoError(t, err)
+
+	// A subsequent error response for the same request must not be masked.
+	originalErr := fmt.Errorf("account balance insufficient")
+	returnedErr, err := service.checkers.handleErrorResponse(
+		ctx, uri, originalErr,
+	)
+	require.NoError(t, err)
+	require.ErrorContains(t, returnedErr, "account balance insufficient")
 }
 
 // TestSendToRouteV2 performs test coverage on the SendToRouteV2 checker.
