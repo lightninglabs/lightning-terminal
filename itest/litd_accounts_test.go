@@ -170,6 +170,12 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 		ctxm, t, rawConn, newAcctBalance, acctResp.Account.Id,
 	)
 
+	// Make sure a payment that the account checker rejects surfaces the
+	// real error instead of the masked "no request values found" error.
+	testAccountPaymentErrorPassthrough(
+		ctxa, t, rawConn, charlie, newAcctBalance,
+	)
+
 	// Clean up our channel and payments, so we can start the next test
 	// iteration with a clean slate.
 	closeChannelAndAssert(t, net, node, channelOp, false)
@@ -311,6 +317,56 @@ func testAccountRestrictions(ctxa context.Context, t *harnessTest,
 	)
 
 	return initialAccountBalance + inboundPaymentAmt - outboundPaymentAmt
+}
+
+// testAccountPaymentErrorPassthrough verifies that a payment which the account
+// checker rejects because the account balance is insufficient surfaces a clear
+// account-balance error to the caller, and never the masked "no request values
+// found for request: <id>" error.
+//
+// SendPaymentV2 is a streaming RPC, so lnd surfaces the account checker's
+// rejection through the stream's terminal error path. That reaches
+// erroredPaymentHandler with no stored request values, which is exactly the
+// case where the error must pass through unmasked instead of being replaced by
+// a confusing "no request values found" error.
+func testAccountPaymentErrorPassthrough(ctxa context.Context, t *harnessTest,
+	rawConn grpc.ClientConnInterface, charlie *HarnessNode,
+	accountBalance uint64) {
+
+	ctxb := context.Background()
+	ctxt, cancel := context.WithTimeout(ctxb, defaultTimeout)
+	defer cancel()
+
+	routerClient := routerrpc.NewRouterClient(rawConn)
+
+	// Create a routable invoice on Charlie whose amount exceeds the account
+	// balance, so the only possible reason the payment fails is the
+	// insufficient account balance.
+	excessiveAmt := int64(accountBalance) + 10_000
+	invoice, err := charlie.AddInvoice(ctxt, &lnrpc.Invoice{
+		Value: excessiveAmt,
+		Memo:  "exceeds account balance",
+	})
+	require.NoError(t.t, err)
+
+	sendReq := &routerrpc.SendPaymentRequest{
+		PaymentRequest: invoice.PaymentRequest,
+		TimeoutSeconds: 60,
+		FeeLimitMsat:   1000,
+	}
+	stream, err := routerClient.SendPaymentV2(ctxa, sendReq)
+	require.NoError(t.t, err)
+
+	// The payment must fail with the underlying account-balance error and
+	// not be masked by the confusing "no request values found" error.
+	_, err = getPaymentResult(stream, false)
+	require.Error(t.t, err)
+	require.NotContains(t.t, err.Error(), "no request values found")
+	require.Contains(t.t, err.Error(), "account balance insufficient")
+
+	// The account balance must be untouched by the rejected payment.
+	lightningClient := lnrpc.NewLightningClient(rawConn)
+	assertChannelBalance(ctxa, t.t, lightningClient, accountBalance, 0)
 }
 
 func assertChannelBalance(ctx context.Context, t *testing.T,

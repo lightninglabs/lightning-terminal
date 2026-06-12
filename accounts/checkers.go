@@ -668,10 +668,18 @@ func erroredPaymentHandler(service Service) mid.ErrorHandler {
 			return nil, err
 		}
 
+		// On streaming sends a call can return a response and then a
+		// terminal error, so the same request's error may be processed
+		// more than once. If the request values are already gone there
+		// is nothing left to clean up and we let the error pass
+		// through.
 		reqVals, ok := service.GetValues(reqID)
 		if !ok {
-			return nil, fmt.Errorf("no request values found for "+
-				"request: %d", reqID)
+			log.Tracef("No request values found for request: %d, "+
+				"passing the response error through unchanged",
+				reqID)
+
+			return nil, nil
 		}
 
 		log.Tracef("Handling payment request error for payment with "+
