@@ -25,6 +25,15 @@
 
 ### Functional Changes/Additions
 
+* [Auto-bake super macaroon on startup](https://github.com/lightninglabs/lightning-terminal/pull/1324):
+  Added config options `--bake-super-macaroon` (choice: `none`, `read-only`,
+  `read-write`) and `--super-macaroon-path` to automatically bake a super
+  macaroon on startup and keep its permissions in sync. When set to `read-only`
+  or `read-write`, the daemon will automatically bake a super macaroon
+  containing read-only or read-write permissions, respectively, for all active
+  sub-servers on startup. If the macaroon already exists but has different
+  permissions, it will be automatically regenerated.
+
 ### Technical and Architectural Updates
 
 * [Report litd's own version for `litd
@@ -49,3 +58,4 @@
 
 * 0xfandom
 * bitromortac
+* Cyberguru1
