@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -1529,4 +1530,218 @@ func bakeSuperMacaroon(t *testing.T, cfg *LitNodeConfig,
 	require.NoError(t, err)
 
 	return tempFile.Name()
+}
+
+// testSuperMacaroonOnStartup tests that the super macaroon is successfully
+// baked on startup if configured.
+func testSuperMacaroonOnStartup(ctx context.Context, net *NetworkHarness,
+	t *harnessTest) {
+
+	superMacPath := filepath.Join(
+		net.Alice.Cfg.LitDir, "startup-super.macaroon",
+	)
+
+	verifyMacaroonPermissions := func(path string, expectWrite bool) {
+		ctxTimeout, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		rawConn, err := connectRPC(
+			ctxTimeout, net.Alice.Cfg.LitAddr(),
+			net.Alice.Cfg.LitTLSCertPath,
+		)
+		require.NoError(t.t, err)
+		defer rawConn.Close()
+
+		macBytes, err := os.ReadFile(path)
+		require.NoError(t.t, err)
+
+		ctxm := macaroonContext(ctxTimeout, macBytes)
+		lnrpcConn := lnrpc.NewLightningClient(rawConn)
+
+		_, err = lnrpcConn.GetInfo(ctxm, &lnrpc.GetInfoRequest{})
+		require.NoError(t.t, err)
+
+		_, err = lnrpcConn.NewAddress(ctxm, &lnrpc.NewAddressRequest{
+			Type: lnrpc.AddressType_WITNESS_PUBKEY_HASH,
+		})
+		if expectWrite {
+			require.NoError(t.t, err)
+		} else {
+			require.Error(t.t, err)
+			require.Contains(t.t, err.Error(), "permission denied")
+		}
+	}
+
+	verifyMacaroonSubserverPermissions := func(path string,
+		expectSubservers bool) {
+
+		macBytes, err := os.ReadFile(path)
+		require.NoError(t.t, err)
+
+		mac := &macaroon.Macaroon{}
+		err = mac.UnmarshalBinary(macBytes)
+		require.NoError(t.t, err)
+
+		rawID := mac.Id()
+		require.NotEmpty(t.t, rawID)
+
+		decodedID := &lnrpc.MacaroonId{}
+		err = proto.Unmarshal(rawID[1:], decodedID)
+		require.NoError(t.t, err)
+
+		hasSubserver := false
+		for _, op := range decodedID.Ops {
+			if op == nil {
+				continue
+			}
+			if op.Entity == "loop" || op.Entity == "pool" ||
+				op.Entity == "faraday" {
+
+				hasSubserver = true
+			}
+		}
+
+		if expectSubservers {
+			require.True(
+				t.t, hasSubserver,
+				"expected macaroon to contain "+
+					"subserver permissions",
+			)
+		} else {
+			require.False(
+				t.t, hasSubserver,
+				"expected macaroon NOT to contain "+
+					"subserver permissions",
+			)
+		}
+	}
+
+	// Ensure any old file is removed first.
+	_ = os.Remove(superMacPath)
+
+	// Test that starting Alice with an invalid super-macaroon-path (not
+	// ending with .macaroon) fails.
+	invalidMacPath := filepath.Join(
+		net.Alice.Cfg.LitDir, "invalid-path.mac",
+	)
+	err := net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "read-only"),
+			WithLitArg("super-macaroon-path", invalidMacPath),
+		},
+	)
+	require.Error(t.t, err)
+
+	// Drain the expected process exit error from the error channel to
+	// prevent it from failing the test runner at the end of the test.
+	select {
+	case <-net.lndErrorChan:
+	case <-time.After(defaultTimeout):
+		t.t.Fatalf("expected process exit error in lndErrorChan")
+	}
+
+	// Restart Alice with read-only super macaroon baking enabled.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "read-only"),
+			WithLitArg("super-macaroon-path", superMacPath),
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Verify that the super macaroon was created on startup.
+	require.FileExists(t.t, superMacPath)
+
+	// Verify permissions: write should be blocked.
+	verifyMacaroonPermissions(superMacPath, false)
+
+	// Restart Alice with a read-write super macaroon, WITHOUT
+	// deleting the file. This will test the overwrite behavior when
+	// permissions differ.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "read-write"),
+			WithLitArg("super-macaroon-path", superMacPath),
+		},
+	)
+	require.NoError(t.t, err)
+
+	require.FileExists(t.t, superMacPath)
+
+	// Verify permissions: write should succeed.
+	verifyMacaroonPermissions(superMacPath, true)
+
+	// Restart Alice back with a read-only super macaroon, WITHOUT
+	// deleting the file. This will test the overwrite behavior when
+	// switching back to read-only.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "read-only"),
+			WithLitArg("super-macaroon-path", superMacPath),
+		},
+	)
+	require.NoError(t.t, err)
+
+	require.FileExists(t.t, superMacPath)
+
+	// Verify permissions: write should be blocked again.
+	verifyMacaroonPermissions(superMacPath, false)
+
+	// Restart Alice with a sub-server disabled to bake a super macaroon
+	// with a subset of permissions.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "read-write"),
+			WithLitArg("super-macaroon-path", superMacPath),
+			WithLitArg("loop-mode", "disable"),
+			WithLitArg("pool-mode", "disable"),
+			WithLitArg("faraday-mode", "disable"),
+		},
+	)
+	require.NoError(t.t, err)
+
+	require.FileExists(t.t, superMacPath)
+	verifyMacaroonSubserverPermissions(superMacPath, false)
+
+	// Restart Alice with the sub-servers re-enabled. This will add
+	// permissions and trigger macaroon regeneration on startup.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "read-write"),
+			WithLitArg("super-macaroon-path", superMacPath),
+		},
+	)
+	require.NoError(t.t, err)
+
+	require.FileExists(t.t, superMacPath)
+	verifyMacaroonSubserverPermissions(superMacPath, true)
+
+	// Verify permissions: write should succeed.
+	verifyMacaroonPermissions(superMacPath, true)
+
+	// Clean up the super macaroon file.
+	_ = os.Remove(superMacPath)
+
+	// Restart Alice with super macaroon baking disabled and verify that
+	// no super macaroon is created.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithLitArg("bake-super-macaroon", "none"),
+			WithLitArg("super-macaroon-path", superMacPath),
+		},
+	)
+	require.NoError(t.t, err)
+
+	_, err = os.Stat(superMacPath)
+	require.True(t.t, os.IsNotExist(err))
+
+	// Clean up after ourselves.
+	err = net.RestartNode(
+		net.Alice, nil, []LitArgOption{
+			WithoutLitArg("bake-super-macaroon"),
+			WithoutLitArg("super-macaroon-path"),
+		},
+	)
+	require.NoError(t.t, err)
+	net.ConnectNodes(t.t, net.Alice, net.Bob)
 }

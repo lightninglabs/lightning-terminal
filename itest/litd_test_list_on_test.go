@@ -31,4 +31,8 @@ var allTestCases = []*testCase{
 		name: "kvdb to sql migration",
 		test: testKvdbSQLMigration,
 	},
+	{
+		name: "terminal super macaroon on startup",
+		test: testSuperMacaroonOnStartup,
+	},
 }
