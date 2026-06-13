@@ -1,9 +1,13 @@
 package macaroons
 
 import (
+	"encoding/hex"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 var (
@@ -42,4 +46,122 @@ func TestIsSuperMacaroon(t *testing.T) {
 	t.Parallel()
 
 	require.True(t, IsSuperMacaroon(testMacHex))
+}
+
+// TestSuperMacaroonHelpers tests that SuperMacaroonExists and
+// MacaroonMatchesPermissions behave correctly.
+func TestSuperMacaroonHelpers(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	path := filepath.Join(tempDir, "test.macaroon")
+
+	// Verify that it doesn't exist yet.
+	require.False(t, SuperMacaroonExists(path))
+
+	// Write the test macaroon.
+	macBytes, err := hex.DecodeString(testMacHex)
+	require.NoError(t, err)
+	err = os.WriteFile(path, macBytes, 0600)
+	require.NoError(t, err)
+
+	// Now it should exist.
+	require.True(t, SuperMacaroonExists(path))
+
+	// The macaroon matches this expected list of permissions.
+	expectedPerms := []bakery.Op{
+		{Entity: "account", Action: "read"},
+		{Entity: "auction", Action: "read"},
+		{Entity: "audit", Action: "read"},
+		{Entity: "auth", Action: "read"},
+		{Entity: "info", Action: "read"},
+		{Entity: "insights", Action: "read"},
+		{Entity: "invoices", Action: "read"},
+		{Entity: "loop", Action: "in"},
+		{Entity: "loop", Action: "out"},
+		{Entity: "macaroon", Action: "read"},
+		{Entity: "message", Action: "read"},
+		{Entity: "offchain", Action: "read"},
+		{Entity: "onchain", Action: "read"},
+		{Entity: "order", Action: "read"},
+		{Entity: "peers", Action: "read"},
+		{Entity: "rates", Action: "read"},
+		{Entity: "recommendation", Action: "read"},
+		{Entity: "report", Action: "read"},
+		{Entity: "suggestions", Action: "read"},
+		{Entity: "swap", Action: "read"},
+		{Entity: "terms", Action: "read"},
+	}
+
+	matches, err := MacaroonMatchesPermissions(path, expectedPerms)
+	require.NoError(t, err)
+	require.True(t, matches)
+
+	// A subset of permissions should NOT match exactly.
+	matches, err = MacaroonMatchesPermissions(path, expectedPerms[:5])
+	require.NoError(t, err)
+	require.False(t, matches)
+
+	// Extra/different permissions should NOT match exactly.
+	differentPerms := append(
+		expectedPerms,
+		bakery.Op{Entity: "invalid", Action: "write"},
+	)
+	matches, err = MacaroonMatchesPermissions(path, differentPerms)
+	require.NoError(t, err)
+	require.False(t, matches)
+}
+
+// TestHasMacaroonSuffix tests that HasMacaroonSuffix correctly
+// checks the suffix of the super macaroon path.
+func TestHasMacaroonSuffix(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+		errStr  string
+	}{
+		{
+			name:    "empty path",
+			path:    "",
+			wantErr: true,
+			errStr:  "super-macaroon-path cannot be empty",
+		},
+		{
+			name:    "valid path",
+			path:    "/tmp/test.macaroon",
+			wantErr: false,
+		},
+		{
+			name:    "invalid path - missing suffix",
+			path:    "/tmp/test.mac",
+			wantErr: true,
+			errStr: "super-macaroon-path must end " +
+				"with the .macaroon suffix",
+		},
+		{
+			name:    "invalid path - wrong suffix",
+			path:    "/tmp/test.macaroon.tmp",
+			wantErr: true,
+			errStr: "super-macaroon-path must end " +
+				"with the .macaroon suffix",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := HasMacaroonSuffix(tt.path)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.errStr)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
