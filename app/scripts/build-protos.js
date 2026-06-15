@@ -124,6 +124,10 @@ const sanitize = async () => {
         'import "reservation.proto"',
         'import "swapserverrpc/reservation.proto"',
     );
+    content = content.replace(
+      'import "lnrpc/lightning.proto"',
+      'import "lnd.proto"',
+    );
     await fs.writeFile(path, content);
   }
 };
