@@ -93,10 +93,15 @@
 
 ### LND
 
-* [Bump lnd to v0.21.0-beta and lndclient to
-  v0.21.0-1](https://github.com/lightninglabs/lightning-terminal/pull/1300).
+* [Bump lnd to
+  v0.21.1-beta](https://github.com/lightninglabs/lightning-terminal/pull/1331).
 
 ### Loop
+
+* Bump [`loop` to
+  v0.33.3-beta](https://github.com/lightninglabs/lightning-terminal/pull/1331),
+  Additionally, `looprpc` is bumped to `v1.0.14` and `swapserverrpc` is bumped
+  to `v1.0.21` match the version used in `loop` `v0.33.3-beta`.
 
 ### Pool
 
