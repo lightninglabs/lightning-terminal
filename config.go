@@ -578,7 +578,9 @@ func defaultConfig() *Config {
 
 // loadAndValidateConfig loads the terminal's main configuration and validates
 // its content.
-func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
+func loadAndValidateConfig(ctx context.Context,
+	interceptor signal.Interceptor) (*Config, error) {
+
 	// Start with the default configuration.
 	preCfg := defaultConfig()
 
@@ -729,7 +731,7 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		)
 	}
 
-	err = validateExclusiveSQLBackends(cfg, litDir)
+	err = validateExclusiveSQLBackends(ctx, cfg, litDir)
 	if err != nil {
 		return nil, err
 	}
@@ -1160,7 +1162,9 @@ func readAutoMigrateKVDB(config *Config) error {
 // inactive SQL backend still has data at its default location. This prevents
 // silently switching to a different SQL store and starting against an empty
 // database.
-func validateExclusiveSQLBackends(cfg *Config, litDir string) error {
+func validateExclusiveSQLBackends(ctx context.Context, cfg *Config,
+	litDir string) error {
+
 	switch cfg.DatabaseBackend {
 	case DatabaseBackendPostgres:
 		sqlitePath := filepath.Join(
@@ -1184,7 +1188,7 @@ func validateExclusiveSQLBackends(cfg *Config, litDir string) error {
 		}
 
 	case DatabaseBackendSqlite:
-		exists, err := postgresDatabaseExists(cfg.Postgres)
+		exists, err := postgresDatabaseExists(ctx, cfg.Postgres)
 		if err != nil {
 			return fmt.Errorf("unable to check for existing "+
 				"postgres database %q at %s:%d for user %q. "+
@@ -1228,7 +1232,9 @@ func sqliteDatabaseExists(path string) (bool, error) {
 // postgresDatabaseExists reports whether a Postgres database can be reached
 // with the configured connection info. If the configuration does not identify
 // a concrete database, the check is skipped.
-func postgresDatabaseExists(cfg *db.PostgresConfig) (bool, error) {
+func postgresDatabaseExists(ctx context.Context,
+	cfg *db.PostgresConfig) (bool, error) {
+
 	if !hasPostgresConnectionInfo(cfg) {
 		return false, nil
 	}
@@ -1240,7 +1246,7 @@ func postgresDatabaseExists(cfg *db.PostgresConfig) (bool, error) {
 	}
 	defer dbConn.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	err = dbConn.PingContext(ctx)

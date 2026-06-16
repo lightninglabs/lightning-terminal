@@ -36,7 +36,7 @@ func TestBlockStartupForPostgresIfSqliteDBExists(t *testing.T) {
 		Postgres:        fixture.GetConfig(),
 	}
 
-	err := validateExclusiveSQLBackends(cfg, litDir)
+	err := validateExclusiveSQLBackends(t.Context(), cfg, litDir)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "sqlite database file already exists")
 	require.Contains(t, err.Error(), sqlitePath)
@@ -57,7 +57,7 @@ func TestBlockStartupForSqliteIfPostgresDBExists(t *testing.T) {
 		Postgres:        fixture.GetConfig(),
 	}
 
-	err := validateExclusiveSQLBackends(cfg, "")
+	err := validateExclusiveSQLBackends(t.Context(), cfg, "")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "postgres database")
 	require.Contains(t, err.Error(), cfg.Postgres.DBName)
@@ -70,7 +70,9 @@ func TestDontBlockSqliteOnlyStartup(t *testing.T) {
 		DatabaseBackend: DatabaseBackendSqlite,
 	}
 
-	require.NoError(t, validateExclusiveSQLBackends(cfg, ""))
+	require.NoError(
+		t, validateExclusiveSQLBackends(t.Context(), cfg, ""),
+	)
 }
 
 // TestDontBlockSqliteStartupIfConfiguredPostgresDoesntExist verifies that a
@@ -92,7 +94,9 @@ func TestDontBlockSqliteStartupIfConfiguredPostgresDoesntExist(t *testing.T) {
 		Postgres:        pgCfg,
 	}
 
-	require.NoError(t, validateExclusiveSQLBackends(cfg, ""))
+	require.NoError(
+		t, validateExclusiveSQLBackends(t.Context(), cfg, ""),
+	)
 
 	// We also validate that the validateExclusiveSQLBackends passed because
 	// the db with the configured DBName doesn't exist and not because the
@@ -139,5 +143,9 @@ func TestDontBlockPostgresOnlyStartup(t *testing.T) {
 		Postgres:        fixture.GetConfig(),
 	}
 
-	require.NoError(t, validateExclusiveSQLBackends(cfg, litDir))
+	require.NoError(
+		t, validateExclusiveSQLBackends(
+			t.Context(), cfg, litDir,
+		),
+	)
 }
