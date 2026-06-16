@@ -289,7 +289,7 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		}
 	}()
 
-	cfg, err := loadAndValidateConfig(shutdownInterceptor)
+	cfg, err := loadAndValidateConfig(ctx, shutdownInterceptor)
 	if err != nil {
 		return fmt.Errorf("could not load config: %w", err)
 	}
