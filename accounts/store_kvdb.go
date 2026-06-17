@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/btcsuite/btcwallet/walletdb"
@@ -443,6 +444,60 @@ func (s *BoltStore) DeleteAccountPayment(_ context.Context, id AccountID,
 	}
 
 	return s.updateAccount(id, update)
+}
+
+// ListAccountPayments returns a paginated list of payments
+// associated with the given account, sorted in ascending lexicographical
+// order of their payment hash.
+func (s *BoltStore) ListAccountPayments(ctx context.Context, id AccountID,
+	offset, limit int32) ([]*AccountPaymentEntry, error) {
+
+	account, err := s.Account(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchedPayments []*AccountPaymentEntry
+	for hash, entry := range account.Payments {
+		matchedPayments = append(matchedPayments, &AccountPaymentEntry{
+			Hash:         hash,
+			PaymentEntry: entry,
+		})
+	}
+
+	// Sort target hashes lexicographically to ensure pagination is
+	// deterministic across all store backends.
+	sort.Slice(matchedPayments, func(i, j int) bool {
+		hashI := matchedPayments[i].Hash[:]
+		hashJ := matchedPayments[j].Hash[:]
+		return bytes.Compare(hashI, hashJ) < 0
+	})
+
+	// Apply pagination limits and offsets.
+	total := int32(len(matchedPayments))
+	if offset >= total {
+		return nil, nil
+	}
+
+	end := offset + limit
+	if limit <= 0 || end > total {
+		end = total
+	}
+
+	return matchedPayments[offset:end], nil
+}
+
+// CountAccountPayments returns the total number of payments associated with
+// the given account.
+func (s *BoltStore) CountAccountPayments(ctx context.Context,
+	id AccountID) (uint64, error) {
+
+	account, err := s.Account(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(len(account.Payments)), nil
 }
 
 func (s *BoltStore) updateAccount(id AccountID,

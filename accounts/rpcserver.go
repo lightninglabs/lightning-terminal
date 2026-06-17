@@ -5,11 +5,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
+	"github.com/lightningnetwork/lnd/lnrpc"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -370,4 +373,159 @@ func marshalAccount(acct *OffChainBalanceAccount) *litrpc.Account {
 	}
 
 	return rpcAccount
+}
+
+// AccountPayments returns the detailed payment history for the given account.
+func (s *RPCServer) AccountPayments(ctx context.Context,
+	req *litrpc.AccountPaymentsRequest) (
+	*litrpc.AccountPaymentsResponse, error) {
+
+	if req.GetAccount() == nil {
+		return nil, fmt.Errorf("account param must be specified")
+	}
+
+	var id, label string
+	switch idType := req.Account.Identifier.(type) {
+	case *litrpc.AccountIdentifier_Id:
+		id = idType.Id
+	case *litrpc.AccountIdentifier_Label:
+		label = idType.Label
+	}
+
+	log.Infof("[accountpayments] id=%s, label=%v, max_payments=%d, "+
+		"index_offset=%d, count_total_payments=%v",
+		id, label, req.MaxPayments, req.IndexOffset,
+		req.CountTotalPayments)
+
+	accountID, err := s.findAccount(ctx, id, label)
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine limits.
+	limit := req.MaxPayments
+	if limit == 0 {
+		limit = 20
+	} else if limit > 50 {
+		return nil, fmt.Errorf("max_payments cannot exceed 50")
+	}
+
+	if req.IndexOffset > 0x7fffffff {
+		return nil, fmt.Errorf("index_offset out of range")
+	}
+	offset := req.IndexOffset
+
+	// Fetch the paginated payment entries from the store.
+	paymentsFromStore, err := s.service.store.ListAccountPayments(
+		ctx, accountID, int32(offset), int32(limit),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"unable to list account payments: %w", err,
+		)
+	}
+
+	// Fetch total payment count if requested.
+	var totalNumPayments uint64
+	if req.CountTotalPayments {
+		total, err := s.service.store.CountAccountPayments(
+			ctx, accountID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to count account payments: %w", err,
+			)
+		}
+
+		totalNumPayments = total
+	}
+
+	// Fetch the detailed payments concurrently from LND.
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		payments = make(map[lntypes.Hash]*lnrpc.Payment)
+		errs     []error
+	)
+
+	rawCtx, _, client := s.service.routerClient.RawClientWithMacAuth(ctx)
+
+	for _, entry := range paymentsFromStore {
+		entry := entry
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Add a timeout of 8s to prevent hanging
+			// streaming calls.
+			trackCtx, trackCancel := context.WithTimeout(
+				rawCtx, 8*time.Second,
+			)
+			defer trackCancel()
+
+			stream, err := client.TrackPaymentV2(
+				trackCtx, &routerrpc.TrackPaymentRequest{
+					PaymentHash:       entry.Hash[:],
+					NoInflightUpdates: false,
+				},
+			)
+			if err != nil {
+				log.Errorf("Failed to track payment %x: %v",
+					entry.Hash[:], err)
+
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+
+				return
+			}
+
+			payment, err := stream.Recv()
+			if err != nil {
+				log.Errorf("Failed to receive payment "+
+					"update for %x: %v", entry.Hash[:], err)
+
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+
+				return
+			}
+
+			mu.Lock()
+			payments[entry.Hash] = payment
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	// If we failed to track any payments successfully and there were
+	// errors, return the error.
+	if len(payments) == 0 && len(errs) > 0 {
+		return nil, fmt.Errorf(
+			"failed to fetch payment details: %w", errs[0],
+		)
+	}
+
+	var finalPayments []*lnrpc.Payment
+	for _, entry := range paymentsFromStore {
+		if p, ok := payments[entry.Hash]; ok {
+			finalPayments = append(finalPayments, p)
+		}
+	}
+
+	var firstIndexOffset, lastIndexOffset uint64
+	if len(paymentsFromStore) > 0 {
+		firstIndexOffset = offset
+		lastIndexOffset = offset + uint64(len(paymentsFromStore))
+	}
+
+	return &litrpc.AccountPaymentsResponse{
+		Payments:         finalPayments,
+		FirstIndexOffset: firstIndexOffset,
+		LastIndexOffset:  lastIndexOffset,
+		TotalNumPayments: totalNumPayments,
+	}, nil
 }

@@ -80,6 +80,18 @@ WHERE account_id = $1;
 SELECT *
 FROM account_payments;
 
+-- name: AccountPaymentsPaginated :many
+SELECT *
+FROM account_payments
+WHERE account_id = $1
+ORDER BY hash ASC
+LIMIT $2 OFFSET $3;
+
+-- name: CountAccountPayments :one
+SELECT COUNT(*)
+FROM account_payments
+WHERE account_id = $1;
+
 -- name: ListAccountInvoices :many
 SELECT *
 FROM account_invoices
