@@ -228,6 +228,13 @@ func (p *rpcProxy) StopDaemon(_ context.Context,
 
 	log.Infof("StopDaemon rpc request received")
 
+	// Stop litd via its own shutdown source, and stop the embedded lnd via
+	// its interceptor. Both are needed because litd's lifecycle is
+	// decoupled from lnd's interceptor.
+	if litdShutdown != nil {
+		litdShutdown.RequestShutdown()
+	}
+
 	interceptor.RequestShutdown()
 
 	return &litrpc.StopDaemonResponse{}, nil
