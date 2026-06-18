@@ -45,7 +45,10 @@ import (
 	"github.com/lightningnetwork/lnd/lntest/wait"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"gopkg.in/macaroon.v2"
 )
 
@@ -383,6 +386,13 @@ type HarnessNode struct {
 
 	// litConn is the underlying connection to Lit's grpc endpoint.
 	litConn *grpc.ClientConn
+
+	// litMacPath, when set, is the macaroon file used to authenticate
+	// litConn. It is set for stateless init nodes, which have no lit
+	// macaroon on disk: we bake a super macaroon from the in-memory admin
+	// macaroon and point this at it so the node can still be stopped via
+	// litd's own StopDaemon.
+	litMacPath string
 
 	// RouterClient, WalletKitClient, WatchtowerClient cannot be embedded,
 	// because a name collision would occur with LightningClient.
@@ -776,31 +786,9 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 		return nil
 	}
 
-	err = hn.initLightningClient(conn)
-	if err != nil {
-		return fmt.Errorf("could not init Lightning Client: %w", err)
-	}
-
-	// Also connect to Lit's RPC port for any Litd specific calls.
-	litConn, err := connectLitRPC(
-		context.Background(), hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath,
-		hn.Cfg.LitMacPath,
-	)
-	if err != nil {
-		return fmt.Errorf("could not connect to Lit RPC: %w", err)
-	}
-	hn.litConn = litConn
-
-	ctxt, cancel := context.WithTimeout(
-		context.Background(), lntest.DefaultTimeout,
-	)
-	defer cancel()
-	return wait.NoError(func() error {
-		litConn := litrpc.NewProxyClient(hn.litConn)
-
-		_, err = litConn.GetInfo(ctxt, &litrpc.GetInfoRequest{})
-		return err
-	}, lntest.DefaultTimeout)
+	// initLightningClient also connects to Lit's RPC port and sets
+	// hn.litConn so the node can be stopped via litd's own StopDaemon.
+	return hn.initLightningClient(conn)
 }
 
 // WaitForLNDWalletReady waits until the wallet state flips from
@@ -1087,6 +1075,60 @@ func (hn *HarnessNode) initClientWhenReady(timeout time.Duration) error {
 	return hn.initLightningClient(conn)
 }
 
+// bakeLitSuperMacaroon bakes a lit super macaroon from the given admin macaroon
+// (returned in-memory during stateless init, where no lit macaroon is written
+// to disk), writes it next to the node's lit config, and records its path so
+// litConn can authenticate against it. This lets the harness stop a stateless
+// node via litd's own StopDaemon.
+func (hn *HarnessNode) bakeLitSuperMacaroon(adminMac []byte) error {
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
+	defer cancel()
+
+	rawConn, err := connectLitRPC(
+		ctxt, hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath, "",
+	)
+	if err != nil {
+		return err
+	}
+	defer rawConn.Close()
+
+	// Attach the admin macaroon to the request context so litd authorizes
+	// the bake call.
+	macCtx := metadata.NewOutgoingContext(ctxt, metadata.MD{
+		"macaroon": []string{hex.EncodeToString(adminMac)},
+	})
+
+	litConn := litrpc.NewProxyClient(rawConn)
+	resp, err := litConn.BakeSuperMacaroon(
+		macCtx, &litrpc.BakeSuperMacaroonRequest{
+			RootKeyIdSuffix: 0,
+			ReadOnly:        false,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// BakeSuperMacaroon hex encodes the returned macaroon.
+	superMacBytes, err := hex.DecodeString(resp.Macaroon)
+	if err != nil {
+		return err
+	}
+
+	macPath := filepath.Join(
+		filepath.Dir(hn.Cfg.LitMacPath), "lit-super.macaroon",
+	)
+	if err := os.WriteFile(macPath, superMacBytes, 0644); err != nil {
+		return err
+	}
+
+	hn.litMacPath = macPath
+
+	return nil
+}
+
 // Init initializes a harness node by passing the init request via rpc. After
 // the request is submitted, this method will block until a
 // macaroon-authenticated RPC connection can be established to the harness node.
@@ -1124,6 +1166,17 @@ func (hn *HarnessNode) Init(ctx context.Context,
 		return err == nil
 	}, lntest.DefaultTimeout); err != nil {
 		return nil, err
+	}
+
+	// In stateless init mode no lit macaroon is written to disk, so bake a
+	// super macaroon from the admin macaroon we just received. The harness
+	// uses it to stop the node via litd's own StopDaemon.
+	if initReq.StatelessInit {
+		err := hn.bakeLitSuperMacaroon(response.AdminMacaroon)
+		if err != nil {
+			return nil, fmt.Errorf("could not bake lit super "+
+				"macaroon: %w", err)
+		}
 	}
 
 	return response, hn.initLightningClient(conn)
@@ -1167,6 +1220,17 @@ func (hn *HarnessNode) InitChangePassword(ctx context.Context,
 		return err == nil
 	}, lntest.DefaultTimeout); err != nil {
 		return nil, err
+	}
+
+	// In stateless init mode no lit macaroon is written to disk, so bake a
+	// super macaroon from the admin macaroon we just received. The harness
+	// uses it to stop the node via litd's own StopDaemon.
+	if chngPwReq.StatelessInit {
+		err := hn.bakeLitSuperMacaroon(response.AdminMacaroon)
+		if err != nil {
+			return nil, fmt.Errorf("could not bake lit super "+
+				"macaroon: %w", err)
+		}
 	}
 
 	return response, hn.initLightningClient(conn)
@@ -1248,6 +1312,48 @@ func (hn *HarnessNode) initLightningClient(conn *grpc.ClientConn) error {
 	err := wait.NoError(
 		hn.FetchNodeInfo, lntest.DefaultTimeout,
 	)
+	if err != nil {
+		return err
+	}
+
+	// Also connect to Lit's RPC port for any litd specific calls. We do
+	// this here, rather than only on the no-seed path in start, so that
+	// seed based nodes (which reach this method via Init or Unlock) get a
+	// litConn too. Stop relies on it to shut the node down via litd's own
+	// StopDaemon, which is the only way to bring litd down now that its
+	// lifecycle is decoupled from lnd's. For stateless nodes litMacPath
+	// points at a baked super macaroon; otherwise the lit macaroon on disk
+	// is used.
+	macPath := hn.Cfg.LitMacPath
+	if hn.litMacPath != "" {
+		macPath = hn.litMacPath
+	}
+	// connectLitRPC dials with grpc.WithBlock, so it needs a bounded
+	// context to avoid hanging the harness if litd never comes up.
+	ctxd, cancelDial := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
+	defer cancelDial()
+
+	litConn, err := connectLitRPC(
+		ctxd, hn.Cfg.LitAddr(), hn.Cfg.LitTLSCertPath, macPath,
+	)
+	if err != nil {
+		return fmt.Errorf("could not connect to Lit RPC: %w", err)
+	}
+	hn.litConn = litConn
+
+	ctxt, cancel := context.WithTimeout(
+		context.Background(), lntest.DefaultTimeout,
+	)
+	defer cancel()
+
+	err = wait.NoError(func() error {
+		litClient := litrpc.NewProxyClient(hn.litConn)
+
+		_, err := litClient.GetInfo(ctxt, &litrpc.GetInfoRequest{})
+		return err
+	}, lntest.DefaultTimeout)
 	if err != nil {
 		return err
 	}
@@ -1423,9 +1529,31 @@ func (hn *HarnessNode) Stop() error {
 		return nil
 	}
 
-	// If start() failed before creating a client, we will just wait for the
-	// child process to die.
-	if !hn.Cfg.RemoteMode && hn.LightningClient != nil {
+	// litd owns its own lifecycle, so we ask it to stop via its own
+	// StopDaemon RPC. In integrated mode this also brings down the embedded
+	// lnd.
+	switch {
+	case hn.litConn != nil:
+		ctx, cancel := context.WithTimeout(
+			context.Background(), lntest.DefaultTimeout,
+		)
+		litConn := litrpc.NewProxyClient(hn.litConn)
+
+		// litd normally answers before it shuts down, but the
+		// connection can also be torn down first as litd begins
+		// shutting down. That surfaces as an Unavailable status and
+		// is expected. Any other error is not, so surface it. We
+		// confirm the process actually exits via processExit below.
+		_, err := litConn.StopDaemon(ctx, &litrpc.StopDaemonRequest{})
+		cancel()
+		if err != nil && status.Code(err) != codes.Unavailable {
+			return err
+		}
+
+	// If start() failed before the lit connection was created, fall back to
+	// stopping the integrated lnd directly and just wait for the child
+	// process to die.
+	case !hn.Cfg.RemoteMode && hn.LightningClient != nil:
 		// Don't watch for error because sometimes the RPC connection
 		// gets closed before a response is returned.
 		req := lnrpc.StopRequest{}
@@ -1447,19 +1575,6 @@ func (hn *HarnessNode) Stop() error {
 				return nil
 			}
 		}, lntest.DefaultTimeout)
-		if err != nil {
-			return err
-		}
-	} else if hn.Cfg.RemoteMode {
-		// If lit is running in remote mode, then calling LNDs
-		// StopDaemon method will not shut down Lit, and so we need to
-		// explicitly request lit to shut down.
-		ctx, cancel := context.WithTimeout(
-			context.Background(), lntest.DefaultTimeout,
-		)
-		litConn := litrpc.NewProxyClient(hn.litConn)
-		_, err := litConn.StopDaemon(ctx, &litrpc.StopDaemonRequest{})
-		cancel()
 		if err != nil {
 			return err
 		}
