@@ -35,6 +35,14 @@
 
 ### Functional Changes/Additions
 
+* [Keep litd running after lnd
+  stops](https://github.com/lightninglabs/lightning-terminal/pull/1329):
+  In integrated mode, litd no longer shuts down when lnd stops. It now marks lnd
+  as errored, tears down the lnd dependent sub-servers and keeps running so its
+  status endpoint stays available to report what happened. Note that calling
+  lnd's `StopDaemon` (for example `lncli stop`) no longer stops litd; use litd's
+  own `StopDaemon` to stop everything.
+
 * [Support for SQL database
   backends](https://github.com/lightninglabs/lightning-terminal/pull/1305):
   Litd now supports SQLite and postgres database backends. The old BBolt
