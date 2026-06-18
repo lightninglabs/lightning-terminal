@@ -73,7 +73,8 @@ func (e *proxyErr) Unwrap() error {
 func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 	superMacValidator litmac.SuperMacaroonValidator,
 	permsMgr *perms.Manager, subServerMgr *subservers.Manager,
-	statusMgr *litstatus.Manager, getLNDClient lndBasicClientFn) *rpcProxy {
+	statusMgr *litstatus.Manager, getLNDClient lndBasicClientFn,
+	litdShutdown *shutdownSource) *rpcProxy {
 
 	// The gRPC web calls are protected by HTTP basic auth which is defined
 	// by base64(username:password). Because we only have a password, we
@@ -96,6 +97,7 @@ func newRpcProxy(cfg *Config, validator macaroons.MacaroonValidator,
 		subServerMgr:      subServerMgr,
 		statusMgr:         statusMgr,
 		getBasicLNDClient: getLNDClient,
+		litdShutdown:      litdShutdown,
 	}
 	p.grpcServer = grpc.NewServer(
 		// From the grpxProxy doc: This codec is *crucial* to the
@@ -173,6 +175,10 @@ type rpcProxy struct {
 	statusMgr         *litstatus.Manager
 	getBasicLNDClient lndBasicClientFn
 
+	// litdShutdown is litd's own shutdown source. It is needed alongside
+	// the interceptor because litd's lifecycle is decoupled from lnd's.
+	litdShutdown *shutdownSource
+
 	bakeSuperMac bakeSuperMac
 
 	macValidator      macaroons.MacaroonValidator
@@ -227,6 +233,11 @@ func (p *rpcProxy) StopDaemon(_ context.Context,
 	_ *litrpc.StopDaemonRequest) (*litrpc.StopDaemonResponse, error) {
 
 	log.Infof("StopDaemon rpc request received")
+
+	// Stop litd via its own shutdown source, and stop the embedded lnd via
+	// its interceptor. Both are needed because litd's lifecycle is
+	// decoupled from lnd's interceptor.
+	p.litdShutdown.RequestShutdown()
 
 	interceptor.RequestShutdown()
 
