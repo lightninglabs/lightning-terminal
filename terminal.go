@@ -191,6 +191,20 @@ type LightningTerminal struct {
 	wg       sync.WaitGroup
 	errQueue *queue.ConcurrentQueue[error]
 
+	// shutdown is litd's own shutdown source. It is separate from the
+	// signal.Interceptor handed to lnd so that litd controls its own
+	// lifecycle and can keep running (to serve its status endpoint) after
+	// lnd alone has stopped.
+	shutdown *shutdownSource
+
+	// lndStopped is set to true when lnd stops while litd keeps running. It
+	// lets the final shutdown skip the graceful lnd client teardown, which
+	// would otherwise block waiting on subscription goroutines that can no
+	// longer reach the now-dead lnd. On a clean shutdown it stays false so
+	// the lnd client is closed gracefully. It is only ever accessed from
+	// the main run goroutine.
+	lndStopped bool
+
 	lndConnID string
 	lndConn   *grpc.ClientConn
 	lndClient *lndclient.GrpcLndServices
@@ -269,31 +283,42 @@ func (s *stores) close() error {
 // Run starts everything and then blocks until either the application is shut
 // down or a critical error happens.
 func (g *LightningTerminal) Run(ctx context.Context) error {
-	// Hook interceptor for os signals.
+	// Hook interceptor for os signals. This interceptor is handed to lnd.
+	// We intentionally keep litd's own shutdown separate from it (see
+	// shutdownSource) so that lnd stopping does not force litd to stop.
 	shutdownInterceptor, err := signal.Intercept()
 	if err != nil {
 		return fmt.Errorf("could not intercept signals: %v", err)
 	}
 
+	// Create litd's own shutdown source. It listens for OS signals
+	// independently of lnd's interceptor and is passed to the loggers and
+	// the RPC proxy below so that a critical log or a litd StopDaemon call
+	// can bring litd down.
+	g.shutdown = newShutdownSource()
+	defer g.shutdown.Stop()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Make sure the context is canceled if the user requests shutdown and
-	// that the shutdown signal is requested if the context is canceled.
+	// Make sure the context is canceled if litd requests shutdown and that
+	// litd shutdown is requested if the context is canceled. Note that we
+	// watch litd's own shutdown source here, not lnd's interceptor, so that
+	// an lnd-only shutdown does not cancel litd's context.
 	go func() {
 		select {
 		// Client requests shutdown, cancel the wait.
-		case <-shutdownInterceptor.ShutdownChannel():
+		case <-g.shutdown.ShutdownChannel():
 			cancel()
 
 		// The check was completed and the above defer canceled the
 		// context. We can just exit the goroutine, nothing more to do.
 		case <-ctx.Done():
-			shutdownInterceptor.RequestShutdown()
+			g.shutdown.RequestShutdown()
 		}
 	}()
 
-	cfg, err := loadAndValidateConfig(ctx, shutdownInterceptor)
+	cfg, err := loadAndValidateConfig(ctx, shutdownInterceptor, g.shutdown)
 	if err != nil {
 		return fmt.Errorf("could not load config: %w", err)
 	}
@@ -377,7 +402,7 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 	// server is started.
 	g.rpcProxy = newRpcProxy(
 		g.cfg, g, g.validateSuperMacaroon, g.permsMgr, g.subServerMgr,
-		g.statusMgr, g.basicLNDClient,
+		g.statusMgr, g.basicLNDClient, g.shutdown,
 	)
 
 	// Register any gRPC services that should be served using LiT's
@@ -401,10 +426,16 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		}
 	}
 
+	// lndQuit is closed by the lnd.Main goroutine (inside start) when lnd
+	// stops. We create it in Run so that both start, during startup, and
+	// waitForShutdown, at runtime, can observe it without it living on the
+	// struct.
+	lndQuit := make(chan struct{})
+
 	// Attempt to start Lit and all of its sub-servers. If an error is
 	// returned, it means that either one of Lit's internal sub-servers
 	// could not start or LND could not start or be connected to.
-	startErr := g.start(ctx)
+	startErr := g.start(ctx, lndQuit)
 	if startErr != nil {
 		g.statusMgr.SetErrored(
 			subservers.LIT, "could not start Lit: %v", startErr,
@@ -424,10 +455,22 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		}
 	}
 
-	// Now block until we receive an error or the main shutdown
-	// signal.
-	<-shutdownInterceptor.ShutdownChannel()
-	log.Infof("Shutdown signal received")
+	// We keep litd running so its status endpoint stays reachable only if
+	// it got far enough that the rpcProxy started; before that, litcli stop
+	// cannot reach litd, so there would be no way to stop it. If the proxy
+	// did start, waitForShutdown blocks until litd itself is asked to shut
+	// down, tearing down the lnd-dependent sub-servers if lnd stops
+	// meanwhile. Otherwise we fall through and shut down fully, so a
+	// startup failure is loud and a supervisor can restart us.
+	if g.rpcProxy.hasStarted() {
+		g.waitForShutdown(ctx, lndQuit)
+	}
+
+	// litd is going down, so bring lnd down with it. This is idempotent and
+	// a no-op if lnd already stopped (e.g. the shutdown was triggered by an
+	// OS signal that lnd's interceptor also received). It is required so
+	// that the lnd.Main goroutine returns and g.wg.Wait below can complete.
+	shutdownInterceptor.RequestShutdown()
 
 	err = g.shutdownSubServers()
 	if err != nil {
@@ -443,8 +486,11 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 // LND errors are considered fatal and will result in an error being returned.
 // If any of the sub-servers managed by the subServerMgr error while starting
 // up, these are considered non-fatal and will not result in an error being
-// returned.
-func (g *LightningTerminal) start(ctx context.Context) error {
+// returned. lndQuit is closed by start's lnd.Main goroutine when lnd stops, so
+// that the caller can keep litd running while reporting lnd as errored.
+func (g *LightningTerminal) start(ctx context.Context,
+	lndQuit chan struct{}) error {
+
 	var err error
 
 	accountServiceErrCallback := func(err error) {
@@ -524,9 +570,9 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		readyChan      = make(chan struct{})
 		bufReadyChan   = make(chan struct{})
 		unlockChan     = make(chan struct{})
-		lndQuit        = make(chan struct{})
 		macChan        = make(chan []byte, 1)
 	)
+
 	if g.cfg.LndMode == ModeIntegrated {
 		lisCfg := lnd.ListenerCfg{
 			RPCListeners: []*lnd.ListenerWithSignal{{
@@ -579,19 +625,33 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 			// function during the execution of this, as `g` is
 			// referenced in the passed `implCfg`
 			err := lnd.Main(g.cfg.Lnd, lisCfg, implCfg, interceptor)
+
+			// Mark lnd as errored on the status server so the
+			// status endpoint reports why it stopped. On a real
+			// crash we also push the error into the shared error
+			// queue, the single source of runtime errors, so the
+			// startup-phase selects can abort before the other
+			// sub-servers come up.
 			if e, ok := err.(*flags.Error); err != nil &&
 				(!ok || e.Type != flags.ErrHelp) {
 
-				errStr := fmt.Sprintf("Error running main "+
-					"lnd: %v", err)
-				log.Errorf(errStr)
+				lndErr := fmt.Sprintf(
+					"Error running main lnd: %v", err,
+				)
+				log.Errorf(lndErr)
 
-				g.statusMgr.SetErrored(subservers.LND, errStr)
+				g.statusMgr.SetErrored(subservers.LND, lndErr)
 				g.errQueue.ChanIn() <- err
-
-				return
+			} else {
+				g.statusMgr.SetErrored(
+					subservers.LND, "lnd has stopped",
+				)
 			}
 
+			// Signal that lnd has stopped, whether it exited
+			// cleanly or with an error, so start can either fail
+			// startup or tear down the lnd-dependent sub-servers
+			// while keeping litd (and its status endpoint) alive.
 			close(lndQuit)
 		}()
 	} else {
@@ -614,17 +674,12 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	case <-readyChan:
 
 	case err := <-g.errQueue.ChanOut():
-		g.statusMgr.SetErrored(
-			subservers.LND, "error from errQueue channel",
-		)
-
-		return fmt.Errorf("could not start LND: %v", err)
+		return fmt.Errorf("error from subsystem: %w", err)
 
 	case <-lndQuit:
-		g.statusMgr.SetErrored(
-			subservers.LND, "lndQuit channel closed",
-		)
-
+		// lnd has stopped during startup. The lnd.Main goroutine has
+		// already marked lnd errored on the status server, so we just
+		// abort startup here.
 		return fmt.Errorf("LND has stopped")
 
 	case <-ctx.Done():
@@ -707,22 +762,20 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	}
 
 	// waitForSignal is a helper closure that can be used to wait on the
-	// given channel for a signal while also being responsive to an error
-	// from the error Queue, LND quiting or the interceptor receiving a
-	// shutdown signal.
+	// given channel for a signal while also being responsive to LND
+	// quitting or the context being canceled.
 	waitForSignal := func(c chan struct{}) error {
 		select {
 		case <-c:
 			return nil
 
 		case err := <-g.errQueue.ChanOut():
-			return err
+			return fmt.Errorf("error from subsystem: %w", err)
 
 		case <-lndQuit:
-			g.statusMgr.SetErrored(
-				subservers.LND, "lndQuit channel closed",
-			)
-
+			// lnd has stopped during startup. The lnd.Main
+			// goroutine has already marked lnd errored on the
+			// status server, so we just abort startup here.
 			return fmt.Errorf("LND has stopped")
 
 		case <-ctx.Done():
@@ -822,29 +875,69 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
 
-	// We can now set the status of LiT as running.
+	// We can now set the status of LiT as running. litd has finished
+	// starting up, so we return and let Run block on waitForShutdown.
 	g.statusMgr.SetRunning(subservers.LIT)
 
-	// Now block until we receive an error or the main shutdown signal.
-	select {
-	case err := <-g.errQueue.ChanOut():
-		if err != nil {
-			return fmt.Errorf("received critical error from "+
-				"subsystem, shutting down: %v", err)
-		}
-
-	case <-lndQuit:
-		g.statusMgr.SetErrored(
-			subservers.LND, "lndQuit channel closed",
-		)
-
-		return fmt.Errorf("LND is not running")
-
-	case <-ctx.Done():
-		log.Infof("Shutdown signal received")
-	}
-
 	return nil
+}
+
+// waitForShutdown blocks until litd itself is told to shut down. Unlike
+// during startup, an lnd stop here does not bring litd down: we mark lnd as
+// errored and LiT as stopped, tear down the lnd-dependent sub-servers, and
+// keep litd running so its status endpoint stays available to report what
+// happened. Runtime sub-server errors are logged only. Only litd's own
+// shutdown (OS signal, litcli stop) or the context being canceled stops
+// litd.
+func (g *LightningTerminal) waitForShutdown(ctx context.Context,
+	lndQuit chan struct{}) {
+
+	for {
+		select {
+		case <-g.shutdown.ShutdownChannel():
+			log.Infof("Shutdown signal received")
+
+			return
+
+		case <-ctx.Done():
+			return
+
+		case err := <-g.errQueue.ChanOut():
+			// Once litd is up, a runtime sub-server error no
+			// longer brings it down: we keep litd (and its
+			// status endpoint) running so the failure stays
+			// observable. Such errors are commonly the fallout
+			// of lnd stopping (e.g. the RPC middleware losing
+			// its lnd connection); the lnd stop itself is
+			// handled via lndQuit below, so we only log here and
+			// keep waiting.
+			log.Errorf("Sub-server reported a runtime error; "+
+				"keeping litd running so it stays observable: "+
+				"%v", err)
+
+		case <-lndQuit:
+			// lnd has stopped while litd was running. The
+			// lnd.Main goroutine has already set the LND
+			// sub-server status (the real error, or a generic
+			// message on a clean stop). Record that lnd is gone
+			// so the final shutdown skips the graceful lnd client
+			// teardown, mark LiT as errored so the status endpoint
+			// reports why it is no longer running, and tear down
+			// the lnd-dependent sub-servers while keeping litd
+			// running.
+			g.lndStopped = true
+			g.statusMgr.SetErrored(
+				subservers.LIT, "lit was stopped as lnd was "+
+					"shut down",
+			)
+			g.shutdownLndDependentSubServers()
+
+			// Disable this case so the now-closed channel does not
+			// busy-loop the select while we wait for litd's own
+			// shutdown.
+			lndQuit = nil
+		}
+	}
 }
 
 // basicLNDClient provides access to LiT's basicClient if it has been set.
@@ -864,7 +957,7 @@ func (g *LightningTerminal) checkRunning(ctx context.Context,
 
 	select {
 	case err := <-g.errQueue.ChanOut():
-		return fmt.Errorf("error from subsystem: %v", err)
+		return fmt.Errorf("error from subsystem: %w", err)
 
 	case <-lndQuit:
 		return fmt.Errorf("LND has stopped")
@@ -1538,6 +1631,47 @@ func (g *LightningTerminal) buildAuxComponents(
 	}, nil
 }
 
+// shutdownLndDependentSubServers stops the sub-servers and sub-systems that
+// depend on lnd and cannot function once it has stopped, while leaving litd and
+// its lnd-independent sub-servers (such as the status endpoint) running.
+//
+// It is called from waitForShutdown (which runs in Run) when lnd stops after
+// litd has finished starting up, before the final shutdownSubServers, so it
+// never races that full shutdown. Each underlying Stop is in any case
+// idempotent.
+func (g *LightningTerminal) shutdownLndDependentSubServers() {
+	log.Infof("lnd has stopped; shutting down lnd-dependent sub-servers " +
+		"while keeping litd's status endpoint available")
+
+	// Stop the daemon sub-servers (loop, pool, tapd, faraday).
+	// Manager.Stop is idempotent and marks each stopped sub-server in the
+	// status manager.
+	if err := g.subServerMgr.Stop(); err != nil {
+		log.Errorf("Error stopping sub-servers after lnd stopped: %v",
+			err)
+	}
+
+	// The autopilot client talks to lnd, so stop it too. Its Stop is
+	// guarded by a sync.Once and is safe to call again during the final
+	// shutdown.
+	if g.autopilotClient != nil {
+		g.autopilotClient.Stop()
+	}
+
+	// Stop the internal accounts service, which also depends on lnd.
+	// Guard it so the final shutdownSubServers does not stop it a second
+	// time (its Stop closes a channel and is not idempotent).
+	if g.accountServiceStarted {
+		if err := g.accountService.Stop(); err != nil {
+			log.Errorf("Error stopping account service after lnd "+
+				"stopped: %v", err)
+		}
+		g.accountServiceStarted = false
+
+		g.statusMgr.SetStopped(subservers.ACCOUNTS)
+	}
+}
+
 // shutdownSubServers stops all subservers that were started and attached to
 // lnd.
 func (g *LightningTerminal) shutdownSubServers() error {
@@ -1605,7 +1739,11 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		}
 	}
 
-	if g.lndClient != nil {
+	// Skip the graceful lnd client teardown if lnd has already stopped: its
+	// Close waits on subscription goroutines that can no longer reach lnd
+	// and would block shutdown indefinitely. The process is exiting, so the
+	// connection does not need an orderly close in that case.
+	if g.lndClient != nil && !g.lndStopped {
 		g.lndClient.Close()
 	}
 
@@ -1634,7 +1772,7 @@ func (g *LightningTerminal) shutdownSubServers() error {
 		}
 	}
 
-	// Do we have any last errors to display? We use an anonymous function,
+	// Drain and log any last runtime errors. We use an anonymous function
 	// so we can use return instead of breaking to a label in the default
 	// case.
 	func() {

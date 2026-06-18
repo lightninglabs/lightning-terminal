@@ -579,7 +579,8 @@ func defaultConfig() *Config {
 // loadAndValidateConfig loads the terminal's main configuration and validates
 // its content.
 func loadAndValidateConfig(ctx context.Context,
-	interceptor signal.Interceptor) (*Config, error) {
+	interceptor signal.Interceptor,
+	litdShutdown *shutdownSource) (*Config, error) {
 
 	// Start with the default configuration.
 	preCfg := defaultConfig()
@@ -614,7 +615,7 @@ func loadAndValidateConfig(ctx context.Context,
 	preCfg.Lnd.SubLogMgr = build.NewSubLoggerManager(
 		build.NewDefaultLogHandlers(logCfg, preCfg.Lnd.LogRotator)...,
 	)
-	SetupLoggers(preCfg.Lnd.SubLogMgr, interceptor)
+	SetupLoggers(preCfg.Lnd.SubLogMgr, interceptor, litdShutdown)
 
 	// Load the main configuration file and parse any command line options.
 	// This function will also set up logging properly.
