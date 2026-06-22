@@ -85,6 +85,12 @@
   `litcli accounts update debit` and `litcli accounts update credit` commands
   to modify an account's balance.
 
+* [Add custom permissions support to sessions](https://github.com/lightninglabs/lightning-terminal/pull/1317):
+  Added the `--permission` flag to `litcli sessions add` to allow specifying
+  custom `entity:action` permissions (e.g. `info:read`), similar to
+  `lncli bakemacaroon`, for sessions of type `custom`. Supports repeated flags,
+  comma-separated lists, and mixed input.
+
 ### Technical and Architectural Updates
 
 ## RPC Updates

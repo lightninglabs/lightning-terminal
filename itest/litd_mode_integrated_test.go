@@ -692,6 +692,55 @@ func integratedTestSuite(ctx context.Context, net *NetworkHarness, t *testing.T,
 			})
 		}
 	})
+
+	t.Run("lnc auth custom entity action perms", func(tt *testing.T) {
+		cfg := net.Alice.Cfg
+
+		ctx := context.Background()
+		ctxt, cancel := context.WithTimeout(ctx, defaultTimeout)
+		defer cancel()
+
+		customPerms := []*litrpc.MacaroonPermission{
+			{
+				Entity: "info",
+				Action: "read",
+			},
+		}
+
+		rawLNCConn := setUpLNCConn(
+			ctxt, t, cfg.LitAddr(), cfg.LitTLSCertPath,
+			cfg.LitMacPath,
+			litrpc.SessionType_TYPE_MACAROON_CUSTOM,
+			customPerms,
+		)
+		defer rawLNCConn.Close()
+
+		for _, endpoint := range endpoints {
+			endpoint := endpoint
+			endpointDisabled := subServersDisabled &&
+				endpoint.canDisable
+
+			expectedErr := "permission denied"
+			if endpoint.noAuth {
+				expectedErr = "unknown service"
+			}
+
+			tt.Run(endpoint.name+" lit port", func(ttt *testing.T) {
+				// Only lnrpc (GetInfo) is allowed, as we
+				// only granted the "info:read" permission.
+				allowed := endpoint.name == "lnrpc"
+
+				runLNCAuthTest(
+					ttt, rawLNCConn, endpoint.requestFn,
+					endpoint.successPattern,
+					allowed, expectedErr,
+					endpointDisabled,
+					endpoint.disabledPattern,
+					endpoint.noAuth,
+				)
+			})
+		}
+	})
 }
 
 func uiPasswordAuthCheck(t *testing.T, cfg *LitNodeConfig, subServersDisabled,
