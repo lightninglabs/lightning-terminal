@@ -298,6 +298,15 @@ SwapClient.StaticAddressLoopIn = {
   responseType: loop_pb.StaticAddressLoopInResponse
 };
 
+SwapClient.StaticOpenChannel = {
+  methodName: "StaticOpenChannel",
+  service: SwapClient,
+  requestStream: false,
+  responseStream: false,
+  requestType: loop_pb.StaticOpenChannelRequest,
+  responseType: loop_pb.StaticOpenChannelResponse
+};
+
 exports.SwapClient = SwapClient;
 
 function SwapClientClient(serviceHost, options) {
@@ -1279,6 +1288,37 @@ SwapClientClient.prototype.staticAddressLoopIn = function staticAddressLoopIn(re
     callback = arguments[1];
   }
   var client = grpc.unary(SwapClient.StaticAddressLoopIn, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+SwapClientClient.prototype.staticOpenChannel = function staticOpenChannel(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(SwapClient.StaticOpenChannel, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

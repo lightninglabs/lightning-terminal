@@ -1098,6 +1098,21 @@ export class SubscribeNotificationsResponse extends jspb.Message {
   getUnfinishedSwap(): ServerUnfinishedSwapNotification | undefined;
   setUnfinishedSwap(value?: ServerUnfinishedSwapNotification): void;
 
+  hasStaticLoopInRiskAccepted(): boolean;
+  clearStaticLoopInRiskAccepted(): void;
+  getStaticLoopInRiskAccepted(): ServerStaticLoopInRiskAcceptedNotification | undefined;
+  setStaticLoopInRiskAccepted(value?: ServerStaticLoopInRiskAcceptedNotification): void;
+
+  hasStaticLoopInRiskRejected(): boolean;
+  clearStaticLoopInRiskRejected(): void;
+  getStaticLoopInRiskRejected(): ServerStaticLoopInRiskRejectedNotification | undefined;
+  setStaticLoopInRiskRejected(value?: ServerStaticLoopInRiskRejectedNotification): void;
+
+  hasHtlcConfirmed(): boolean;
+  clearHtlcConfirmed(): void;
+  getHtlcConfirmed(): ServerHtlcConfirmedNotification | undefined;
+  setHtlcConfirmed(value?: ServerHtlcConfirmedNotification): void;
+
   getNotificationCase(): SubscribeNotificationsResponse.NotificationCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SubscribeNotificationsResponse.AsObject;
@@ -1114,6 +1129,9 @@ export namespace SubscribeNotificationsResponse {
     reservationNotification?: swapserverrpc_reservation_pb.ServerReservationNotification.AsObject,
     staticLoopInSweep?: ServerStaticLoopInSweepNotification.AsObject,
     unfinishedSwap?: ServerUnfinishedSwapNotification.AsObject,
+    staticLoopInRiskAccepted?: ServerStaticLoopInRiskAcceptedNotification.AsObject,
+    staticLoopInRiskRejected?: ServerStaticLoopInRiskRejectedNotification.AsObject,
+    htlcConfirmed?: ServerHtlcConfirmedNotification.AsObject,
   }
 
   export enum NotificationCase {
@@ -1121,6 +1139,9 @@ export namespace SubscribeNotificationsResponse {
     RESERVATION_NOTIFICATION = 1,
     STATIC_LOOP_IN_SWEEP = 2,
     UNFINISHED_SWAP = 3,
+    STATIC_LOOP_IN_RISK_ACCEPTED = 4,
+    STATIC_LOOP_IN_RISK_REJECTED = 5,
+    HTLC_CONFIRMED = 6,
   }
 }
 
@@ -1161,6 +1182,50 @@ export namespace ServerStaticLoopInSweepNotification {
   }
 }
 
+export class ServerStaticLoopInRiskAcceptedNotification extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerStaticLoopInRiskAcceptedNotification.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerStaticLoopInRiskAcceptedNotification): ServerStaticLoopInRiskAcceptedNotification.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerStaticLoopInRiskAcceptedNotification, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerStaticLoopInRiskAcceptedNotification;
+  static deserializeBinaryFromReader(message: ServerStaticLoopInRiskAcceptedNotification, reader: jspb.BinaryReader): ServerStaticLoopInRiskAcceptedNotification;
+}
+
+export namespace ServerStaticLoopInRiskAcceptedNotification {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+  }
+}
+
+export class ServerStaticLoopInRiskRejectedNotification extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerStaticLoopInRiskRejectedNotification.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerStaticLoopInRiskRejectedNotification): ServerStaticLoopInRiskRejectedNotification.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerStaticLoopInRiskRejectedNotification, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerStaticLoopInRiskRejectedNotification;
+  static deserializeBinaryFromReader(message: ServerStaticLoopInRiskRejectedNotification, reader: jspb.BinaryReader): ServerStaticLoopInRiskRejectedNotification;
+}
+
+export namespace ServerStaticLoopInRiskRejectedNotification {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+  }
+}
+
 export class ServerUnfinishedSwapNotification extends jspb.Message {
   getSwapHash(): Uint8Array | string;
   getSwapHash_asU8(): Uint8Array;
@@ -1184,6 +1249,40 @@ export namespace ServerUnfinishedSwapNotification {
   export type AsObject = {
     swapHash: Uint8Array | string,
     isLoopIn: boolean,
+  }
+}
+
+export class ServerHtlcConfirmedNotification extends jspb.Message {
+  getSwapHash(): Uint8Array | string;
+  getSwapHash_asU8(): Uint8Array;
+  getSwapHash_asB64(): string;
+  setSwapHash(value: Uint8Array | string): void;
+
+  getHtlcOutpoint(): string;
+  setHtlcOutpoint(value: string): void;
+
+  getHtlcAddress(): string;
+  setHtlcAddress(value: string): void;
+
+  getSatPerVbyte(): number;
+  setSatPerVbyte(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerHtlcConfirmedNotification.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerHtlcConfirmedNotification): ServerHtlcConfirmedNotification.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerHtlcConfirmedNotification, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerHtlcConfirmedNotification;
+  static deserializeBinaryFromReader(message: ServerHtlcConfirmedNotification, reader: jspb.BinaryReader): ServerHtlcConfirmedNotification;
+}
+
+export namespace ServerHtlcConfirmedNotification {
+  export type AsObject = {
+    swapHash: Uint8Array | string,
+    htlcOutpoint: string,
+    htlcAddress: string,
+    satPerVbyte: number,
   }
 }
 
