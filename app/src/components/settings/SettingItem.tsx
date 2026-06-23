@@ -6,25 +6,30 @@ const Styled = {
   Wrapper: styled.div`
     display: flex;
     align-items: center;
-    height: 80px;
+    height: 48px;
     cursor: pointer;
-    border-bottom: 0.5px solid ${props => props.theme.colors.lightBlue};
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    padding: 0 12px;
+    transition: background 0.15s ease;
 
     &:last-child {
       border-bottom-width: 0;
     }
 
     &:hover {
-      opacity: 0.8;
+      background: rgba(255, 255, 255, 0.04);
     }
   `,
   Name: styled.span`
     flex: 1;
-    font-size: ${props => props.theme.sizes.l};
+    font-size: ${props => props.theme.sizes.s};
+    font-weight: 500;
   `,
   Value: styled.span`
     color: ${props => props.theme.colors.gray};
-    margin-right: 20px;
+    font-size: ${props => props.theme.sizes.xs};
+    margin-right: 12px;
   `,
 };
 

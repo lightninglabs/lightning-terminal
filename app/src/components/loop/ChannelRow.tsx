@@ -17,7 +17,7 @@ import ChannelIcon from './ChannelIcon';
  * the virtualized list requires each row to have a specified
  * height. Defining a const here because it is used in multiple places
  */
-export const ROW_HEIGHT = 60;
+export const ROW_HEIGHT = 44;
 
 const BaseColumn = styled(Column)`
   white-space: nowrap;
@@ -28,8 +28,10 @@ const BaseColumn = styled(Column)`
 
 const Styled = {
   Row: styled(Row)<{ dimmed?: boolean; selectable?: boolean }>`
-    border-bottom: 0.5px solid ${props => props.theme.colors.darkGray};
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     opacity: ${props => (props.dimmed ? '0.4' : '1')};
+    font-size: 13px;
+    transition: background 0.1s ease;
 
     &:last-child {
       border-bottom-width: 0;
@@ -40,7 +42,7 @@ const Styled = {
       `
       &:hover {
         cursor: pointer;
-        background-color: ${props.theme.colors.overlay};
+        background-color: rgba(255, 255, 255, 0.03);
       }
     `}
   `,

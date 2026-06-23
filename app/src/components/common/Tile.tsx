@@ -6,10 +6,12 @@ import Tip from './Tip';
 
 const Styled = {
   TileWrap: styled.div`
-    min-height: 105px;
-    padding: 15px;
-    background-color: ${props => props.theme.colors.overlay};
-    border-radius: 4px;
+    min-height: 80px;
+    padding: 16px 20px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    height: 100%;
   `,
   Header: styled.div`
     display: flex;
@@ -26,10 +28,12 @@ const Styled = {
     }
   `,
   Text: styled.div`
-    font-size: ${props => props.theme.sizes.xl};
-    line-height: 37px;
-    letter-spacing: 0.43px;
-    margin-top: 10px;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 28px;
+    letter-spacing: -0.02em;
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
   `,
 };
 

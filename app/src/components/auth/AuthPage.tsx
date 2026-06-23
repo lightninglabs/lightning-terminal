@@ -17,74 +17,97 @@ const Styled = {
   `,
   Logo: styled(LogoImage)`
     color: ${props => props.theme.colors.offWhite};
-    width: 80px;
-    height: 156px;
-    margin-bottom: 30px;
+    width: 48px;
+    height: 96px;
+    margin-bottom: 24px;
+    opacity: 0.8;
   `,
   Title: styled(HeaderOne)`
-    font-size: 75px;
-    margin-bottom: 30px;
-    text-transform: uppercase;
+    font-size: 36px;
+    margin-bottom: 8px;
+    letter-spacing: -0.03em;
+    font-weight: 600;
   `,
   Subtitle: styled.div`
     width: 100%;
-    max-width: 500px;
-    margin-bottom: 80px;
+    max-width: 400px;
+    margin-bottom: 48px;
     text-align: center;
+    color: ${props => props.theme.colors.gray};
+    font-size: 14px;
   `,
   Form: styled.form`
-    max-width: 550px;
+    max-width: 360px;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 16px;
   `,
   Password: styled.input`
-    font-family: ${props => props.theme.fonts.work.light};
-    font-weight: 300;
-    font-size: ${props => props.theme.sizes.xxl};
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
     color: ${props => props.theme.colors.offWhite};
-    background-color: transparent;
-    border-width: 0;
-    border-bottom: 3px solid ${props => props.theme.colors.offWhite};
-    padding: 5px;
-    text-align: center;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px 16px;
     width: 100%;
+    transition: border-color 0.15s ease;
 
     &:active,
     &:focus {
       outline: none;
-      background-color: ${props => props.theme.colors.overlay};
-      border-bottom-color: ${props => props.theme.colors.white};
+      border-color: ${props => props.theme.colors.iris};
+      background-color: rgba(255, 255, 255, 0.06);
     }
 
     &::placeholder {
       color: ${props => props.theme.colors.gray};
     }
   `,
-  Label: styled.label``,
+  Label: styled.label`
+    font-size: 13px;
+    color: ${props => props.theme.colors.gray};
+  `,
   ErrMessage: styled.div`
     width: 100%;
-    display: inline-block;
-    padding: 5px 0;
-    background-color: ${props => props.theme.colors.pink};
-    color: ${props => props.theme.colors.offWhite};
+    padding: 10px 14px;
+    background-color: rgba(244, 63, 94, 0.15);
+    color: ${props => props.theme.colors.pink};
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    border-radius: 8px;
     text-align: center;
+    font-size: 13px;
   `,
   ErrDetail: styled.div`
     width: 100%;
-    display: inline-block;
-    padding: 5px 0;
-    color: ${props => props.theme.colors.offWhite};
+    padding: 6px 0;
+    color: ${props => props.theme.colors.gray};
     text-align: center;
+    font-size: 12px;
   `,
   ErrDetailToggle: styled(Button)`
     width: 100%;
-    padding: 5px 0;
+    padding: 4px 0;
     background-color: transparent;
+    font-size: 12px;
   `,
   Submit: styled(Button)`
-    margin-top: 80px;
-    background-color: transparent;
+    margin-top: 8px;
+    width: 100%;
+    height: 40px;
+    background: ${props => props.theme.colors.iris};
+    border: none;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 14px;
+
+    &:hover {
+      background: #5355d4;
+      color: white;
+    }
   `,
 };
 

@@ -47,11 +47,13 @@ const BadgeList: React.FC<Props> = ({ options, value, onChange }) => {
   return (
     <Wrapper>
       {options.map(o => (
-        <Tip key={o.value} overlay={o.tip}>
-          <Badge selected={o.value === value} onClick={handleClick(o.value)}>
-            {o.label}
-          </Badge>
-        </Tip>
+        <div key={o.value} style={{ display: 'inline-block' }}>
+          <Tip overlay={o.tip}>
+            <Badge selected={o.value === value} onClick={handleClick(o.value)}>
+              {o.label}
+            </Badge>
+          </Tip>
+        </div>
       ))}
     </Wrapper>
   );
