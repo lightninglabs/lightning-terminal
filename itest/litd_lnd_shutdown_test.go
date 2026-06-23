@@ -91,18 +91,22 @@ func testLitdSurvivesLndShutdown(ctx context.Context, net *NetworkHarness,
 	}, defaultTimeout)
 	require.NoError(t.t, err)
 
-	// litd itself must keep running after lnd has stopped. Check that the
-	// LIT sub-server stays reachable and reports as running for a few
-	// seconds, confirming it does not shut down shortly after lnd does.
+	// litd's process itself must keep running after lnd has stopped: its
+	// status endpoint stays reachable. The LIT sub-server is reported as no
+	// longer running, since litd cannot function without lnd, but the
+	// endpoint continuing to answer at all is what proves litd did not
+	// cascade down with lnd. Check this holds for a few seconds.
 	for i := 0; i < 3; i++ {
 		resp, err := statusClient.SubServerStatus(
 			ctxt, &litrpc.SubServerStatusReq{},
 		)
-		require.NoError(t.t, err)
+		require.NoError(t.t, err, "litd status endpoint must stay "+
+			"reachable after lnd stopped")
 
 		litStatus, ok := resp.SubServers[subservers.LIT]
 		require.True(t.t, ok, "expected lit sub-server status")
-		require.True(t.t, litStatus.Running, "litd should stay running")
+		require.False(t.t, litStatus.Running, "litd sub-server should "+
+			"be reported as stopped once lnd has stopped")
 
 		time.Sleep(time.Second)
 	}
