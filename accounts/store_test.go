@@ -848,3 +848,61 @@ func TestLastInvoiceIndexes(t *testing.T) {
 	require.EqualValues(t, 7, add)
 	require.EqualValues(t, 99, settle)
 }
+
+// TestCheckLabel ensures that only labels that could be mistaken for a hex
+// encoded account ID are rejected, while all other labels (including the empty
+// label) are accepted.
+func TestCheckLabel(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		label     string
+		expectErr bool
+	}{{
+		name:  "empty label is allowed",
+		label: "",
+	}, {
+		name:  "plain text label is allowed",
+		label: "my account",
+	}, {
+		name:  "short hex label is allowed",
+		label: "00112233",
+	}, {
+		name: "non-hex label with account ID length is allowed",
+		// 16 characters long, matching an encoded account ID, but not
+		// valid hex.
+		label: "zzzzzzzzzzzzzzzz",
+	}, {
+		name: "lowercase hex label with account ID length is rejected",
+		// 16 characters of valid hex, exactly the length of an encoded
+		// account ID.
+		label:     "0011223344556677",
+		expectErr: true,
+	}, {
+		name: "uppercase hex label with account ID length is rejected",
+		// hex.DecodeString also accepts uppercase digits, so this must
+		// be rejected as well.
+		label:     "00112233445566AA",
+		expectErr: true,
+	}}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := checkLabel(tc.label)
+			if tc.expectErr {
+				require.ErrorContains(
+					t, err, "is not allowed as it can be "+
+						"mistaken",
+				)
+
+				return
+			}
+
+			require.NoError(t, err)
+		})
+	}
+}
