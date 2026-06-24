@@ -692,6 +692,41 @@ func payInvoice(cliCtx *cli.Context) error {
 	)
 }
 
+// addInvoiceUnsupportedFlags is the set of flags that are inherited from
+// lncli's addinvoice command but don't apply to Taproot Asset invoices. The
+// addInvoice action below never reads these, so we strip them to avoid
+// presenting options that have no effect.
+var addInvoiceUnsupportedFlags = map[string]struct{}{
+	// The final-hop CLTV delta isn't applied to asset invoices.
+	"cltv_expiry_delta": {},
+
+	// Blinded paths aren't supported for asset invoices; the relevant hop
+	// hints are added as part of the RFQ process instead.
+	"blind":                              {},
+	"min_real_blinded_hops":              {},
+	"num_blinded_hops":                   {},
+	"max_blinded_paths":                  {},
+	"blinded_path_omit_node":             {},
+	"blinded_path_incoming_channel_list": {},
+}
+
+// withoutUnsupportedAddInvoiceFlags returns the given flags with the ones that
+// don't apply to Taproot Asset invoices (see addInvoiceUnsupportedFlags)
+// removed.
+func withoutUnsupportedAddInvoiceFlags(flags []cli.Flag) []cli.Flag {
+	filtered := make([]cli.Flag, 0, len(flags))
+	for _, flag := range flags {
+		_, unsupported := addInvoiceUnsupportedFlags[flag.GetName()]
+		if unsupported {
+			continue
+		}
+
+		filtered = append(filtered, flag)
+	}
+
+	return filtered
+}
+
 var addInvoiceCommand = cli.Command{
 	Name:     "addinvoice",
 	Category: commands.AddInvoiceCommand.Category,
@@ -703,7 +738,9 @@ var addInvoiceCommand = cli.Command{
 	ArgsUsage: "[--asset_id=X | --group_key=X] --asset_amount=Y " +
 		"[--rfq_peer_pubkey=Z] ",
 	Flags: append(
-		commands.AddInvoiceCommand.Flags,
+		withoutUnsupportedAddInvoiceFlags(
+			commands.AddInvoiceCommand.Flags,
+		),
 		cli.StringFlag{
 			Name: "asset_id",
 			Usage: "the asset ID of the asset to receive; cannot " +
