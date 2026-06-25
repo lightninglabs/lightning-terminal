@@ -591,16 +591,14 @@ func loadAndValidateConfig(ctx context.Context,
 		return nil, fmt.Errorf("error parsing flags: %w", err)
 	}
 
-	// Show the version and exit if the version flag was specified.
+	// Show the version and exit if the version flag was specified. Both
+	// litd's own `--version` flag and the `-V`/`--version` flag inherited
+	// from lnd should report litd's version, not the integrated lnd version
+	// (see https://github.com/lightninglabs/lightning-terminal/issues/1091).
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	if preCfg.ShowVersion {
+	if preCfg.ShowVersion || preCfg.Lnd.ShowVersion {
 		fmt.Println(appName, "version", RichVersion())
-		os.Exit(0)
-	}
-	if preCfg.Lnd.ShowVersion {
-		fmt.Println(appName, "version", build.Version(),
-			"commit="+build.Commit)
 		os.Exit(0)
 	}
 

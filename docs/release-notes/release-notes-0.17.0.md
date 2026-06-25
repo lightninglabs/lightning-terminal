@@ -93,6 +93,11 @@
 
 ### Technical and Architectural Updates
 
+* [Report litd's own version for `litd
+  -V`](https://github.com/lightninglabs/lightning-terminal/pull/1337): The
+  `-V`/`--version` flag now prints litd's version instead of the integrated lnd
+  version.
+
 ## RPC Updates
 
 ## Integrated Binary Updates
