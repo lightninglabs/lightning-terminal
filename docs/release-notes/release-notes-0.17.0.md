@@ -92,6 +92,16 @@
   comma-separated lists, and mixed input.
 
 ### Technical and Architectural Updates
+* The Faraday subserver [is made an active
+  component](https://github.com/lightninglabs/lightning-terminal/pull/1251)
+  instead of only incorporating its RPC server.
+* A gRPC interceptor [is
+  added](https://github.com/lightninglabs/lightning-terminal/pull/1271) to be
+  able to apply privacy mapping for non-LND sub-daemon requests (e.g. Faraday)
+  within LNC sessions. Non-mapped subservers calls are blocked.
+* The Faraday `ForwardingAbility` endpoint [is enabled and its peer pubkeys
+  obfuscated](https://github.com/lightninglabs/lightning-terminal/pull/1321) in
+  the firewall's privacy mapper.
 
 ## RPC Updates
 
@@ -121,6 +131,7 @@
 
 # Contributors (Alphabetical Order)
 
+* bitromortac
 * Boris Nagaev
 * Calvin Zachman
 * Cyberguru1
