@@ -35,6 +35,12 @@
 
 ### Technical and Architectural Updates
 
+* [Hide unsupported flags from `litcli ln
+  addinvoice`](https://github.com/lightninglabs/lightning-terminal/pull/1335):
+  The `addinvoice` command no longer advertises the blinded-path flags or
+  `--cltv_expiry_delta`, which were inherited from `lncli` but have no effect on
+  Taproot Asset invoices.
+
 ## RPC Updates
 
 ## Integrated Binary Updates
