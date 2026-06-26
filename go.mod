@@ -24,15 +24,15 @@ require (
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lndclient v0.21.0-1
-	github.com/lightninglabs/loop v0.31.8-beta
-	github.com/lightninglabs/loop/looprpc v1.0.13
-	github.com/lightninglabs/loop/swapserverrpc v1.0.20
+	github.com/lightninglabs/loop v0.33.3-beta
+	github.com/lightninglabs/loop/looprpc v1.0.14
+	github.com/lightninglabs/loop/swapserverrpc v1.0.21
 	github.com/lightninglabs/pool v0.7.1-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.8.0
 	github.com/lightninglabs/taproot-assets/taprpc v1.1.0
-	github.com/lightningnetwork/lnd v0.21.0-beta
+	github.com/lightningnetwork/lnd v0.21.1-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
@@ -40,7 +40,7 @@ require (
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
 	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae
 	github.com/lightningnetwork/lnd/tlv v1.3.2
-	github.com/lightningnetwork/lnd/tor v1.1.6
+	github.com/lightningnetwork/lnd/tor v1.1.7
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/ory/dockertest/v3 v3.10.0

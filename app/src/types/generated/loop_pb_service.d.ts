@@ -292,6 +292,15 @@ type SwapClientStaticAddressLoopIn = {
   readonly responseType: typeof loop_pb.StaticAddressLoopInResponse;
 };
 
+type SwapClientStaticOpenChannel = {
+  readonly methodName: string;
+  readonly service: typeof SwapClient;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof loop_pb.StaticOpenChannelRequest;
+  readonly responseType: typeof loop_pb.StaticOpenChannelResponse;
+};
+
 export class SwapClient {
   static readonly serviceName: string;
   static readonly LoopOut: SwapClientLoopOut;
@@ -326,6 +335,7 @@ export class SwapClient {
   static readonly ListStaticAddressSwaps: SwapClientListStaticAddressSwaps;
   static readonly GetStaticAddressSummary: SwapClientGetStaticAddressSummary;
   static readonly StaticAddressLoopIn: SwapClientStaticAddressLoopIn;
+  static readonly StaticOpenChannel: SwapClientStaticOpenChannel;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -639,6 +649,15 @@ export class SwapClientClient {
   staticAddressLoopIn(
     requestMessage: loop_pb.StaticAddressLoopInRequest,
     callback: (error: ServiceError|null, responseMessage: loop_pb.StaticAddressLoopInResponse|null) => void
+  ): UnaryResponse;
+  staticOpenChannel(
+    requestMessage: loop_pb.StaticOpenChannelRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StaticOpenChannelResponse|null) => void
+  ): UnaryResponse;
+  staticOpenChannel(
+    requestMessage: loop_pb.StaticOpenChannelRequest,
+    callback: (error: ServiceError|null, responseMessage: loop_pb.StaticOpenChannelResponse|null) => void
   ): UnaryResponse;
 }
 
