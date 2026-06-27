@@ -35,6 +35,11 @@ var (
 	// interceptor is the OS signal interceptor that we need to keep a
 	// reference to for listening for shutdown signals.
 	interceptor signal.Interceptor
+
+	// litdShutdown is litd's own shutdown source. It is used to bring litd
+	// down on a critical error, independently of lnd's signal.Interceptor.
+	// It is set in Run before any sub-logger can fire a critical log.
+	litdShutdown *shutdownSource
 )
 
 const (
@@ -112,8 +117,14 @@ func genSubLogger(root *build.SubLoggerManager,
 	interceptor signal.Interceptor) func(string) btclog.Logger {
 
 	// Create a shutdown function which will request shutdown from our
-	// interceptor if it is listening.
+	// interceptor if it is listening. We also request shutdown from litd's
+	// own shutdown source so that a critical error brings litd down too,
+	// not just lnd (litd no longer exits simply because lnd stopped).
 	shutdown := func() {
+		if litdShutdown != nil {
+			litdShutdown.RequestShutdown()
+		}
+
 		if !interceptor.Listening() {
 			return
 		}
