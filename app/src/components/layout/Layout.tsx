@@ -110,6 +110,24 @@ const Styled = {
   Fluid: styled.div`
     height: 100%;
   `,
+  Versions: styled.div`
+    position: absolute;
+    font-size: ${props => props.theme.sizes.xs};
+    bottom: 0;
+    padding: 15px;
+  `,
+};
+
+const VersionInfo = () => {
+  const { nodeStore } = useStore();
+  const { Versions } = Styled;
+  const shortVersion = nodeStore.version.split(' commit=')[0];
+
+  return (
+    <Versions>
+      <div title={nodeStore.version}>{`LND: v${shortVersion}`}</div>
+    </Versions>
+  );
 };
 
 export const Layout: React.FC = ({ children }) => {
@@ -127,6 +145,7 @@ export const Layout: React.FC = ({ children }) => {
         </Hamburger>
         <Aside collapsed={!settingsStore.sidebarVisible}>
           <Sidebar />
+          <VersionInfo />
         </Aside>
         <Content collapsed={!settingsStore.sidebarVisible} fullWidth={appView.fullWidth}>
           <Fluid className="container-fluid">{children}</Fluid>

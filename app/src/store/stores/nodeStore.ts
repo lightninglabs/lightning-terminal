@@ -18,6 +18,8 @@ export default class NodeStore {
    */
   private _knownTxns: string[] = [];
 
+  /** the version of the LND node */
+  version = '';
   /** the pubkey of the LND node */
   pubkey = '';
   /** the alias of the LND node */
@@ -71,6 +73,7 @@ export default class NodeStore {
     try {
       const info = await this._store.api.lnd.getInfo();
       runInAction(() => {
+        this.version = info.version;
         this.pubkey = info.identityPubkey;
         this.alias = info.alias;
         this.blockHeight = info.blockHeight;
