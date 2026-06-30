@@ -3,6 +3,49 @@
 
 import * as jspb from "google-protobuf";
 import * as swapserverrpc_common_pb from "./swapserverrpc/common_pb";
+import * as lnd_pb from "./lnd_pb";
+
+export class StaticOpenChannelRequest extends jspb.Message {
+  hasOpenChannelRequest(): boolean;
+  clearOpenChannelRequest(): void;
+  getOpenChannelRequest(): lnd_pb.OpenChannelRequest | undefined;
+  setOpenChannelRequest(value?: lnd_pb.OpenChannelRequest): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticOpenChannelRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticOpenChannelRequest): StaticOpenChannelRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticOpenChannelRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticOpenChannelRequest;
+  static deserializeBinaryFromReader(message: StaticOpenChannelRequest, reader: jspb.BinaryReader): StaticOpenChannelRequest;
+}
+
+export namespace StaticOpenChannelRequest {
+  export type AsObject = {
+    openChannelRequest?: lnd_pb.OpenChannelRequest.AsObject,
+  }
+}
+
+export class StaticOpenChannelResponse extends jspb.Message {
+  getChannelOpenOutpoint(): string;
+  setChannelOpenOutpoint(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StaticOpenChannelResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: StaticOpenChannelResponse): StaticOpenChannelResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StaticOpenChannelResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StaticOpenChannelResponse;
+  static deserializeBinaryFromReader(message: StaticOpenChannelResponse, reader: jspb.BinaryReader): StaticOpenChannelResponse;
+}
+
+export namespace StaticOpenChannelResponse {
+  export type AsObject = {
+    channelOpenOutpoint: string,
+  }
+}
 
 export class StopDaemonRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
@@ -1247,6 +1290,9 @@ export class LiquidityParameters extends jspb.Message {
   setEasyAutoloopExcludedPeersList(value: Array<Uint8Array | string>): void;
   addEasyAutoloopExcludedPeers(value: Uint8Array | string, index?: number): Uint8Array | string;
 
+  getLoopInSource(): LoopInSourceMap[keyof LoopInSourceMap];
+  setLoopInSource(value: LoopInSourceMap[keyof LoopInSourceMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LiquidityParameters.AsObject;
   static toObject(includeInstance: boolean, msg: LiquidityParameters): LiquidityParameters.AsObject;
@@ -1286,6 +1332,7 @@ export namespace LiquidityParameters {
     easyAssetParamsMap: Array<[string, EasyAssetAutoloopParams.AsObject]>,
     fastSwapPublication: boolean,
     easyAutoloopExcludedPeersList: Array<Uint8Array | string>,
+    loopInSource: LoopInSourceMap[keyof LoopInSourceMap],
   }
 }
 
@@ -1450,6 +1497,11 @@ export class SuggestSwapsResponse extends jspb.Message {
   setLoopInList(value: Array<LoopInRequest>): void;
   addLoopIn(value?: LoopInRequest, index?: number): LoopInRequest;
 
+  clearStaticLoopInList(): void;
+  getStaticLoopInList(): Array<StaticAddressLoopInRequest>;
+  setStaticLoopInList(value: Array<StaticAddressLoopInRequest>): void;
+  addStaticLoopIn(value?: StaticAddressLoopInRequest, index?: number): StaticAddressLoopInRequest;
+
   clearDisqualifiedList(): void;
   getDisqualifiedList(): Array<Disqualified>;
   setDisqualifiedList(value: Array<Disqualified>): void;
@@ -1469,6 +1521,7 @@ export namespace SuggestSwapsResponse {
   export type AsObject = {
     loopOutList: Array<LoopOutRequest.AsObject>,
     loopInList: Array<LoopInRequest.AsObject>,
+    staticLoopInList: Array<StaticAddressLoopInRequest.AsObject>,
     disqualifiedList: Array<Disqualified.AsObject>,
   }
 }
@@ -1921,9 +1974,9 @@ export namespace Utxo {
 
 export class WithdrawDepositsRequest extends jspb.Message {
   clearOutpointsList(): void;
-  getOutpointsList(): Array<OutPoint>;
-  setOutpointsList(value: Array<OutPoint>): void;
-  addOutpoints(value?: OutPoint, index?: number): OutPoint;
+  getOutpointsList(): Array<lnd_pb.OutPoint>;
+  setOutpointsList(value: Array<lnd_pb.OutPoint>): void;
+  addOutpoints(value?: lnd_pb.OutPoint, index?: number): lnd_pb.OutPoint;
 
   getAll(): boolean;
   setAll(value: boolean): void;
@@ -1949,7 +2002,7 @@ export class WithdrawDepositsRequest extends jspb.Message {
 
 export namespace WithdrawDepositsRequest {
   export type AsObject = {
-    outpointsList: Array<OutPoint.AsObject>,
+    outpointsList: Array<lnd_pb.OutPoint.AsObject>,
     all: boolean,
     destAddr: string,
     satPerVbyte: string,
@@ -1978,36 +2031,6 @@ export namespace WithdrawDepositsResponse {
   export type AsObject = {
     withdrawalTxHash: string,
     address: string,
-  }
-}
-
-export class OutPoint extends jspb.Message {
-  getTxidBytes(): Uint8Array | string;
-  getTxidBytes_asU8(): Uint8Array;
-  getTxidBytes_asB64(): string;
-  setTxidBytes(value: Uint8Array | string): void;
-
-  getTxidStr(): string;
-  setTxidStr(value: string): void;
-
-  getOutputIndex(): number;
-  setOutputIndex(value: number): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): OutPoint.AsObject;
-  static toObject(includeInstance: boolean, msg: OutPoint): OutPoint.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: OutPoint, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): OutPoint;
-  static deserializeBinaryFromReader(message: OutPoint, reader: jspb.BinaryReader): OutPoint;
-}
-
-export namespace OutPoint {
-  export type AsObject = {
-    txidBytes: Uint8Array | string,
-    txidStr: string,
-    outputIndex: number,
   }
 }
 
@@ -2179,6 +2202,9 @@ export class StaticAddressSummaryResponse extends jspb.Message {
   getValueHtlcTimeoutSweepsSatoshis(): string;
   setValueHtlcTimeoutSweepsSatoshis(value: string): void;
 
+  getValueChannelsOpened(): string;
+  setValueChannelsOpened(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressSummaryResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressSummaryResponse): StaticAddressSummaryResponse.AsObject;
@@ -2200,6 +2226,7 @@ export namespace StaticAddressSummaryResponse {
     valueWithdrawnSatoshis: string,
     valueLoopedInSatoshis: string,
     valueHtlcTimeoutSweepsSatoshis: string,
+    valueChannelsOpened: string,
   }
 }
 
@@ -2318,6 +2345,21 @@ export class StaticAddressLoopInSwap extends jspb.Message {
   setDepositsList(value: Array<Deposit>): void;
   addDeposits(value?: Deposit, index?: number): Deposit;
 
+  getInitiationTime(): string;
+  setInitiationTime(value: string): void;
+
+  getLastUpdateTime(): string;
+  setLastUpdateTime(value: string): void;
+
+  getCostServer(): string;
+  setCostServer(value: string): void;
+
+  getCostOnchain(): string;
+  setCostOnchain(value: string): void;
+
+  getCostOffchain(): string;
+  setCostOffchain(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressLoopInSwap.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressLoopInSwap): StaticAddressLoopInSwap.AsObject;
@@ -2336,6 +2378,11 @@ export namespace StaticAddressLoopInSwap {
     swapAmountSatoshis: string,
     paymentRequestAmountSatoshis: string,
     depositsList: Array<Deposit.AsObject>,
+    initiationTime: string,
+    lastUpdateTime: string,
+    costServer: string,
+    costOnchain: string,
+    costOffchain: string,
   }
 }
 
@@ -2661,6 +2708,13 @@ export interface FailureReasonMap {
 
 export const FailureReason: FailureReasonMap;
 
+export interface LoopInSourceMap {
+  LOOP_IN_SOURCE_WALLET: 0;
+  LOOP_IN_SOURCE_STATIC_ADDRESS: 1;
+}
+
+export const LoopInSource: LoopInSourceMap;
+
 export interface LiquidityRuleTypeMap {
   UNKNOWN: 0;
   THRESHOLD: 1;
@@ -2683,6 +2737,8 @@ export interface AutoReasonMap {
   AUTO_REASON_LIQUIDITY_OK: 11;
   AUTO_REASON_BUDGET_INSUFFICIENT: 12;
   AUTO_REASON_FEE_INSUFFICIENT: 13;
+  AUTO_REASON_STATIC_LOOP_IN_NO_CANDIDATE: 14;
+  AUTO_REASON_CUSTOM_CHANNEL_DATA: 15;
 }
 
 export const AutoReason: AutoReasonMap;
@@ -2699,6 +2755,8 @@ export interface DepositStateMap {
   PUBLISH_EXPIRED: 8;
   WAIT_FOR_EXPIRY_SWEEP: 9;
   EXPIRED: 10;
+  OPENING_CHANNEL: 11;
+  CHANNEL_PUBLISHED: 12;
 }
 
 export const DepositState: DepositStateMap;

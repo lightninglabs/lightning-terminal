@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "swapserverrpc/common.proto";
+import "lnd.proto";
 
 package looprpc;
 
@@ -206,12 +207,33 @@ service SwapClient {
     rpc GetStaticAddressSummary (StaticAddressSummaryRequest)
         returns (StaticAddressSummaryResponse);
 
-    /* loop:`static`
+    /* loop:`static in`
     StaticAddressLoopIn initiates a static address loop-in swap.
     */
     rpc StaticAddressLoopIn (StaticAddressLoopInRequest)
         returns (StaticAddressLoopInResponse);
+
+    /* loop:`static openchannel`
+    StaticOpenChannel opens a channel funded by selected static address
+    deposits.
+    */
+    rpc StaticOpenChannel (StaticOpenChannelRequest)
+        returns (StaticOpenChannelResponse);
 }
+
+message StaticOpenChannelRequest {
+    // Wrap lnd's request so Loop can extend this RPC with Loop-specific fields
+    // without diverging from the upstream API surface.
+    lnrpc.OpenChannelRequest open_channel_request = 1;
+}
+
+message StaticOpenChannelResponse {
+    /*
+    The outpoint of the channel opening transaction in the format
+    "txid:output_index".
+    */
+    string channel_open_outpoint = 1;
+};
 
 message StopDaemonRequest {
 }
@@ -1170,6 +1192,18 @@ message GetInfoResponse {
 message GetLiquidityParamsRequest {
 }
 
+enum LoopInSource {
+    /*
+    Use the legacy wallet-funded loop-in flow.
+    */
+    LOOP_IN_SOURCE_WALLET = 0;
+
+    /*
+    Use deposited static-address funds for loop-in autoloops.
+    */
+    LOOP_IN_SOURCE_STATIC_ADDRESS = 1;
+}
+
 message LiquidityParameters {
     /*
     A set of liquidity rules that describe the desired liquidity balance.
@@ -1348,6 +1382,11 @@ message LiquidityParameters {
     considered for easy autoloop swaps.
     */
     repeated bytes easy_autoloop_excluded_peers = 27;
+
+    /*
+    Selects which source autoloop uses for loop-in rules.
+    */
+    LoopInSource loop_in_source = 28;
 }
 
 message EasyAssetAutoloopParams {
@@ -1504,6 +1543,18 @@ enum AutoReason {
     the portion of total swap amount that we allow fees to consume.
     */
     AUTO_REASON_FEE_INSUFFICIENT = 13;
+
+    /*
+    No static loop-in candidate indicates that static loop-in autoloop was
+    selected, but no full-deposit static candidate fit the rule.
+    */
+    AUTO_REASON_STATIC_LOOP_IN_NO_CANDIDATE = 14;
+
+    /*
+    Custom channel data indicates that the target channel carries custom
+    channel data and is excluded from the standard autoloop planner.
+    */
+    AUTO_REASON_CUSTOM_CHANNEL_DATA = 15;
 }
 
 message Disqualified {
@@ -1533,6 +1584,11 @@ message SuggestSwapsResponse {
     The set of recommended loop in swaps
     */
     repeated LoopInRequest loop_in = 3;
+
+    /*
+    The set of recommended static-address loop in swaps.
+    */
+    repeated StaticAddressLoopInRequest static_loop_in = 4;
 
     /*
     Disqualified contains the set of channels that swaps are not recommended
@@ -1771,7 +1827,7 @@ message WithdrawDepositsRequest {
     /*
     The outpoints of the deposits to withdraw.
     */
-    repeated OutPoint outpoints = 1;
+    repeated lnrpc.OutPoint outpoints = 1;
 
     /*
     If set to true, all deposits will be withdrawn.
@@ -1808,23 +1864,6 @@ message WithdrawDepositsResponse {
     The destination address of the withdrawal transaction.
     */
     string address = 2;
-}
-
-message OutPoint {
-    /*
-    Raw bytes representing the transaction id.
-    */
-    bytes txid_bytes = 1;
-
-    /*
-    Reversed, hex-encoded string representing the transaction id.
-    */
-    string txid_str = 2;
-
-    /*
-    The index of the output on the transaction.
-    */
-    uint32 output_index = 3;
 }
 
 message ListStaticAddressDepositsRequest {
@@ -1914,6 +1953,11 @@ message StaticAddressSummaryResponse {
     The total value of all htlc timeout sweeps that the client swept.
     */
     int64 value_htlc_timeout_sweeps_satoshis = 9 [jstype = JS_STRING];
+
+    /*
+    The total value of all deposits that have been used for channel openings.
+    */
+    int64 value_channels_opened = 10 [jstype = JS_STRING];
 }
 
 enum DepositState {
@@ -1982,6 +2026,18 @@ enum DepositState {
     has been sufficiently confirmed.
     */
     EXPIRED = 10;
+
+    /*
+    OPENING_CHANNEL indicates that the channel open in which the deposit was
+    used is in progress.
+    */
+    OPENING_CHANNEL = 11;
+
+    /*
+    CHANNEL_PUBLISHED indicates that the channel open was finalized and
+    published and that it should be managed from lnd from now on.
+    */
+    CHANNEL_PUBLISHED = 12;
 }
 
 message Deposit {
@@ -2087,6 +2143,31 @@ message StaticAddressLoopInSwap {
     The deposits that were used for this swap.
     */
     repeated Deposit deposits = 6;
+
+    /*
+    Initiation time of the swap.
+    */
+    int64 initiation_time = 7 [jstype = JS_STRING];
+
+    /*
+    Last update time of the swap.
+    */
+    int64 last_update_time = 8 [jstype = JS_STRING];
+
+    /*
+    Swap server cost.
+    */
+    int64 cost_server = 9 [jstype = JS_STRING];
+
+    /*
+    On-chain transaction cost.
+    */
+    int64 cost_onchain = 10 [jstype = JS_STRING];
+
+    /*
+    Off-chain routing fees.
+    */
+    int64 cost_offchain = 11 [jstype = JS_STRING];
 }
 
 enum StaticAddressLoopInSwapState {
