@@ -365,16 +365,12 @@ func loadAndValidateConfig(interceptor signal.Interceptor) (*Config, error) {
 		return nil, fmt.Errorf("error parsing flags: %w", err)
 	}
 
-	// Show the version and exit if the version flag was specified.
+	// Show the version and exit if the version flag was specified. This
+	// applies for both the `--version` and the `-V` flag.
 	appName := filepath.Base(os.Args[0])
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	if preCfg.ShowVersion {
+	if preCfg.ShowVersion || preCfg.Lnd.ShowVersion {
 		fmt.Println(appName, "version", RichVersion())
-		os.Exit(0)
-	}
-	if preCfg.Lnd.ShowVersion {
-		fmt.Println(appName, "version", build.Version(),
-			"commit="+build.Commit)
 		os.Exit(0)
 	}
 
