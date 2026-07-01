@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: cleanup space
-        run: rm -rf /opt/hostedtoolcache
+        uses: ./.github/actions/cleanup-space
   
       - name: Set up QEMU
         uses: lightninglabs/gh-actions/setup-qemu-action@2021.01.25.00
