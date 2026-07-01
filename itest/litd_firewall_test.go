@@ -308,8 +308,9 @@ func testRequestLoggerDisable(ctx context.Context, net *NetworkHarness,
 		"--autopilot.disable",
 	)
 	require.NoError(t.t, err)
+	reqLogOnNode := node
 	defer func() {
-		_ = net.ShutdownNode(node)
+		_ = net.ShutdownNode(reqLogOnNode)
 	}()
 
 	rawConn, err = connectLitRPC(
