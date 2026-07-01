@@ -87,7 +87,10 @@ Move all the configuration settings specific to LiT from `lnd.conf` to
 `lit.conf` and remove any previous LiT-specific customizations from the
 configuration settings in `lnd.conf`. Note that any section headers (
 `[ Example ]`) in `lit.conf` should be removed or changed to comments (
-`# Example`).
+`; Example`).
+
+For a full reference of all litd-native configuration options with descriptions
+and defaults, see [`sample-litd.conf`](./sample-litd.conf) in this repository.
 
 ## Usage
 

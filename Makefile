@@ -281,6 +281,15 @@ fmt: $(GOIMPORTS_BIN)
 	@$(call print, "Formatting source.")
 	gofmt -l -w -s $(GOFILES_NOVENDOR)
 
+sample-conf-check:
+	@$(call print, "Checking sample-litd.conf options are valid")
+	@HELP=$$(go run -tags="litd_no_ui $(LND_RELEASE_TAGS)" ./cmd/litd --help 2>&1 || true); \
+	FAILS=0; \
+	for OPT in $$(grep -E '^;[[:space:]]*[a-z][a-z0-9._-]+=' sample-litd.conf | sed -E 's/^;[[:space:]]*//' | cut -d= -f1); do \
+	    echo "$$HELP" | grep -qE -- "--$${OPT}[= ]" || { echo "Option '$$OPT' missing from litd --help"; FAILS=1; }; \
+	done; \
+	exit $$FAILS
+
 check-go-version-yaml:
 	@$(call print, "Checking for target Go version (v$(GO_VERSION)) in YAML files (*.yaml, *.yml)")
 	./scripts/check-go-version-yaml.sh $(GO_VERSION)
@@ -353,5 +362,5 @@ flakehunter-unit:
 	go-install go-install-noui go-install-cli app-build release go-release \
 	docker-release docker-tools scratch check unit unit-bench unit-cover unit-race \
 	clean-itest build-itest build-itest-binary itest-only itest \
-	itest-parallel flake-unit fmt lint \
+	itest-parallel flake-unit fmt lint sample-conf-check \
 	mod mod-check list rpc protos protos-check rpc-js-compile clean
