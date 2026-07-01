@@ -16,6 +16,14 @@
 
 ### Bug Fixes
 
+* [Don't mask account payment errors when request values are
+  absent](https://github.com/lightninglabs/lightning-terminal/pull/1322):
+  When a streaming account payment (`SendPaymentV2`/`SendToRouteV2`) fails and
+  lnd returns a terminal error after the request values have already been
+  cleaned up, lnd's underlying error is now passed through to the caller instead
+  of being masked by a confusing `no request values found for request: <id>`
+  error.
+
 * [Fix `dev.Dockerfile` build failure on git
   worktree checkouts](https://github.com/lightninglabs/lightning-terminal/pull/1311):
   The web UI `postbuild` step no longer aborts when the build context lacks a
@@ -130,4 +138,5 @@
 * Calvin Zachman
 * Cyberguru1
 * darioAnongba
+* Vandit Singh
 * Viktor-T11
