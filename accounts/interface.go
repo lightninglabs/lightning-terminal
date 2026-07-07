@@ -107,6 +107,12 @@ type AccountInvoices map[lntypes.Hash]struct{}
 // AccountPayments is the set of payments that are associated with an account.
 type AccountPayments map[lntypes.Hash]*PaymentEntry
 
+// AccountPaymentEntry wraps a payment hash with its entry details.
+type AccountPaymentEntry struct {
+	Hash lntypes.Hash
+	*PaymentEntry
+}
+
 // OffChainBalanceAccount holds all information that is needed to keep track of
 // a user's off-chain account balance. This balance can only be spent by paying
 // invoices.
