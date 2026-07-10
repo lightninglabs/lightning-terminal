@@ -38,7 +38,7 @@ require (
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.4.16
-	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae
+	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.7
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f

@@ -24,8 +24,6 @@ import (
 //
 // nolint:ll
 type SQLQueries interface {
-	sqldb.BaseQuerier
-
 	GetAliasBySessionID(ctx context.Context, id int64) ([]byte, error)
 	GetSessionByID(ctx context.Context, id int64) (sqlc.Session, error)
 	GetSessionsInGroup(ctx context.Context, groupID sql.NullInt64) ([]sqlc.Session, error)
@@ -78,7 +76,7 @@ type SQLStore struct {
 	clock clock.Clock
 }
 
-type sqlQueriesExecutor[T sqldb.BaseQuerier] struct {
+type sqlQueriesExecutor[T any] struct {
 	*sqldb.TransactionExecutor[T]
 
 	SQLQueries

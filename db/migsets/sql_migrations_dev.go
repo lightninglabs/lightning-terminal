@@ -34,6 +34,7 @@ func MakeMigrationSets(ctx context.Context,
 		//
 		// NOTE: This MUST be updated when a new migration is added.
 		LatestMigrationVersion: db.LatestMigrationVersion,
+		Descriptors:            db.MakeMigrationDescriptors(),
 
 		MakeProgrammaticMigrations: func(baseDB *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {

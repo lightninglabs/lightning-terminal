@@ -33,8 +33,6 @@ const (
 //
 //nolint:ll
 type SQLQueries interface {
-	sqldb.BaseQuerier
-
 	AddAccountInvoice(ctx context.Context, arg sqlc.AddAccountInvoiceParams) error
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg sqlc.DeleteAccountPaymentParams) error
@@ -79,7 +77,7 @@ type SQLStore struct {
 	clock clock.Clock
 }
 
-type sqlQueriesExecutor[T sqldb.BaseQuerier] struct {
+type sqlQueriesExecutor[T any] struct {
 	*sqldb.TransactionExecutor[T]
 
 	SQLQueries

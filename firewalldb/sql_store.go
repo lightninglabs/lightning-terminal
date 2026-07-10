@@ -20,8 +20,6 @@ type SQLSessionQueries interface {
 // SQLQueries is a subset of the sqlc.Queries interface that can be used to
 // interact with various firewalldb tables.
 type SQLQueries interface {
-	sqldb.BaseQuerier
-
 	SQLKVStoreQueries
 	SQLPrivacyPairQueries
 	SQLActionQueries
@@ -48,7 +46,7 @@ type SQLDB struct {
 	clock clock.Clock
 }
 
-type sqlQueriesExecutor[T sqldb.BaseQuerier] struct {
+type sqlQueriesExecutor[T any] struct {
 	*sqldb.TransactionExecutor[T]
 
 	SQLQueries
