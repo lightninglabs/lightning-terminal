@@ -37,6 +37,43 @@ const (
 	LatestDevMigrationVersion = 0
 )
 
+// MakeMigrationDescriptors returns the ordered migration descriptors for LiT's
+// production SQL schema.
+func MakeMigrationDescriptors() []sqldb.MigrationDescriptor {
+	return []sqldb.MigrationDescriptor{
+		{
+			Name:          "accounts",
+			Version:       1,
+			SchemaVersion: 1,
+		},
+		{
+			Name:          "sessions",
+			Version:       2,
+			SchemaVersion: 2,
+		},
+		{
+			Name:          "kvstores",
+			Version:       3,
+			SchemaVersion: 3,
+		},
+		{
+			Name:          "privacy_pairs",
+			Version:       4,
+			SchemaVersion: 4,
+		},
+		{
+			Name:          "actions",
+			Version:       5,
+			SchemaVersion: 5,
+		},
+		{
+			Name:          "kvdb_to_sql",
+			Version:       6,
+			SchemaVersion: 6,
+		},
+	}
+}
+
 // HasDevMigrations reports whether any dev SQL migration files are embedded in
 // the current build. This lets dev builds omit the separate dev migration set
 // cleanly when the directory exists but currently contains no migration files.
@@ -67,6 +104,7 @@ func MakeTestMigrationSets() []sqldb.MigrationSet {
 		//
 		// NOTE: This MUST be updated when a new migration is added.
 		LatestMigrationVersion: LatestMigrationVersion,
+		Descriptors:            MakeMigrationDescriptors(),
 
 		MakeProgrammaticMigrations: func(db *sqldb.BaseDB) (
 			map[uint]migrate.ProgrammaticMigrEntry, error) {

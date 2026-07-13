@@ -1189,8 +1189,8 @@ github.com/lightningnetwork/lnd/queue v1.2.0 h1:sSrn+u84OLuOT/F+xGxgg8VfknXeIZEA
 github.com/lightningnetwork/lnd/queue v1.2.0/go.mod h1:qLNP0L3B7piRGvDyhAyJKic4xTt+Mw4D7mWrQeuAwxY=
 github.com/lightningnetwork/lnd/sqldb v1.0.13 h1:CcG9mrHNW/hIuZnqgosdiNmS7QhjSyfR/XkSFJB7EC8=
 github.com/lightningnetwork/lnd/sqldb v1.0.13/go.mod h1:ew3kMfknA0B4djTtrQSAkxvro+8+c++L8LuNaoT7GQA=
-github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae h1:ICRuZIkXed43iuqcJaayubPTcQolttttwNZFrapdwIo=
-github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0-20260326184657-f7cc56305bae/go.mod h1:T2F1Sfb0oSpZyylIEE3ijiSejaXvIExER5xEdoe5wEE=
+github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0 h1:c0tt+rlsXCPmPlw641ruOe+EmeyFPWmD+E4sONaj0lc=
+github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0/go.mod h1:TyfjJz1iAKJA3uw3Tk7Mto0FJZY/MR5mAUc5qI80zB4=
 github.com/lightningnetwork/lnd/ticker v1.1.1 h1:J/b6N2hibFtC7JLV77ULQp++QLtCwT6ijJlbdiZFbSM=
 github.com/lightningnetwork/lnd/ticker v1.1.1/go.mod h1:waPTRAAcwtu7Ji3+3k+u/xH5GHovTsCoSVpho0KDvdA=
 github.com/lightningnetwork/lnd/tlv v1.3.2 h1:MO4FCk7F4k5xPMqVZF6Nb/kOpxlwPrUQpYjmyKny5s0=
