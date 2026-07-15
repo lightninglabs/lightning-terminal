@@ -87,6 +87,10 @@ const (
 	defaultRPCTimeout     = 3 * time.Minute
 	minimumRPCTimeout     = 30 * time.Second
 	defaultStartupTimeout = 5 * time.Second
+
+	// stateServicePollInterval is how often we poll lnd's StateService
+	// while waiting for its RPC interceptor to leave WAITING_TO_START.
+	stateServicePollInterval = 200 * time.Millisecond
 )
 
 // restRegistration is a function type that represents a REST proxy
@@ -671,6 +675,22 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	if err := g.rpcProxy.Start(g.lndConn, bakeSuperMac); err != nil {
 		return fmt.Errorf("error starting lnd gRPC proxy server: %v",
 			err)
+	}
+
+	// The unlockChan/readyChan signal we waited on above only guarantees
+	// that lnd's gRPC listener socket is bound, not that lnd's RPC
+	// interceptor has advanced far enough to service non-State RPCs. Wait
+	// for that here so that the "Wallet Ready" status set below is not
+	// observed before it's actually true.
+	lndStateClient := lnrpc.NewStateClient(g.lndConn)
+	if err := waitForLndRPCReady(
+		ctx, lndStateClient, defaultConnectTimeout,
+	); err != nil {
+		g.statusMgr.SetErrored(
+			subservers.LND, "lnd RPC not ready: %v", err,
+		)
+
+		return fmt.Errorf("lnd RPC not ready: %v", err)
 	}
 
 	// We now set a custom status for the LND sub-server to indicate that
