@@ -6,8 +6,12 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/protobuf/proto"
 	"gopkg.in/macaroon-bakery.v2/bakery"
 	"gopkg.in/macaroon.v2"
 )
@@ -117,4 +121,128 @@ func BakeSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
 	}
 
 	return hex.EncodeToString(macBytes), err
+}
+
+// SuperMacaroonExists determines whether a macaroon file exists at the given
+// path.
+func SuperMacaroonExists(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		return false
+	}
+
+	return true
+}
+
+// MacaroonMatchesPermissions checks if the macaroon at the given path contains
+// exactly the expected permissions (no more and no less).
+func MacaroonMatchesPermissions(path string,
+	expectedPerms []bakery.Op) (bool, error) {
+
+	macBytes, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	mac := &macaroon.Macaroon{}
+	if err := mac.UnmarshalBinary(macBytes); err != nil {
+		return false, err
+	}
+
+	rawID := mac.Id()
+	if len(rawID) == 0 || rawID[0] != byte(bakery.LatestVersion) {
+		return false, errors.New("invalid macaroon version")
+	}
+
+	decodedID := &lnrpc.MacaroonId{}
+	if err := proto.Unmarshal(rawID[1:], decodedID); err != nil {
+		return false, err
+	}
+
+	// Map expected permissions for easy lookup: entity -> action -> true.
+	expectedMap := make(map[string]map[string]bool)
+	for _, op := range expectedPerms {
+		if expectedMap[op.Entity] == nil {
+			expectedMap[op.Entity] = make(map[string]bool)
+		}
+
+		expectedMap[op.Entity][op.Action] = true
+	}
+
+	// Map actual permissions from decoded macaroon ID:
+	// entity -> action -> true.
+	actualMap := make(map[string]map[string]bool)
+	for _, op := range decodedID.Ops {
+		if op == nil {
+			continue
+		}
+		if actualMap[op.Entity] == nil {
+			actualMap[op.Entity] = make(map[string]bool)
+		}
+		for _, action := range op.Actions {
+			actualMap[op.Entity][action] = true
+		}
+	}
+
+	// Compare the mapped sets for exact equality.
+	if len(expectedMap) != len(actualMap) {
+		return false, nil
+	}
+
+	for entity, actions := range expectedMap {
+		actualActions, ok := actualMap[entity]
+
+		if !ok || len(actions) != len(actualActions) {
+			return false, nil
+		}
+		for action := range actions {
+			if !actualActions[action] {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
+// BakeAndWriteSuperMacaroon bakes a super macaroon and writes it to disk.
+func BakeAndWriteSuperMacaroon(ctx context.Context, lnd lnrpc.LightningClient,
+	path string, perms []bakery.Op) error {
+
+	var suffixBytes [4]byte
+	rootKeyID := NewSuperMacaroonRootKeyID(suffixBytes)
+
+	superMacHex, err := BakeSuperMacaroon(
+		ctx, lnd, rootKeyID, perms, nil,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to bake super macaroon: %w", err)
+	}
+
+	superMacBytes, err := hex.DecodeString(superMacHex)
+	if err != nil {
+		return fmt.Errorf("unable to decode baked "+
+			"super macaroon: %w", err)
+	}
+
+	if err := os.WriteFile(path, superMacBytes, 0600); err != nil {
+		return fmt.Errorf("unable to write super macaroon to %v: %w",
+			path, err)
+	}
+
+	return nil
+}
+
+// HasMacaroonSuffix checks that the super macaroon path is not empty and ends
+// with the expected suffix.
+func HasMacaroonSuffix(path string) error {
+	if path == "" {
+		return fmt.Errorf("super-macaroon-path cannot be empty")
+	}
+
+	if !strings.HasSuffix(path, ".macaroon") {
+		return fmt.Errorf("super-macaroon-path must end with the " +
+			".macaroon suffix")
+	}
+
+	return nil
 }
