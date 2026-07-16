@@ -899,31 +899,56 @@ func (hn *HarnessNode) WaitUntilStarted(conn grpc.ClientConnInterface,
 			return err
 		}
 
+		// LiT itself only reports Running once it has finished baking
+		// and writing its default macaroons to disk, so waiting for
+		// this closes the race between that and callers that read
+		// LitMacPath straight off disk right after we return.
+		litStatus, ok := states.SubServers[subservers.LIT]
+		if !ok || !litStatus.Running {
+			return fmt.Errorf("LiT has not yet started")
+		}
+
 		if faradayMode != terminal.ModeDisable {
 			faraday, ok := states.SubServers[subservers.FARADAY]
-			if !ok || !faraday.Running {
-				return fmt.Errorf("faraday has not yet started")
+			if !ok {
+				return fmt.Errorf("faraday status not found")
+			}
+			if faraday.Error != "" {
+				return fmt.Errorf("faraday failed to "+
+					"start: %s", faraday.Error)
 			}
 		}
 
 		if loopMode != terminal.ModeDisable {
 			loop, ok := states.SubServers[subservers.LOOP]
-			if !ok || !loop.Running {
-				return fmt.Errorf("loop has not yet started")
+			if !ok {
+				return fmt.Errorf("loop status not found")
+			}
+			if loop.Error != "" {
+				return fmt.Errorf("loop failed to "+
+					"start: %s", loop.Error)
 			}
 		}
 
 		if poolMode != terminal.ModeDisable {
 			pool, ok := states.SubServers[subservers.POOL]
-			if !ok || !pool.Running {
-				return fmt.Errorf("pool has not yet started")
+			if !ok {
+				return fmt.Errorf("pool status not found")
+			}
+			if pool.Error != "" {
+				return fmt.Errorf("pool failed to "+
+					"start: %s", pool.Error)
 			}
 		}
 
 		if tapMode != terminal.ModeDisable {
 			tap, ok := states.SubServers[subservers.TAP]
-			if !ok || !tap.Running {
-				return fmt.Errorf("tap has not yet started")
+			if !ok {
+				return fmt.Errorf("tap status not found")
+			}
+			if tap.Error != "" {
+				return fmt.Errorf("tap failed to "+
+					"start: %s", tap.Error)
 			}
 		}
 
