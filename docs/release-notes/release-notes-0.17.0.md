@@ -33,13 +33,6 @@
   expiration date would overwrite it to 0 (never expires). It now correctly
   defaults to -1 (no change).
 
-* [Gate wallet-ready status on lnd's actual RPC
-  readiness](https://github.com/lightninglabs/lightning-terminal/pull/1353):
-  Fixed a startup race where litd could report the LND sub-server as "Wallet
-  Ready" before lnd's RPC interceptor had actually left its
-  `WAITING_TO_START` state, so the very next call could still fail with
-  `rpc error: ... waiting to start`.
-
 ### Functional Changes/Additions
 
 * [Support for SQL database
@@ -99,10 +92,6 @@
   comma-separated lists, and mixed input.
 
 ### Technical and Architectural Updates
-
-* [Report litd's own version for `litd
-  -V`](https://github.com/lightninglabs/lightning-terminal/pull/1337): The `-V`
-  flag now prints litd's version instead of the integrated lnd version.
 
 ## RPC Updates
 
