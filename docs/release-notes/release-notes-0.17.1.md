@@ -27,6 +27,13 @@
 
 ### Technical and Architectural Updates
 
+* [Stop itest litd nodes via litd's own
+  `StopDaemon`](https://github.com/lightninglabs/lightning-terminal/pull/1356):
+  The itest harness now sets up a lit connection for every node, seed based or
+  not, so nodes are stopped through litd's own `StopDaemon`. For stateless init
+  nodes, which keep no macaroon files on disk, the harness bakes a lit super
+  macaroon from the admin macaroon to authenticate that call.
+
 * [Report litd's own version for `litd
   -V`](https://github.com/lightninglabs/lightning-terminal/pull/1337): The `-V`
   flag now prints litd's version instead of the integrated lnd version.
