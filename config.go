@@ -98,6 +98,18 @@ const (
 
 	defaultFirstLNCConnTimeout = 10 * time.Minute
 
+	// defaultLndReadyTimeout is the default maximum time that litd
+	// waits for lnd's RPC server to become ready. It currently applies
+	// to the one-time kvdb-to-SQL data migration, which must call into
+	// lnd's main RPC server (ListMacaroonIDs); that only becomes
+	// available once lnd reaches its "RPC active" state. On nodes with a
+	// large channel/graph state this can take well over a minute after
+	// the wallet is unlocked, and timing out aborts litd startup
+	// entirely (requiring a manual restart), so we default to a
+	// deliberately generous value that comfortably covers even large
+	// nodes.
+	defaultLndReadyTimeout = 10 * time.Minute
+
 	// DatabaseBackendSqlite is the name of the SQLite database backend.
 	DatabaseBackendSqlite = "sqlite"
 
@@ -220,6 +232,11 @@ type Config struct {
 	// resolved.
 	autoMigrateKVDBApproved bool
 
+	// LndReadyTimeout is the maximum time that litd will wait for lnd's RPC
+	// server to become ready. This currently applies to the one-time
+	// kvdb-to-SQL data migration, which must call into lnd's RPC.
+	LndReadyTimeout time.Duration `long:"lndreadytimeout" description:"The maximum time that litd will wait for lnd's RPC server to become ready. This currently applies to the one-time migration of litd's legacy kvdb data to the configured SQL backend, which must call into lnd's RPC. On nodes with a large channel and graph state, lnd can take a while to start serving RPC calls after the wallet is unlocked; increase this value if startup fails with an error mentioning that lnd's 'RPC server is in the process of starting up'."`
+
 	// Sqlite holds the configuration options for a SQLite database
 	// backend.
 	Sqlite *db.SqliteConfig `group:"sqlite" namespace:"sqlite"`
@@ -341,6 +358,7 @@ func (c *Config) NewStores(ctx context.Context,
 				migsets.MakeMigrationSets(
 					ctx, basicClient, c.MacaroonPath,
 					c.LitDir, c.Network, clock,
+					c.LndReadyTimeout,
 				),
 			)
 			if err != nil {
@@ -393,6 +411,7 @@ func (c *Config) NewStores(ctx context.Context,
 				migsets.MakeMigrationSets(
 					ctx, basicClient, c.MacaroonPath,
 					c.LitDir, c.Network, clock,
+					c.LndReadyTimeout,
 				),
 			)
 			if err != nil {
@@ -539,6 +558,7 @@ func defaultConfig() *Config {
 		Lnd:                &lndDefaultConfig,
 		LndRPCTimeout:      defaultRPCTimeout,
 		LndConnectInterval: defaultStartupTimeout,
+		LndReadyTimeout:    defaultLndReadyTimeout,
 		LitDir:             DefaultLitDir,
 		LetsEncryptListen:  defaultLetsEncryptListen,
 		LetsEncryptDir:     defaultLetsEncryptDir,
@@ -671,6 +691,15 @@ func loadAndValidateConfig(ctx context.Context,
 	if cfg.LndRPCTimeout < minimumRPCTimeout {
 		return nil, fmt.Errorf("lnd RPC timeout must be at least %v "+
 			"to avoid problems", minimumRPCTimeout)
+	}
+
+	// The work that waits on lnd's readiness (currently the kvdb-to-SQL
+	// migration) cannot proceed without lnd, so a non-positive timeout
+	// would make it fail immediately on any node where lnd isn't
+	// instantly ready. Require a positive value.
+	if cfg.LndReadyTimeout <= 0 {
+		return nil, fmt.Errorf("lndreadytimeout must be positive, got "+
+			"%v", cfg.LndReadyTimeout)
 	}
 
 	// Validate the lightning-terminal config options.
