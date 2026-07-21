@@ -72,6 +72,12 @@
   runtimes. This represents a breaking change to the `NewPrivacyMapper` and
   `CryptoRandIntn` functions. The PR also introduced a `sync.Pool` for
   `*big.Int` to optimize allocations.
+* [Allow overriding faraday and frdrpc in
+  `dev.Dockerfile`](https://github.com/lightninglabs/lightning-terminal/pull/1299):
+  Added `FARADAY_REPO`/`FARADAY_VERSION` and `FRDRPC_REPO`/`FRDRPC_VERSION`
+  build arguments so dev images can be built against an arbitrary `faraday`
+  commit or fork, mirroring the existing overrides for `lnd`, `taproot-assets`,
+  `taprpc`, and `loop`.
 
 ## RPC Updates
 
