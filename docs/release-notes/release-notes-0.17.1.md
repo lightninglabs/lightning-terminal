@@ -31,6 +31,12 @@
   of being masked by a confusing `no request values found for request: <id>`
   error.
 
+* [Hide unsupported flags from `litcli ln
+  addinvoice`](https://github.com/lightninglabs/lightning-terminal/pull/1335):
+  The `addinvoice` command no longer advertises the blinded-path flags or
+  `--cltv_expiry_delta`, which were inherited from `lncli` but have no effect on
+  Taproot Asset invoices.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
