@@ -22,6 +22,12 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
+// testLndReadyTimeout is the lnd RPC-ready timeout used for the migration in
+// these tests. The test lnd server is ready immediately, so any positive value
+// works; we use a short one so a broken poll loop fails fast rather than
+// hanging the test.
+const testLndReadyTimeout = 5 * time.Second
+
 // TestKVDBToSQLProgrammaticMigrationSkipsMissingStores verifies that the kvdb
 // to SQL migration does not create missing legacy kvdb files while scanning for
 // stores to migrate.
@@ -39,6 +45,7 @@ func TestKVDBToSQLProgrammaticMigrationSkipsMissingStores(t *testing.T) {
 	err := kvdbToSqlProgrammaticMigration(
 		context.Background(), nil, accountsDir, networkDir,
 		sqlStore.BaseDB, clock.NewDefaultClock(), queries,
+		testLndReadyTimeout,
 	)
 	require.NoError(t, err)
 
@@ -77,6 +84,7 @@ func TestKVDBToSQLProgrammaticMigrationRunsWithOneBBoltDBFiles(t *testing.T) {
 	err = kvdbToSqlProgrammaticMigration(
 		ctx, lndClient, accountsDir, networkDir,
 		sqlStore.BaseDB, testClock, queries,
+		testLndReadyTimeout,
 	)
 	require.NoError(t, err)
 

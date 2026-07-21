@@ -23,6 +23,17 @@
   `WAITING_TO_START` state, so the very next call could still fail with
   `rpc error: ... waiting to start`.
 
+* [Wait longer for lnd during the kvdb-to-SQL
+  migration](https://github.com/lightninglabs/lightning-terminal/pull/1359):
+  The kvdb-to-SQL data migration polls lnd's `ListMacaroonIDs` RPC, which only
+  becomes available once lnd reaches its "RPC active" state. On nodes with a
+  large channel/graph state, lnd can take well over a minute to get there after
+  the wallet is unlocked, which exceeded the previous fixed 60-second poll
+  budget and caused the migration (and therefore litd startup) to fail
+  permanently, requiring a manual restart. The wait is now bounded by a
+  configurable, generous timeout (`--lndreadytimeout`, defaulting to 10
+  minutes) instead of a fixed attempt count.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates

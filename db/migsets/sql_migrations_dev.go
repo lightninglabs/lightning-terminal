@@ -5,6 +5,7 @@ package migsets
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/pgx/v5"
@@ -17,7 +18,8 @@ import (
 // MakeMigrationSets creates the migration sets for the dev environments.
 func MakeMigrationSets(ctx context.Context,
 	basicClient lnrpc.LightningClient, macPath, litDir, network string,
-	clock clock.Clock) []sqldb.MigrationSet {
+	clock clock.Clock,
+	lndReadyTimeout time.Duration) []sqldb.MigrationSet {
 
 	accountsDir := filepath.Dir(macPath)
 	networkDir := filepath.Join(litDir, network)
@@ -49,6 +51,7 @@ func MakeMigrationSets(ctx context.Context,
 			res[db.KVDBtoSQLMigVersion] = Mig6ProgrammaticMigration(
 				ctx, basicClient, baseDB, accountsDir,
 				networkDir, clock, db.KVDBtoSQLMigVersion,
+				lndReadyTimeout,
 			)
 
 			return res, nil

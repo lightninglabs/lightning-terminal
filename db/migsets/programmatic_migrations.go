@@ -26,7 +26,8 @@ import (
 func Mig6ProgrammaticMigration(ctx context.Context,
 	basicClient lnrpc.LightningClient, db *sqldb.BaseDB,
 	accountsDir, networkDir string, clock clock.Clock,
-	migVersion uint) migrate.ProgrammaticMigrEntry {
+	migVersion uint,
+	lndReadyTimeout time.Duration) migrate.ProgrammaticMigrEntry {
 
 	mig6queries := sqlcmig6.NewForType(db, db.BackendType)
 	mig6executor := sqldb.NewTransactionExecutor(
@@ -49,6 +50,7 @@ func Mig6ProgrammaticMigration(ctx context.Context,
 				return kvdbToSqlProgrammaticMigration(
 					ctx, basicClient, accountsDir,
 					networkDir, db, clock, q6,
+					lndReadyTimeout,
 				)
 			}, sqldb.NoOpReset,
 		)
@@ -87,7 +89,8 @@ func Mig6ProgrammaticMigration(ctx context.Context,
 
 func kvdbToSqlProgrammaticMigration(ctx context.Context,
 	basicClient lnrpc.LightningClient, accountsDir, networkDir string,
-	_ *sqldb.BaseDB, clock clock.Clock, q *sqlcmig6.Queries) error {
+	_ *sqldb.BaseDB, clock clock.Clock, q *sqlcmig6.Queries,
+	lndReadyTimeout time.Duration) error {
 
 	start := time.Now()
 
@@ -185,19 +188,40 @@ func kvdbToSqlProgrammaticMigration(ctx context.Context,
 		}
 	}()
 
-	// We'll fetch the macaroonIDList from `lnd` next. Note that since lnd's
-	// RPC servers may not have been fully started yet if the execution of
-	// accounts and session migration were really quick, we poll the request
-	// up to 120 times with a 0.5 second delay between the attempts. This
-	// should be a sufficient amount of time for the wallet to have been
-	// loaded and for the RPC servers to started.
-	const (
-		maxListMacaroonIDAttempts = 120
-		listMacaroonIDRetryDelay  = 500 * time.Millisecond
-	)
+	// We'll fetch the macaroonIDList from lnd next. This is a call to
+	// lnd's main Lightning RPC server, which only starts accepting calls
+	// once lnd has reached its "RPC active" state. On nodes with a large
+	// channel and graph state, reaching that state can take well over a
+	// minute after the wallet is unlocked (opening the main database and
+	// building all of lnd's subsystems is slow), so we cannot assume lnd
+	// is ready by the time the (fast) accounts and session migrations
+	// above have completed. We therefore poll the request, retrying
+	// every listMacaroonIDRetryDelay, until lnd becomes ready, the
+	// lndReadyTimeout budget is exhausted, or the daemon shuts down (ctx
+	// canceled).
+	//
+	// NOTE: lndReadyTimeout is intentionally generous rather than a
+	// tight bound (see its default in the main config). litd cannot
+	// complete this migration without lnd, so timing out here aborts
+	// litd startup entirely and forces a manual restart; waiting longer
+	// for a slow-but-healthy lnd is strictly preferable to that.
+	//
+	// listMacaroonIDRetryDelay is the delay between successive attempts
+	// to reach lnd. 500ms keeps the poll responsive (lnd is typically
+	// ready within a minute or two) without busy-looping against a
+	// not-yet-ready RPC server.
+	const listMacaroonIDRetryDelay = 500 * time.Millisecond
 
-	var macaroonIDList *lnrpc.ListMacaroonIDsResponse
-	for i := 1; i <= maxListMacaroonIDAttempts; i++ {
+	waitCtx, cancel := context.WithTimeout(ctx, lndReadyTimeout)
+	defer cancel()
+
+	var (
+		macaroonIDList *lnrpc.ListMacaroonIDsResponse
+		attempt        int
+	)
+	for {
+		attempt++
+
 		macaroonIDList, err = basicClient.ListMacaroonIDs(
 			ctx, &lnrpc.ListMacaroonIDsRequest{},
 		)
@@ -205,21 +229,18 @@ func kvdbToSqlProgrammaticMigration(ctx context.Context,
 			break
 		}
 
-		if i == maxListMacaroonIDAttempts {
-			return fmt.Errorf("error listing macaroon IDs when "+
-				"migrating stores to SQL after %d attempts: %w",
-				maxListMacaroonIDAttempts, err)
-		}
-
 		log.Warnf("Failed to list macaroon IDs when migrating "+
-			"stores to SQL (attempt %d/%d), retrying in %v: %v",
-			i, maxListMacaroonIDAttempts, listMacaroonIDRetryDelay,
-			err)
+			"stores to SQL (attempt %d), retrying in %v: %v",
+			attempt, listMacaroonIDRetryDelay, err)
 
 		select {
-		case <-ctx.Done():
-			return fmt.Errorf("context canceled while retrying "+
-				"to list macaroon IDs: %w", ctx.Err())
+		case <-waitCtx.Done():
+			return fmt.Errorf("error listing macaroon IDs "+
+				"when migrating stores to SQL after %d "+
+				"attempts (waited up to %v for lnd's RPC "+
+				"server to become ready): %w", attempt,
+				lndReadyTimeout, err)
+
 		case <-time.After(listMacaroonIDRetryDelay):
 		}
 	}
