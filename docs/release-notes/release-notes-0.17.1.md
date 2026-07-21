@@ -31,6 +31,12 @@
   -V`](https://github.com/lightninglabs/lightning-terminal/pull/1337): The `-V`
   flag now prints litd's version instead of the integrated lnd version.
 
+* [Refactor privacy mapper to prevent 32-bit truncation and optimize
+  allocations](https://github.com/lightninglabs/lightning-terminal/pull/1358):
+  Refactored the privacy mapper's random number generation to use `int64`
+  instead of `int` to prevent architecture-dependent truncation on 32-bit
+  runtimes, and introduced a `sync.Pool` for `*big.Int` to optimize allocations.
+
 ## RPC Updates
 
 ## Integrated Binary Updates
