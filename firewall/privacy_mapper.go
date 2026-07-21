@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -1857,13 +1858,26 @@ func hideBool(randIntn func(n int64) (int64, error)) (bool, error) {
 	return random >= 1, nil
 }
 
+// bigIntPool is a pool of *big.Int values to avoid frequent heap allocations in
+// CryptoRandIntn.
+var bigIntPool = sync.Pool{
+	New: func() any {
+		return new(big.Int)
+	},
+}
+
 // CryptoRandIntn generates a random number between [0, n).
 func CryptoRandIntn(n int64) (int64, error) {
 	if n == 0 {
 		return 0, nil
 	}
 
-	randBig, err := rand.Int(rand.Reader, big.NewInt(n))
+	nBig := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(nBig)
+
+	nBig.SetInt64(n)
+
+	randBig, err := rand.Int(rand.Reader, nBig)
 	if err != nil {
 		return 0, err
 	}
