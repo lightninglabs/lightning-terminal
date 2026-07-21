@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -61,14 +62,14 @@ var _ mid.RequestInterceptor = (*PrivacyMapper)(nil)
 // requests to their real values and vice versa for responses.
 type PrivacyMapper struct {
 	db        firewalldb.PrivacyMapper
-	randIntn  func(int) (int, error)
+	randIntn  func(int64) (int64, error)
 	sessionDB firewalldb.SessionDB
 }
 
 // NewPrivacyMapper returns a new instance of PrivacyMapper. The randIntn
 // function is used to draw randomness for request field obfuscation.
 func NewPrivacyMapper(newDB firewalldb.PrivacyMapper,
-	randIntn func(int) (int, error),
+	randIntn func(int64) (int64, error),
 	sessionDB firewalldb.SessionDB) *PrivacyMapper {
 
 	return &PrivacyMapper{
@@ -379,7 +380,7 @@ func handleGetInfoResponse(db firewalldb.PrivacyMapDB,
 
 func handleFwdHistoryResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags,
-	randIntn func(int) (int, error)) func(ctx context.Context,
+	randIntn func(int64) (int64, error)) func(ctx context.Context,
 	r *lnrpc.ForwardingHistoryResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.ForwardingHistoryResponse) (
@@ -582,7 +583,7 @@ func handleListChannelsRequest(db firewalldb.PrivacyMapDB,
 
 func handleListChannelsResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags,
-	randIntn func(int) (int, error)) func(ctx context.Context,
+	randIntn func(int64) (int64, error)) func(ctx context.Context,
 	r *lnrpc.ListChannelsResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.ListChannelsResponse) (
@@ -866,7 +867,7 @@ func handleUpdatePolicyResponse(db firewalldb.PrivacyMapDB,
 
 func handleWalletBalanceResponse(_ firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags,
-	randIntn func(int) (int, error)) func(ctx context.Context,
+	randIntn func(int64) (int64, error)) func(ctx context.Context,
 	r *lnrpc.WalletBalanceResponse) (proto.Message, error) {
 
 	return func(_ context.Context, r *lnrpc.WalletBalanceResponse) (
@@ -945,7 +946,7 @@ func handleWalletBalanceResponse(_ firewalldb.PrivacyMapDB,
 
 func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags,
-	randIntn func(int) (int, error)) func(ctx context.Context,
+	randIntn func(int64) (int64, error)) func(ctx context.Context,
 	r *lnrpc.ClosedChannelsResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.ClosedChannelsResponse) (
@@ -1065,7 +1066,7 @@ func handleClosedChannelsResponse(db firewalldb.PrivacyMapDB,
 // channel.
 func obfuscatePendingChannel(ctx context.Context,
 	c *lnrpc.PendingChannelsResponse_PendingChannel,
-	tx firewalldb.PrivacyMapTx, randIntn func(int) (int, error),
+	tx firewalldb.PrivacyMapTx, randIntn func(int64) (int64, error),
 	flags session.PrivacyFlags) (
 	*lnrpc.PendingChannelsResponse_PendingChannel, error) {
 
@@ -1142,7 +1143,7 @@ func obfuscatePendingChannel(ctx context.Context,
 
 func handlePendingChannelsResponse(db firewalldb.PrivacyMapDB,
 	flags session.PrivacyFlags,
-	randIntn func(int) (int, error)) func(ctx context.Context,
+	randIntn func(int64) (int64, error)) func(ctx context.Context,
 	r *lnrpc.PendingChannelsResponse) (proto.Message, error) {
 
 	return func(ctx context.Context, r *lnrpc.PendingChannelsResponse) (
@@ -1729,7 +1730,7 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 }
 
 // maybeHideAmount hides an amount if the privacy flag is not set.
-func maybeHideAmount(flags session.PrivacyFlags, randIntn func(int) (int,
+func maybeHideAmount(flags session.PrivacyFlags, randIntn func(int64) (int64,
 	error), a int64) (int64, error) {
 
 	if !flags.Contains(session.ClearAmounts) {
@@ -1748,13 +1749,18 @@ func maybeHideAmount(flags session.PrivacyFlags, randIntn func(int) (int,
 
 // hideAmount symmetrically randomizes an amount around a given relative
 // variation interval. relativeVariation should be between 0 and 1.
-func hideAmount(randIntn func(n int) (int, error), relativeVariation float64,
-	amount uint64) (uint64, error) {
+func hideAmount(randIntn func(n int64) (int64, error),
+	relativeVariation float64, amount uint64) (uint64, error) {
 
 	if relativeVariation < 0 || relativeVariation > 1 {
 		return 0, fmt.Errorf("hide amount: relative variation is not "+
 			"between allowed bounds of [0, 1], is %v",
 			relativeVariation)
+	}
+
+	if amount > math.MaxInt64 {
+		return 0, fmt.Errorf("hide amount: amount %d overflows "+
+			"int64", amount)
 	}
 
 	if amount == 0 {
@@ -1765,8 +1771,13 @@ func hideAmount(randIntn func(n int) (int, error), relativeVariation float64,
 	// between 0 and 1.
 	fuzzInterval := uint64(float64(amount) * relativeVariation)
 
-	amountMin := int(amount - fuzzInterval)
-	amountMax := int(amount + fuzzInterval)
+	if amount+fuzzInterval > math.MaxInt64 {
+		return 0, fmt.Errorf("hide amount: amount %d with variation "+
+			"overflows int64", amount)
+	}
+
+	amountMin := int64(amount - fuzzInterval)
+	amountMax := int64(amount + fuzzInterval)
 
 	randAmount, err := randBetween(randIntn, amountMin, amountMax)
 	if err != nil {
@@ -1778,7 +1789,7 @@ func hideAmount(randIntn func(n int) (int, error), relativeVariation float64,
 
 // hideTimestamp symmetrically randomizes a unix timestamp given an absolute
 // variation interval. The random input is expected to be rand.Intn.
-func hideTimestamp(randIntn func(n int) (int, error),
+func hideTimestamp(randIntn func(n int64) (int64, error),
 	absoluteVariation time.Duration,
 	timestamp time.Time) (time.Time, error) {
 
@@ -1802,18 +1813,20 @@ func hideTimestamp(randIntn func(n int) (int, error),
 	timeMax := timestamp.Add(absoluteVariation)
 
 	timeNs, err := randBetween(
-		randIntn, int(timeMin.UnixNano()), int(timeMax.UnixNano()),
+		randIntn, timeMin.UnixNano(), timeMax.UnixNano(),
 	)
 	if err != nil {
 		return time.Time{}, err
 	}
 
-	return time.Unix(0, int64(timeNs)), nil
+	return time.Unix(0, timeNs), nil
 }
 
 // randBetween generates a random number between [min, max) given a source of
 // randomness.
-func randBetween(randIntn func(int) (int, error), min, max int) (int, error) {
+func randBetween(randIntn func(int64) (int64, error),
+	min, max int64) (int64, error) {
+
 	if max < min {
 		return 0, fmt.Errorf("min is not allowed to be greater than "+
 			"max, (min: %v, max: %v)", min, max)
@@ -1833,7 +1846,7 @@ func randBetween(randIntn func(int) (int, error), min, max int) (int, error) {
 }
 
 // hideBool generates a random bool given a random input.
-func hideBool(randIntn func(n int) (int, error)) (bool, error) {
+func hideBool(randIntn func(n int64) (int64, error)) (bool, error) {
 	random, err := randIntn(2)
 	if err != nil {
 		return false, err
@@ -1845,17 +1858,17 @@ func hideBool(randIntn func(n int) (int, error)) (bool, error) {
 }
 
 // CryptoRandIntn generates a random number between [0, n).
-func CryptoRandIntn(n int) (int, error) {
+func CryptoRandIntn(n int64) (int64, error) {
 	if n == 0 {
 		return 0, nil
 	}
 
-	nBig, err := rand.Int(rand.Reader, big.NewInt(int64(n)))
+	randBig, err := rand.Int(rand.Reader, big.NewInt(n))
 	if err != nil {
 		return 0, err
 	}
 
-	return int(nBig.Int64()), nil
+	return randBig.Int64(), nil
 }
 
 // ObfuscateConfig alters the config string by replacing sensitive data with
