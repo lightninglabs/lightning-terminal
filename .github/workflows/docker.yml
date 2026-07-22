@@ -23,7 +23,7 @@ env:
 
 jobs:
   main:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: cleanup space
         uses: ./.github/actions/cleanup-space

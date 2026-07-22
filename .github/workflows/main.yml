@@ -102,7 +102,7 @@ jobs:
   ########################
   cross-compile:
     name: cross compilation
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     strategy:
       fail-fast: true
       matrix:
@@ -115,9 +115,6 @@ jobs:
           - name: arm
             sys: darwin-arm64 linux-armv6 linux-armv7 linux-arm64
     steps:
-      - name: cleanup space
-        run: rm -rf /opt/hostedtoolcache
-
       - name: git checkout
         uses: actions/checkout@v4
 
@@ -134,7 +131,7 @@ jobs:
   ########################
   proto-compile-check:
     name: RPC proto compilation check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -170,7 +167,7 @@ jobs:
   check-commits:
     if: github.event_name == 'pull_request'
     name: check commits
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -198,7 +195,7 @@ jobs:
   #######################
   sqlc-check:
     name: Sqlc check
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: git checkout
         uses: actions/checkout@v3
@@ -220,7 +217,7 @@ jobs:
   ########################
   lint:
     name: lint
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -243,7 +240,7 @@ jobs:
   ########################
   unit-test:
     name: run unit tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     strategy:
       # Allow other tests in the matrix to continue if one fails.
       fail-fast: false
@@ -272,7 +269,7 @@ jobs:
   ########################
   build-itest:
     name: build itest binaries
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -296,7 +293,7 @@ jobs:
   ########################
   itest:
     name: integration test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     needs: build-itest
     strategy:
       # Allow other tests in the matrix to continue if one fails.
@@ -358,7 +355,7 @@ jobs:
   ########################
   release-notes-check:
     name: check release notes updated
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     if: '!contains(github.event.pull_request.labels.*.name, ''no-changelog'')'
     steps:
       - name: git checkout
