@@ -23,6 +23,14 @@
   `WAITING_TO_START` state, so the very next call could still fail with
   `rpc error: ... waiting to start`.
 
+* [Don't mask account payment errors when request values are
+  absent](https://github.com/lightninglabs/lightning-terminal/pull/1322):
+  When a streaming account payment (`SendPaymentV2`/`SendToRouteV2`) fails and
+  lnd returns a terminal error after the request values have already been
+  cleaned up, lnd's underlying error is now passed through to the caller instead
+  of being masked by a confusing `no request values found for request: <id>`
+  error.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
@@ -49,3 +57,4 @@
 
 * 0xfandom
 * bitromortac
+* Vandit Singh
