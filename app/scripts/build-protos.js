@@ -128,6 +128,10 @@ const sanitize = async () => {
       'import "lnrpc/lightning.proto"',
       'import "lnd.proto"',
     );
+    content = content.replace(
+        'import "proto/lnd.proto";',
+        'import "lnd.proto";',
+    );
     await fs.writeFile(path, content);
   }
 };

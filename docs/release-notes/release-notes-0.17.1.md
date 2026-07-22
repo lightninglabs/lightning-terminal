@@ -33,6 +33,12 @@
 
 ### Functional Changes/Additions
 
+* [Add accounts payments history subcommand](https://github.com/lightninglabs/lightning-terminal/pull/1316):
+  Added the `litcli accounts payments` subcommand and corresponding gRPC
+  endpoint `AccountPayments` to retrieve the off-chain payment history of
+  an account, supporting pagination (sorted in ascending lexicographical
+  order of their payment hash) and counting of total payments.
+
 ### Technical and Architectural Updates
 
 * [Report litd's own version for `litd
@@ -57,4 +63,5 @@
 
 * 0xfandom
 * bitromortac
+* Cyberguru1
 * Vandit Singh
