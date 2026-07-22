@@ -216,6 +216,26 @@ jobs:
         run: make sqlc-check
 
   ########################
+  # sample conf check
+  ########################
+  sample-conf-check:
+    name: Check sample-litd.conf is valid
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: setup go ${{ env.GO_VERSION }}
+        uses: ./.github/actions/setup-go
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+
+      - name: check sample-litd.conf options
+        run: make sample-conf-check
+
+  ########################
   # lint code
   ########################
   lint:
