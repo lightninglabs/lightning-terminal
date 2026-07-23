@@ -18,8 +18,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/lib/pq"
 	"github.com/lightninglabs/faraday"
-	"github.com/lightninglabs/faraday/chain"
-	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/lightning-terminal/accounts"
 	"github.com/lightninglabs/lightning-terminal/autopilotserver"
 	"github.com/lightninglabs/lightning-terminal/db"
@@ -267,10 +265,6 @@ type Config struct {
 
 	Accounts *accounts.Config `group:"Accounts options" namespace:"accounts"`
 
-	// faradayRpcConfig is a subset of faraday's full configuration that is
-	// passed into faraday's RPC server.
-	faradayRpcConfig *frdrpcserver.Config
-
 	// lndRemote is a convenience bool variable that is parsed from the
 	// LndMode string variable on startup.
 	lndRemote     bool
@@ -287,6 +281,10 @@ type Config struct {
 	// over an in-memory connection on startup. This is only set in
 	// integrated lnd mode.
 	lndAdminMacaroon []byte
+
+	// PrivacyTimestampVariation holds the default timestamp variation.
+	// This field is not configurable in production builds.
+	PrivacyTimestampVariation time.Duration
 
 	// DevConfig is a config struct that is empty if lit is built without
 	// the `dev` flag (in other words when it is build for a production
@@ -558,7 +556,6 @@ func defaultConfig() *Config {
 		ConfigFile:           defaultConfigFile,
 		FaradayMode:          defaultFaradayMode,
 		Faraday:              &faradayDefaultConfig,
-		faradayRpcConfig:     &frdrpcserver.Config{},
 		LoopMode:             defaultLoopMode,
 		Loop:                 &loopDefaultConfig,
 		PoolMode:             defaultPoolMode,
@@ -570,9 +567,10 @@ func defaultConfig() *Config {
 		Autopilot: &autopilotserver.Config{
 			PingCadence: time.Hour,
 		},
-		Firewall:  firewall.DefaultConfig(),
-		Accounts:  &accounts.Config{},
-		DevConfig: defaultDevConfig(),
+		Firewall:                  firewall.DefaultConfig(),
+		Accounts:                  &accounts.Config{},
+		PrivacyTimestampVariation: firewall.DefaultTimeVariation,
+		DevConfig:                 defaultDevConfig(),
 	}
 }
 
@@ -732,7 +730,7 @@ func loadAndValidateConfig(ctx context.Context,
 		return nil, err
 	}
 
-	err = cfg.DevConfig.Validate()
+	err = cfg.DevConfig.Validate(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -796,22 +794,6 @@ func loadAndValidateConfig(ctx context.Context,
 			defaultFaradayCfg.TLSCertPath {
 
 			cfg.Remote.Faraday.TLSCertPath = cfg.Faraday.TLSCertPath
-		}
-	}
-
-	// If the client chose to connect to a bitcoin client, get one now.
-	if !cfg.faradayRemote {
-		cfg.faradayRpcConfig.FaradayDir = cfg.Faraday.FaradayDir
-		cfg.faradayRpcConfig.MacaroonPath = cfg.Faraday.MacaroonPath
-
-		if cfg.Faraday.ChainConn {
-			cfg.faradayRpcConfig.BitcoinClient, err =
-				chain.NewBitcoinClient(
-					cfg.Faraday.Bitcoin,
-				)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
