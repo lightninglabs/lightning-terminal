@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -919,7 +920,9 @@ func TestPrivacyMapper(t *testing.T) {
 			require.NoError(t, err)
 
 			// randIntn is used for deterministic testing.
-			randIntn := func(n int) (int, error) { return 100, nil }
+			randIntn := func(n int64) (int64, error) {
+				return 100, nil
+			}
 			p := NewPrivacyMapper(db, randIntn, pd)
 
 			rawMsg, err := proto.Marshal(test.msg)
@@ -1188,8 +1191,10 @@ var _ firewalldb.PrivacyMapDB = (*mockPrivacyMapDB)(nil)
 
 // TestRandBetween tests random number generation for numbers in an interval.
 func TestRandBetween(t *testing.T) {
-	min := 0
-	max := 10
+	var (
+		min int64
+		max int64 = 10
+	)
 
 	for i := 0; i < 100; i++ {
 		val, err := randBetween(CryptoRandIntn, min, max)
@@ -1210,38 +1215,40 @@ func TestHideAmount(t *testing.T) {
 	tests := []struct {
 		name      string
 		amount    uint64
-		randIntFn func(int) (int, error)
+		randIntFn func(int64) (int64, error)
 		expected  uint64
 	}{
 		{
 			name:      "zero test amount",
-			randIntFn: func(int) (int, error) { return 0, nil },
+			randIntFn: func(int64) (int64, error) { return 0, nil },
 		},
 		{
 			name:      "test small amount",
-			randIntFn: func(int) (int, error) { return 0, nil },
+			randIntFn: func(int64) (int64, error) { return 0, nil },
 			amount:    1,
 			expected:  1,
 		},
 		{
 			name:      "min value",
-			randIntFn: func(int) (int, error) { return 0, nil },
+			randIntFn: func(int64) (int64, error) { return 0, nil },
 			amount:    testAmount,
 			expected:  lowerBound,
 		},
 		{
 			name: "max value",
-			randIntFn: func(int) (int, error) {
-				return int(upperBound - lowerBound), nil
+			randIntFn: func(n int64) (int64, error) {
+				return int64(upperBound - lowerBound), nil
 			},
 			amount:   testAmount,
 			expected: upperBound,
 		},
 		{
-			name:      "some fuzz",
-			randIntFn: func(int) (int, error) { return 123, nil },
-			amount:    testAmount,
-			expected:  lowerBound + 123,
+			name: "some fuzz",
+			randIntFn: func(int64) (int64, error) {
+				return 123, nil
+			},
+			amount:   testAmount,
+			expected: lowerBound + 123,
 		},
 	}
 
@@ -1270,6 +1277,33 @@ func TestHideAmount(t *testing.T) {
 			require.NoError(t, err)
 		}
 	})
+
+	t.Run("hideAmount overflow validation", func(t *testing.T) {
+		// amount > math.MaxInt64 should fail.
+		_, err := hideAmount(
+			CryptoRandIntn,
+			relativeVariation,
+			math.MaxInt64+1,
+		)
+		require.Error(t, err)
+
+		// amount <= math.MaxInt64 but amount + fuzzInterval >
+		// math.MaxInt64 should fail.
+		_, err = hideAmount(
+			CryptoRandIntn,
+			0.05,
+			math.MaxInt64-100,
+		)
+		require.Error(t, err)
+
+		// A value that just fits should succeed.
+		_, err = hideAmount(
+			CryptoRandIntn,
+			0.1,
+			922337203685477580,
+		)
+		require.NoError(t, err)
+	})
 }
 
 // TestHideTimestamp test correct timestamp hiding.
@@ -1281,31 +1315,33 @@ func TestHideTimestamp(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		randIntFn func(int) (int, error)
+		randIntFn func(int64) (int64, error)
 		timestamp time.Time
 		expected  time.Time
 	}{
 		{
 			name:      "zero timestamp",
-			randIntFn: func(int) (int, error) { return 0, nil },
+			randIntFn: func(int64) (int64, error) { return 0, nil },
 		},
 		{
 			name:      "min value",
-			randIntFn: func(int) (int, error) { return 0, nil },
+			randIntFn: func(int64) (int64, error) { return 0, nil },
 			timestamp: timestamp,
 			expected:  lowerBound,
 		},
 		{
 			name: "max value",
-			randIntFn: func(int) (int, error) {
-				return int(upperBound.Sub(lowerBound)), nil
+			randIntFn: func(n int64) (int64, error) {
+				return int64(upperBound.Sub(lowerBound)), nil
 			},
 			timestamp: timestamp,
 			expected:  upperBound,
 		},
 		{
-			name:      "some fuzz",
-			randIntFn: func(int) (int, error) { return 123, nil },
+			name: "some fuzz",
+			randIntFn: func(int64) (int64, error) {
+				return 123, nil
+			},
 			timestamp: timestamp,
 			expected:  lowerBound.Add(time.Duration(123)),
 		},
@@ -1328,17 +1364,37 @@ func TestHideTimestamp(t *testing.T) {
 
 // TestHideBool test correct boolean hiding.
 func TestHideBool(t *testing.T) {
-	val, err := hideBool(func(int) (int, error) { return 100, nil })
-	require.NoError(t, err)
-	require.True(t, val)
+	tests := []struct {
+		name     string
+		random   int64
+		expected bool
+	}{
+		{
+			name:     "random value",
+			random:   100,
+			expected: true,
+		},
+		{
+			name:     "exact threshold value",
+			random:   1,
+			expected: true,
+		},
+		{
+			name:     "below threshold value",
+			random:   0,
+			expected: false,
+		},
+	}
 
-	val, err = hideBool(func(int) (int, error) { return 1, nil })
-	require.NoError(t, err)
-	require.True(t, val)
-
-	val, err = hideBool(func(int) (int, error) { return 0, nil })
-	require.NoError(t, err)
-	require.False(t, val)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			val, err := hideBool(func(n int64) (int64, error) {
+				return tc.random, nil
+			})
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, val)
+		})
+	}
 }
 
 // TestObfuscateConfig tests that we substitute substrings in the config
@@ -1604,4 +1660,28 @@ func variance(numbers []uint64) uint64 {
 	}
 
 	return uint64(sum)
+}
+
+// Test32BitOverflowAndTruncation ensures values > MaxInt32 do not truncate on
+// 32-bit runtimes.
+func Test32BitOverflowAndTruncation(t *testing.T) {
+	largeValue := int64(math.MaxInt32) + 1
+
+	// Ensure randBetween successfully operates on values larger than
+	// MaxInt32 without any architecture-dependent truncation.
+	mockRand := func(n int64) (int64, error) {
+		return n - 1, nil
+	}
+
+	val, err := randBetween(mockRand, largeValue, largeValue+10)
+	require.NoError(t, err)
+	require.Equal(t, largeValue+9, val)
+
+	// Ensure hideTimestamp works with a 64-bit nanosecond timestamp
+	// representing a real far-future date (> MaxInt32).
+	farFutureTime := time.Unix(0, 1600000000000000000) // ~Year 2020 in ns
+	variation := 10 * time.Minute
+	resTime, err := hideTimestamp(mockRand, variation, farFutureTime)
+	require.NoError(t, err)
+	require.NotEmpty(t, resTime)
 }
