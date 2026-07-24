@@ -7,52 +7,54 @@ import Chevrons from 'assets/icons/chevrons.svg';
 
 export const Background = styled.div<{ gradient?: boolean }>`
   height: 100%;
-  color: ${props => props.theme.colors.white};
+  color: ${props => props.theme.colors.offWhite};
   background: ${props =>
     props.gradient ? props.theme.colors.gradient : props.theme.colors.blue};
-  font-family: ${props => props.theme.fonts.open.regular};
-  font-size: ${props => props.theme.sizes.m};
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: ${props => props.theme.sizes.s};
+  font-weight: 400;
+  letter-spacing: -0.01em;
 `;
 
 export const Pill = styled.span`
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  padding: 5px;
-  margin-right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
   text-align: center;
-  background-color: ${props => props.theme.colors.overlay};
-  border-radius: 40px;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
 `;
 
 export const Badge = styled.span<{ muted?: boolean }>`
   display: inline-block;
-  margin-left: 10px;
-  font-family: ${props => props.theme.fonts.open.light};
-  font-size: ${props => props.theme.sizes.xxs};
-  font-weight: 700;
-  color: ${props => props.theme.colors.pink};
-  border: 1px solid ${props => props.theme.colors.pink};
+  margin-left: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: ${props => props.theme.colors.iris};
+  background: rgba(99, 102, 241, 0.12);
   border-radius: 4px;
-  padding: 3px 5px 5px;
-  text-transform: lowercase;
-  line-height: 1;
-  letter-spacing: 1.8px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
 
   ${props =>
     props.muted &&
     `
     color: ${props.theme.colors.gray};
-    border: 1px solid ${props.theme.colors.gray};
-
+    background: rgba(107, 114, 128, 0.12);
   `}
 `;
 
 export const Section = styled.section`
-  padding: 15px;
-  background-color: ${props => props.theme.colors.overlay};
-  border: 1px solid ${props => props.theme.colors.blue};
-  border-radius: 5px;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
 `;
 
 export const SummaryItem = styled.div<{ strong?: boolean }>`
@@ -89,21 +91,24 @@ interface ButtonProps {
 }
 
 export const Button = styled.button<ButtonProps>`
-  font-family: ${props => props.theme.fonts.work.medium};
-  font-size: ${props => props.theme.sizes.s};
-  min-width: ${props => (props.compact ? '0' : '120px')};
-  height: ${props => (props.compact ? 'auto' : '44px')};
-  padding-left: 15px;
-  padding-right: 15px;
+  font-family: 'Inter', sans-serif;
+  font-size: ${props => props.theme.sizes.xs};
+  font-weight: 500;
+  min-width: ${props => (props.compact ? '0' : '80px')};
+  height: ${props => (props.compact ? 'auto' : '36px')};
+  padding: 0 16px;
   text-align: center;
   color: ${props => props.theme.colors.offWhite};
-  background-color: ${props => props.theme.colors.blue};
-  border: 1px solid ${props => props.theme.colors.offWhite};
-  border-radius: 22px;
+  background-color: ${props => props.theme.colors.lightBlue};
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  letter-spacing: -0.01em;
 
   &:hover {
-    color: ${props => props.theme.colors.blue};
-    background-color: ${props => props.theme.colors.white};
+    color: ${props => props.theme.colors.white};
+    background-color: ${props => props.theme.colors.paleBlue};
+    border-color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
   }
 
@@ -116,19 +121,21 @@ export const Button = styled.button<ButtonProps>`
     props.ghost &&
     `
     background-color: transparent;
+    border-color: transparent;
     &:hover {
-      color: ${props.theme.colors.offWhite};
-      text-decoration: underline;
-      background-color: transparent;
+      color: ${props.theme.colors.white};
+      background-color: rgba(255, 255, 255, 0.06);
+      border-color: transparent;
     }
   `}
 
   ${props =>
     props.disabled &&
     `
-    opacity: 0.5;
+    opacity: 0.4;
     &:hover {
       cursor: not-allowed;
+      background-color: ${props.theme.colors.lightBlue};
     }
   `}
 
@@ -142,9 +149,10 @@ export const Button = styled.button<ButtonProps>`
     props.danger &&
     `
     border: 1px solid ${props.theme.colors.pink};
+    color: ${props.theme.colors.pink};
+    background-color: rgba(244, 63, 94, 0.1);
     &:hover {
-      color: ${props.theme.colors.blue};
-      text-decoration: none;
+      color: ${props.theme.colors.white};
       background-color: ${props.theme.colors.pink};
     }
   `}
@@ -152,16 +160,16 @@ export const Button = styled.button<ButtonProps>`
   ${props =>
     props.primary &&
     `
-    border: 1px solid ${props.theme.colors.green};
+    border: none;
+    color: ${props.theme.colors.white};
+    background-color: ${props.theme.colors.green};
     &:hover {
-      color: ${props.theme.colors.blue};
-      text-decoration: none;
-      background-color: ${props.theme.colors.green};
+      background-color: #0ea572;
     }
   `}
 
   svg {
-    margin: 0 5px 0 0;
+    margin: 0 6px 0 0;
 
     &:hover {
       background-color: transparent;
@@ -170,21 +178,23 @@ export const Button = styled.button<ButtonProps>`
 `;
 
 export const Input = styled.input`
-  font-family: ${props => props.theme.fonts.work.light};
-  font-weight: 300;
-  font-size: ${props => props.theme.sizes.xxl};
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: ${props => props.theme.sizes.xl};
   color: ${props => props.theme.colors.offWhite};
-  background-color: transparent;
-  border-width: 0;
-  border-bottom: 3px solid ${props => props.theme.colors.offWhite};
-  padding: 5px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
   text-align: center;
+  transition: border-color 0.15s ease;
+  letter-spacing: -0.02em;
 
   &:active,
   &:focus {
     outline: none;
-    background-color: ${props => props.theme.colors.overlay};
-    border-bottom-color: ${props => props.theme.colors.white};
+    border-color: ${props => props.theme.colors.iris};
+    background-color: rgba(255, 255, 255, 0.06);
   }
 
   &::placeholder {
@@ -193,20 +203,21 @@ export const Input = styled.input`
 `;
 
 export const TextArea = styled.textarea`
-  font-family: ${props => props.theme.fonts.work.light};
-  font-weight: 300;
-  font-size: ${props => props.theme.sizes.m};
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: ${props => props.theme.sizes.s};
   color: ${props => props.theme.colors.offWhite};
-  background-color: ${props => props.theme.colors.overlay};
-  border-width: 0;
-  border-bottom: 3px solid ${props => props.theme.colors.offWhite};
-  padding: 5px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color 0.15s ease;
 
   &:active,
   &:focus {
     outline: none;
-    background-color: ${props => props.theme.colors.overlay};
-    border-bottom-color: ${props => props.theme.colors.white};
+    border-color: ${props => props.theme.colors.iris};
+    background-color: rgba(255, 255, 255, 0.06);
   }
 
   &::placeholder {
@@ -365,21 +376,17 @@ export const Scrollable = styled.div`
   height: 0px;
   overflow: auto;
 
-  // use consistent scrollbars across different platforms
   &::-webkit-scrollbar {
-    width: 8px;
-    background-color: rgba(0, 0, 0, 0);
-    border-radius: 10px;
+    width: 6px;
   }
-  &::-webkit-scrollbar:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
-  &::-webkit-scrollbar-thumb:vertical {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
   }
-  &::-webkit-scrollbar-thumb:vertical:active {
-    background-color: rgba(255, 255, 255, 0.6);
-    border-radius: 10px;
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.15);
   }
 `;

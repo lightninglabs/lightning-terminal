@@ -22,9 +22,11 @@ export const Placements = () => {
   return (
     <div style={{ textAlign: 'center', marginTop: 300 }}>
       {placements.map(p => (
-        <Tip key={p} placement={p} overlay="Tip of the day">
-          <span style={{ margin: 10 }}>{p}</span>
-        </Tip>
+        <div key={p} style={{ display: 'inline-block' }}>
+          <Tip placement={p} overlay="Tip of the day">
+            <span style={{ margin: 10 }}>{p}</span>
+          </Tip>
+        </div>
       ))}
     </div>
   );

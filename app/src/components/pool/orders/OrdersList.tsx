@@ -153,15 +153,15 @@ const OrdersList: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {orderListView.orders.map(order => (
-            <OrderRow
-              key={order.nonce}
-              order={order}
-              selected={order.nonce === orderListView.selectedNonce}
-              onClick={orderListView.setChosenNonce}
-              onCancel={orderStore.cancelOrder}
-            />
-          ))}
+          {orderListView.orders.map(order =>
+            React.createElement(OrderRow, {
+              key: order.nonce,
+              order,
+              selected: order.nonce === orderListView.selectedNonce,
+              onClick: orderListView.setChosenNonce,
+              onCancel: orderStore.cancelOrder,
+            }),
+          )}
         </tbody>
       </Table>
       {orderListView.orders.length === 0 && (

@@ -5,53 +5,56 @@ interface HeaderProps {
 }
 
 export const HeaderOne = styled.h1`
-  font-family: ${props => props.theme.fonts.work.light};
-  font-weight: 300;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   font-size: ${props => props.theme.sizes.xxl};
-  line-height: 52px;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
 `;
 
 export const HeaderTwo = styled.h2`
-  font-family: ${props => props.theme.fonts.open.regular};
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
   font-size: ${props => props.theme.sizes.m};
-  line-height: 26px;
+  line-height: 1.4;
 `;
 
 export const HeaderThree = styled.h3`
-  font-family: ${props => props.theme.fonts.open.light};
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   font-size: ${props => props.theme.sizes.l};
-  line-height: 30px;
-  letter-spacing: 2.7px;
-  text-transform: uppercase;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 `;
 
 export const HeaderFour = styled.h4<HeaderProps>`
-  font-family: ${props => props.theme.fonts.open.semiBold};
-  font-size: ${props => props.theme.sizes.xs};
-  line-height: 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: ${props => props.theme.sizes.xxs};
+  line-height: 16px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: ${props => props.theme.colors.gray};
   margin-bottom: ${props => (props.marginless ? '0' : '0.5rem')};
 `;
 
 export const HeaderFive = styled.h5`
-  font-family: ${props => props.theme.fonts.open.bold};
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   font-size: ${props => props.theme.sizes.m};
 `;
 
 export const Small = styled.span`
   font-size: ${props => props.theme.sizes.xs};
-  line-height: 20px;
+  line-height: 18px;
 `;
 
 export const Jumbo = styled.span`
   font-size: ${props => props.theme.sizes.xl};
-  line-height: 38px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 `;
-
-//
-// v2 Text Styles
-//
 
 interface TextProps {
   bold?: boolean;
@@ -64,15 +67,9 @@ interface TextProps {
 }
 
 const BaseText = styled.span<TextProps>`
-  // On larger devices, make bold elements bold instead of semi-bold
-  font-family: ${props =>
-    props.bold
-      ? props.theme.fonts.open.bold
-      : props.semiBold
-      ? props.theme.fonts.open.semiBold
-      : props.theme.fonts.open.regular};
+  font-family: 'Inter', sans-serif;
+  font-weight: ${props => (props.bold ? 700 : props.semiBold ? 600 : 400)};
 
-  // The text-align property is ignored on mobile
   ${props => props.muted && `color: ${props.theme.colors.gray};`}
   ${props => props.space && `margin-bottom: ${props.space}px;`}
   text-align: ${props => (props.center ? 'center' : 'left')};
@@ -81,16 +78,18 @@ const BaseText = styled.span<TextProps>`
 const BaseBlock = BaseText.withComponent('div');
 
 export const DisplayLarge = styled(BaseBlock)`
-  font-size: 40px;
-  line-height: 48px;
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: -0.03em;
 `;
 
 export const Display = styled(BaseBlock)`
-  font-size: 32px;
-  line-height: 40px;
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
 `;
 
 export const Paragraph = styled(BaseBlock)`
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 22px;
 `;

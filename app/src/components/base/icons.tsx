@@ -41,60 +41,61 @@ interface IconProps {
 }
 
 const Icon = styled.span<IconProps>`
-  display: inline-block;
-  padding: 6px;
-  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: all 0.15s ease;
 
   ${props =>
     props.onClick &&
     `
-    border-radius: 36px;
+    border-radius: 6px;
     cursor: pointer;
     &:hover {
-      color: ${props.theme.colors.blue};
-      background-color: ${props.theme.colors.offWhite};
+      background-color: rgba(255, 255, 255, 0.08);
     }
   `}
 
   ${props =>
     props.disabled &&
     `
-    color: ${props.theme.colors.lightBlue};
+    opacity: 0.3;
   `}
 
   ${props =>
     props.size === 'x-small' &&
     `
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     `}
 
   ${props =>
     props.size === 'small' &&
     `
-      width: 24px;
-      height: 24px;
+      width: 18px;
+      height: 18px;
     `}
 
   ${props =>
     (props.size === 'medium' || !props.size) &&
     `
-      width: 30px;
-      height: 30px;
+      width: 22px;
+      height: 22px;
     `}
 
   ${props =>
     props.size === 'large' &&
     `
-      width: 36px;
-      height: 36px;
+      width: 28px;
+      height: 28px;
     `}
 
   ${props =>
     props.size === 'x-large' &&
     `
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
     `}
 `;
 
