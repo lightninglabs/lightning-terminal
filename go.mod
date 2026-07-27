@@ -48,7 +48,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli v1.22.16
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
 	golang.org/x/net v0.55.0
 	golang.org/x/sync v0.20.0
