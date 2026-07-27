@@ -822,6 +822,13 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not start litd sub-servers: %v", err)
 	}
 
+	// Bake the super macaroon on startup if configured, now that all local
+	// and remote sub-servers have been started and active permissions are
+	// fully known.
+	if err := g.setupSuperMacaroon(ctx); err != nil {
+		return fmt.Errorf("could not setup super macaroon: %w", err)
+	}
+
 	// We can now set the status of LiT as running.
 	g.statusMgr.SetRunning(subservers.LIT)
 
@@ -2191,4 +2198,65 @@ func randId(n int) string {
 	}
 
 	return string(b)
+}
+
+// setupSuperMacaroon bakes a super macaroon and writes it to disk if needed.
+func (g *LightningTerminal) setupSuperMacaroon(ctx context.Context) error {
+	// If the bake-super-macaroon option is set to none, we don't bake a
+	// macaroon.
+	if g.cfg.BakeSuperMacaroon == noneChoice {
+		return nil
+	}
+
+	// If the super macaroon baking option is enabled, we cannot run in
+	// stateless initialization mode as it won't write any macaroons to the
+	// filesystem.
+	if g.cfg.statelessInitMode {
+		return fmt.Errorf("cannot use bake-super-macaroon " +
+			"with stateless-init mode")
+	}
+
+	path := g.cfg.SuperMacaroonPath
+
+	readOnly := g.cfg.BakeSuperMacaroon == readOnlyChoice
+	activePerms := g.permsMgr.ActivePermissions(readOnly)
+
+	if litmac.SuperMacaroonExists(path) {
+		matches, err := litmac.MacaroonMatchesPermissions(
+			path, activePerms,
+		)
+
+		if err == nil && matches {
+			log.Debugf("Super macaroon already exists at "+
+				"%v and matches configuration, "+
+				"skipping bake", path)
+
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf(
+				"unable to verify super macaroon "+
+					"permissions at %v, please delete "+
+					"it if the issue persists: %w",
+				path, err,
+			)
+		}
+
+		log.Infof("Super macaroon permissions " +
+			"differ from configuration, " +
+			"regenerating...")
+	}
+
+	log.Infof("Baking super macaroon on startup...")
+
+	// Bake the super macaroon and write it to disk.
+	if err := litmac.BakeAndWriteSuperMacaroon(
+		ctx, g.basicClient, path, activePerms,
+	); err != nil {
+		return err
+	}
+
+	log.Infof("Successfully baked and wrote super macaroon to %v", path)
+
+	return nil
 }
