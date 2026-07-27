@@ -7,6 +7,7 @@
 package litrpc
 
 import (
+	lnrpc "github.com/lightningnetwork/lnd/lnrpc"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -960,11 +961,162 @@ func (*AccountIdentifier_Id) isAccountIdentifier_Identifier() {}
 
 func (*AccountIdentifier_Label) isAccountIdentifier_Identifier() {}
 
+type AccountPaymentsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The identifier of the account to query payments for.
+	Account *AccountIdentifier `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	// The maximum number of payments to return. If set to 0, it will default
+	// to 20. Capped at 50.
+	MaxPayments uint64 `protobuf:"varint,2,opt,name=max_payments,json=maxPayments,proto3" json:"max_payments,omitempty"`
+	// The row offset into the list of payments that will be used as the start of
+	// the query. The payments are returned in ascending lexicographical order of
+	// their payment hash.
+	IndexOffset uint64 `protobuf:"varint,3,opt,name=index_offset,json=indexOffset,proto3" json:"index_offset,omitempty"`
+	// If set, the total number of payments matching the query will be returned
+	// in the response.
+	CountTotalPayments bool `protobuf:"varint,4,opt,name=count_total_payments,json=countTotalPayments,proto3" json:"count_total_payments,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *AccountPaymentsRequest) Reset() {
+	*x = AccountPaymentsRequest{}
+	mi := &file_lit_accounts_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountPaymentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountPaymentsRequest) ProtoMessage() {}
+
+func (x *AccountPaymentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lit_accounts_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountPaymentsRequest.ProtoReflect.Descriptor instead.
+func (*AccountPaymentsRequest) Descriptor() ([]byte, []int) {
+	return file_lit_accounts_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AccountPaymentsRequest) GetAccount() *AccountIdentifier {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
+func (x *AccountPaymentsRequest) GetMaxPayments() uint64 {
+	if x != nil {
+		return x.MaxPayments
+	}
+	return 0
+}
+
+func (x *AccountPaymentsRequest) GetIndexOffset() uint64 {
+	if x != nil {
+		return x.IndexOffset
+	}
+	return 0
+}
+
+func (x *AccountPaymentsRequest) GetCountTotalPayments() bool {
+	if x != nil {
+		return x.CountTotalPayments
+	}
+	return false
+}
+
+type AccountPaymentsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The detailed payments associated with the account, sorted in ascending
+	// lexicographical order of their payment hash.
+	Payments []*lnrpc.Payment `protobuf:"bytes,1,rep,name=payments,proto3" json:"payments,omitempty"`
+	// The row offset of the first payment returned.
+	FirstIndexOffset uint64 `protobuf:"varint,2,opt,name=first_index_offset,json=firstIndexOffset,proto3" json:"first_index_offset,omitempty"`
+	// The row offset of the last payment returned. This can be used as the
+	// index_offset in a subsequent query to paginate forwards.
+	LastIndexOffset uint64 `protobuf:"varint,3,opt,name=last_index_offset,json=lastIndexOffset,proto3" json:"last_index_offset,omitempty"`
+	// The total number of payments matching the query (only set if
+	// count_total_payments was true in the request).
+	TotalNumPayments uint64 `protobuf:"varint,4,opt,name=total_num_payments,json=totalNumPayments,proto3" json:"total_num_payments,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *AccountPaymentsResponse) Reset() {
+	*x = AccountPaymentsResponse{}
+	mi := &file_lit_accounts_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountPaymentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountPaymentsResponse) ProtoMessage() {}
+
+func (x *AccountPaymentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lit_accounts_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountPaymentsResponse.ProtoReflect.Descriptor instead.
+func (*AccountPaymentsResponse) Descriptor() ([]byte, []int) {
+	return file_lit_accounts_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *AccountPaymentsResponse) GetPayments() []*lnrpc.Payment {
+	if x != nil {
+		return x.Payments
+	}
+	return nil
+}
+
+func (x *AccountPaymentsResponse) GetFirstIndexOffset() uint64 {
+	if x != nil {
+		return x.FirstIndexOffset
+	}
+	return 0
+}
+
+func (x *AccountPaymentsResponse) GetLastIndexOffset() uint64 {
+	if x != nil {
+		return x.LastIndexOffset
+	}
+	return 0
+}
+
+func (x *AccountPaymentsResponse) GetTotalNumPayments() uint64 {
+	if x != nil {
+		return x.TotalNumPayments
+	}
+	return 0
+}
+
 var File_lit_accounts_proto protoreflect.FileDescriptor
 
 const file_lit_accounts_proto_rawDesc = "" +
 	"\n" +
-	"\x12lit-accounts.proto\x12\x06litrpc\"~\n" +
+	"\x12lit-accounts.proto\x12\x06litrpc\x1a\x0fproto/lnd.proto\"~\n" +
 	"\x14CreateAccountRequest\x12'\n" +
 	"\x0faccount_balance\x18\x01 \x01(\x04R\x0eaccountBalance\x12'\n" +
 	"\x0fexpiration_date\x18\x02 \x01(\x03R\x0eexpirationDate\x12\x14\n" +
@@ -1019,7 +1171,17 @@ const file_lit_accounts_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tH\x00R\x02id\x12\x16\n" +
 	"\x05label\x18\x02 \x01(\tH\x00R\x05labelB\f\n" +
 	"\n" +
-	"identifier2\x86\x04\n" +
+	"identifier\"\xc5\x01\n" +
+	"\x16AccountPaymentsRequest\x123\n" +
+	"\aaccount\x18\x01 \x01(\v2\x19.litrpc.AccountIdentifierR\aaccount\x12!\n" +
+	"\fmax_payments\x18\x02 \x01(\x04R\vmaxPayments\x12!\n" +
+	"\findex_offset\x18\x03 \x01(\x04R\vindexOffset\x120\n" +
+	"\x14count_total_payments\x18\x04 \x01(\bR\x12countTotalPayments\"\xcd\x01\n" +
+	"\x17AccountPaymentsResponse\x12*\n" +
+	"\bpayments\x18\x01 \x03(\v2\x0e.lnrpc.PaymentR\bpayments\x12,\n" +
+	"\x12first_index_offset\x18\x02 \x01(\x04R\x10firstIndexOffset\x12*\n" +
+	"\x11last_index_offset\x18\x03 \x01(\x04R\x0flastIndexOffset\x12,\n" +
+	"\x12total_num_payments\x18\x04 \x01(\x04R\x10totalNumPayments2\xda\x04\n" +
 	"\bAccounts\x12L\n" +
 	"\rCreateAccount\x12\x1c.litrpc.CreateAccountRequest\x1a\x1d.litrpc.CreateAccountResponse\x12>\n" +
 	"\rUpdateAccount\x12\x1c.litrpc.UpdateAccountRequest\x1a\x0f.litrpc.Account\x12L\n" +
@@ -1027,7 +1189,8 @@ const file_lit_accounts_proto_rawDesc = "" +
 	"\fDebitAccount\x12\x1b.litrpc.DebitAccountRequest\x1a\x1c.litrpc.DebitAccountResponse\x12I\n" +
 	"\fListAccounts\x12\x1b.litrpc.ListAccountsRequest\x1a\x1c.litrpc.ListAccountsResponse\x12:\n" +
 	"\vAccountInfo\x12\x1a.litrpc.AccountInfoRequest\x1a\x0f.litrpc.Account\x12L\n" +
-	"\rRemoveAccount\x12\x1c.litrpc.RemoveAccountRequest\x1a\x1d.litrpc.RemoveAccountResponseB4Z2github.com/lightninglabs/lightning-terminal/litrpcb\x06proto3"
+	"\rRemoveAccount\x12\x1c.litrpc.RemoveAccountRequest\x1a\x1d.litrpc.RemoveAccountResponse\x12R\n" +
+	"\x0fAccountPayments\x12\x1e.litrpc.AccountPaymentsRequest\x1a\x1f.litrpc.AccountPaymentsResponseB4Z2github.com/lightninglabs/lightning-terminal/litrpcb\x06proto3"
 
 var (
 	file_lit_accounts_proto_rawDescOnce sync.Once
@@ -1041,24 +1204,27 @@ func file_lit_accounts_proto_rawDescGZIP() []byte {
 	return file_lit_accounts_proto_rawDescData
 }
 
-var file_lit_accounts_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_lit_accounts_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_lit_accounts_proto_goTypes = []any{
-	(*CreateAccountRequest)(nil),  // 0: litrpc.CreateAccountRequest
-	(*CreateAccountResponse)(nil), // 1: litrpc.CreateAccountResponse
-	(*Account)(nil),               // 2: litrpc.Account
-	(*AccountInvoice)(nil),        // 3: litrpc.AccountInvoice
-	(*AccountPayment)(nil),        // 4: litrpc.AccountPayment
-	(*UpdateAccountRequest)(nil),  // 5: litrpc.UpdateAccountRequest
-	(*CreditAccountRequest)(nil),  // 6: litrpc.CreditAccountRequest
-	(*CreditAccountResponse)(nil), // 7: litrpc.CreditAccountResponse
-	(*DebitAccountRequest)(nil),   // 8: litrpc.DebitAccountRequest
-	(*DebitAccountResponse)(nil),  // 9: litrpc.DebitAccountResponse
-	(*ListAccountsRequest)(nil),   // 10: litrpc.ListAccountsRequest
-	(*ListAccountsResponse)(nil),  // 11: litrpc.ListAccountsResponse
-	(*AccountInfoRequest)(nil),    // 12: litrpc.AccountInfoRequest
-	(*RemoveAccountRequest)(nil),  // 13: litrpc.RemoveAccountRequest
-	(*RemoveAccountResponse)(nil), // 14: litrpc.RemoveAccountResponse
-	(*AccountIdentifier)(nil),     // 15: litrpc.AccountIdentifier
+	(*CreateAccountRequest)(nil),    // 0: litrpc.CreateAccountRequest
+	(*CreateAccountResponse)(nil),   // 1: litrpc.CreateAccountResponse
+	(*Account)(nil),                 // 2: litrpc.Account
+	(*AccountInvoice)(nil),          // 3: litrpc.AccountInvoice
+	(*AccountPayment)(nil),          // 4: litrpc.AccountPayment
+	(*UpdateAccountRequest)(nil),    // 5: litrpc.UpdateAccountRequest
+	(*CreditAccountRequest)(nil),    // 6: litrpc.CreditAccountRequest
+	(*CreditAccountResponse)(nil),   // 7: litrpc.CreditAccountResponse
+	(*DebitAccountRequest)(nil),     // 8: litrpc.DebitAccountRequest
+	(*DebitAccountResponse)(nil),    // 9: litrpc.DebitAccountResponse
+	(*ListAccountsRequest)(nil),     // 10: litrpc.ListAccountsRequest
+	(*ListAccountsResponse)(nil),    // 11: litrpc.ListAccountsResponse
+	(*AccountInfoRequest)(nil),      // 12: litrpc.AccountInfoRequest
+	(*RemoveAccountRequest)(nil),    // 13: litrpc.RemoveAccountRequest
+	(*RemoveAccountResponse)(nil),   // 14: litrpc.RemoveAccountResponse
+	(*AccountIdentifier)(nil),       // 15: litrpc.AccountIdentifier
+	(*AccountPaymentsRequest)(nil),  // 16: litrpc.AccountPaymentsRequest
+	(*AccountPaymentsResponse)(nil), // 17: litrpc.AccountPaymentsResponse
+	(*lnrpc.Payment)(nil),           // 18: lnrpc.Payment
 }
 var file_lit_accounts_proto_depIdxs = []int32{
 	2,  // 0: litrpc.CreateAccountResponse.account:type_name -> litrpc.Account
@@ -1069,25 +1235,29 @@ var file_lit_accounts_proto_depIdxs = []int32{
 	15, // 5: litrpc.DebitAccountRequest.account:type_name -> litrpc.AccountIdentifier
 	2,  // 6: litrpc.DebitAccountResponse.account:type_name -> litrpc.Account
 	2,  // 7: litrpc.ListAccountsResponse.accounts:type_name -> litrpc.Account
-	0,  // 8: litrpc.Accounts.CreateAccount:input_type -> litrpc.CreateAccountRequest
-	5,  // 9: litrpc.Accounts.UpdateAccount:input_type -> litrpc.UpdateAccountRequest
-	6,  // 10: litrpc.Accounts.CreditAccount:input_type -> litrpc.CreditAccountRequest
-	8,  // 11: litrpc.Accounts.DebitAccount:input_type -> litrpc.DebitAccountRequest
-	10, // 12: litrpc.Accounts.ListAccounts:input_type -> litrpc.ListAccountsRequest
-	12, // 13: litrpc.Accounts.AccountInfo:input_type -> litrpc.AccountInfoRequest
-	13, // 14: litrpc.Accounts.RemoveAccount:input_type -> litrpc.RemoveAccountRequest
-	1,  // 15: litrpc.Accounts.CreateAccount:output_type -> litrpc.CreateAccountResponse
-	2,  // 16: litrpc.Accounts.UpdateAccount:output_type -> litrpc.Account
-	7,  // 17: litrpc.Accounts.CreditAccount:output_type -> litrpc.CreditAccountResponse
-	9,  // 18: litrpc.Accounts.DebitAccount:output_type -> litrpc.DebitAccountResponse
-	11, // 19: litrpc.Accounts.ListAccounts:output_type -> litrpc.ListAccountsResponse
-	2,  // 20: litrpc.Accounts.AccountInfo:output_type -> litrpc.Account
-	14, // 21: litrpc.Accounts.RemoveAccount:output_type -> litrpc.RemoveAccountResponse
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	15, // 8: litrpc.AccountPaymentsRequest.account:type_name -> litrpc.AccountIdentifier
+	18, // 9: litrpc.AccountPaymentsResponse.payments:type_name -> lnrpc.Payment
+	0,  // 10: litrpc.Accounts.CreateAccount:input_type -> litrpc.CreateAccountRequest
+	5,  // 11: litrpc.Accounts.UpdateAccount:input_type -> litrpc.UpdateAccountRequest
+	6,  // 12: litrpc.Accounts.CreditAccount:input_type -> litrpc.CreditAccountRequest
+	8,  // 13: litrpc.Accounts.DebitAccount:input_type -> litrpc.DebitAccountRequest
+	10, // 14: litrpc.Accounts.ListAccounts:input_type -> litrpc.ListAccountsRequest
+	12, // 15: litrpc.Accounts.AccountInfo:input_type -> litrpc.AccountInfoRequest
+	13, // 16: litrpc.Accounts.RemoveAccount:input_type -> litrpc.RemoveAccountRequest
+	16, // 17: litrpc.Accounts.AccountPayments:input_type -> litrpc.AccountPaymentsRequest
+	1,  // 18: litrpc.Accounts.CreateAccount:output_type -> litrpc.CreateAccountResponse
+	2,  // 19: litrpc.Accounts.UpdateAccount:output_type -> litrpc.Account
+	7,  // 20: litrpc.Accounts.CreditAccount:output_type -> litrpc.CreditAccountResponse
+	9,  // 21: litrpc.Accounts.DebitAccount:output_type -> litrpc.DebitAccountResponse
+	11, // 22: litrpc.Accounts.ListAccounts:output_type -> litrpc.ListAccountsResponse
+	2,  // 23: litrpc.Accounts.AccountInfo:output_type -> litrpc.Account
+	14, // 24: litrpc.Accounts.RemoveAccount:output_type -> litrpc.RemoveAccountResponse
+	17, // 25: litrpc.Accounts.AccountPayments:output_type -> litrpc.AccountPaymentsResponse
+	18, // [18:26] is the sub-list for method output_type
+	10, // [10:18] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_lit_accounts_proto_init() }
@@ -1105,7 +1275,7 @@ func file_lit_accounts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lit_accounts_proto_rawDesc), len(file_lit_accounts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -21,3 +21,5 @@ http:
     - selector: litrpc.Accounts.DebitAccount
       post: "/v1/accounts/debit/{account.id}"
       body: "*"
+    - selector: litrpc.Accounts.AccountPayments
+      get: "/v1/accounts/payments"

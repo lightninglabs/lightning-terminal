@@ -195,4 +195,29 @@ func RegisterAccountsJSONCallbacks(registry map[string]func(ctx context.Context,
 		}
 		callback(string(respBytes), nil)
 	}
+
+	registry["litrpc.Accounts.AccountPayments"] = func(ctx context.Context,
+		conn *grpc.ClientConn, reqJSON string, callback func(string, error)) {
+
+		req := &AccountPaymentsRequest{}
+		err := marshaler.Unmarshal([]byte(reqJSON), req)
+		if err != nil {
+			callback("", err)
+			return
+		}
+
+		client := NewAccountsClient(conn)
+		resp, err := client.AccountPayments(ctx, req)
+		if err != nil {
+			callback("", err)
+			return
+		}
+
+		respBytes, err := marshaler.Marshal(resp)
+		if err != nil {
+			callback("", err)
+			return
+		}
+		callback(string(respBytes), nil)
+	}
 }

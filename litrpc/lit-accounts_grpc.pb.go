@@ -52,6 +52,9 @@ type AccountsClient interface {
 	// litcli: `accounts remove`
 	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(ctx context.Context, in *RemoveAccountRequest, opts ...grpc.CallOption) (*RemoveAccountResponse, error)
+	// litcli: `accounts payments`
+	// AccountPayments returns the detailed payment history for the given account.
+	AccountPayments(ctx context.Context, in *AccountPaymentsRequest, opts ...grpc.CallOption) (*AccountPaymentsResponse, error)
 }
 
 type accountsClient struct {
@@ -125,6 +128,15 @@ func (c *accountsClient) RemoveAccount(ctx context.Context, in *RemoveAccountReq
 	return out, nil
 }
 
+func (c *accountsClient) AccountPayments(ctx context.Context, in *AccountPaymentsRequest, opts ...grpc.CallOption) (*AccountPaymentsResponse, error) {
+	out := new(AccountPaymentsResponse)
+	err := c.cc.Invoke(ctx, "/litrpc.Accounts/AccountPayments", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountsServer is the server API for Accounts service.
 // All implementations must embed UnimplementedAccountsServer
 // for forward compatibility
@@ -163,6 +175,9 @@ type AccountsServer interface {
 	// litcli: `accounts remove`
 	// RemoveAccount removes the given account from the account database.
 	RemoveAccount(context.Context, *RemoveAccountRequest) (*RemoveAccountResponse, error)
+	// litcli: `accounts payments`
+	// AccountPayments returns the detailed payment history for the given account.
+	AccountPayments(context.Context, *AccountPaymentsRequest) (*AccountPaymentsResponse, error)
 	mustEmbedUnimplementedAccountsServer()
 }
 
@@ -190,6 +205,9 @@ func (UnimplementedAccountsServer) AccountInfo(context.Context, *AccountInfoRequ
 }
 func (UnimplementedAccountsServer) RemoveAccount(context.Context, *RemoveAccountRequest) (*RemoveAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveAccount not implemented")
+}
+func (UnimplementedAccountsServer) AccountPayments(context.Context, *AccountPaymentsRequest) (*AccountPaymentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountPayments not implemented")
 }
 func (UnimplementedAccountsServer) mustEmbedUnimplementedAccountsServer() {}
 
@@ -330,6 +348,24 @@ func _Accounts_RemoveAccount_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Accounts_AccountPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountPaymentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).AccountPayments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Accounts/AccountPayments",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).AccountPayments(ctx, req.(*AccountPaymentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Accounts_ServiceDesc is the grpc.ServiceDesc for Accounts service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -364,6 +400,10 @@ var Accounts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveAccount",
 			Handler:    _Accounts_RemoveAccount_Handler,
+		},
+		{
+			MethodName: "AccountPayments",
+			Handler:    _Accounts_AccountPayments_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

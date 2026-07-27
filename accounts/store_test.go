@@ -906,3 +906,77 @@ func TestCheckLabel(t *testing.T) {
 		})
 	}
 }
+
+// TestListAccountPayments tests listing and counting payment entries associated
+// with a given account.
+func TestListAccountPayments(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+
+	// Listing payments for non-existent account should fail.
+	_, err := store.ListAccountPayments(
+		ctx, AccountID{}, 0, 0,
+	)
+	require.ErrorIs(t, err, ErrAccNotFound)
+
+	acct, err := store.NewAccount(
+		ctx, 10000, time.Time{}, "payment-list",
+	)
+	require.NoError(t, err)
+
+	// Initially, there should be no payments.
+	payments, err := store.ListAccountPayments(
+		ctx, acct.ID, 0, 0,
+	)
+	require.NoError(t, err)
+	require.Empty(t, payments)
+
+	count, err := store.CountAccountPayments(ctx, acct.ID)
+	require.NoError(t, err)
+	require.Zero(t, count)
+
+	// Add 3 payments.
+	hash1 := lntypes.Hash{1}
+	hash2 := lntypes.Hash{2}
+	hash3 := lntypes.Hash{3}
+
+	_, err = store.UpsertAccountPayment(
+		ctx, acct.ID, hash1, 100, lnrpc.Payment_IN_FLIGHT,
+	)
+	require.NoError(t, err)
+
+	_, err = store.UpsertAccountPayment(
+		ctx, acct.ID, hash2, 200, lnrpc.Payment_SUCCEEDED,
+	)
+	require.NoError(t, err)
+
+	_, err = store.UpsertAccountPayment(
+		ctx, acct.ID, hash3, 300, lnrpc.Payment_FAILED,
+	)
+	require.NoError(t, err)
+
+	// Test counting all payments.
+	count, err = store.CountAccountPayments(ctx, acct.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, count)
+
+	// List all payments in default order (ascending by hash).
+	payments, err = store.ListAccountPayments(
+		ctx, acct.ID, 0, 3,
+	)
+	require.NoError(t, err)
+	require.Len(t, payments, 3)
+	require.Equal(t, hash1, payments[0].Hash)
+	require.Equal(t, hash2, payments[1].Hash)
+	require.Equal(t, hash3, payments[2].Hash)
+
+	// Test offset and limit.
+	payments, err = store.ListAccountPayments(
+		ctx, acct.ID, 1, 1,
+	)
+	require.NoError(t, err)
+	require.Len(t, payments, 1)
+	require.Equal(t, hash2, payments[0].Hash)
+}

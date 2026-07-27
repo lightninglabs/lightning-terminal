@@ -107,6 +107,12 @@ type AccountInvoices map[lntypes.Hash]struct{}
 // AccountPayments is the set of payments that are associated with an account.
 type AccountPayments map[lntypes.Hash]*PaymentEntry
 
+// AccountPaymentEntry wraps a payment hash with its entry details.
+type AccountPaymentEntry struct {
+	Hash lntypes.Hash
+	*PaymentEntry
+}
+
 // OffChainBalanceAccount holds all information that is needed to keep track of
 // a user's off-chain account balance. This balance can only be spent by paying
 // invoices.
@@ -278,6 +284,16 @@ type Store interface {
 	// payment is not associated with the account.
 	DeleteAccountPayment(_ context.Context, id AccountID,
 		hash lntypes.Hash) error
+
+	// ListAccountPayments returns a paginated list of payments
+	// associated with the given account, sorted in ascending
+	// lexicographical order of their payment hash.
+	ListAccountPayments(ctx context.Context, id AccountID, offset,
+		limit int32) ([]*AccountPaymentEntry, error)
+
+	// CountAccountPayments returns the total number of payments associated
+	// with the given account.
+	CountAccountPayments(ctx context.Context, id AccountID) (uint64, error)
 
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
