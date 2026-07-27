@@ -31,4 +31,8 @@ var allTestCases = []*testCase{
 		name: "kvdb to sql migration",
 		test: testKvdbSQLMigration,
 	},
+	{
+		name: "litd survives lnd shutdown",
+		test: testLitdSurvivesLndShutdown,
+	},
 }
