@@ -86,13 +86,6 @@ export default class AppView {
     this._store.log.info('Go to the Settings page');
   }
 
-  /** Change to the Connect page */
-  goToConnect() {
-    this.goTo(`/connect`);
-    this._store.settingsStore.autoCollapseSidebar();
-    this._store.log.info('Go to the Connect page');
-  }
-
   /** Change to the Connect Custom page */
   goToConnectCustom() {
     this.goTo(`/connect/custom`);

@@ -1,27 +1,40 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
-import DashUX from 'assets/images/home_dash_ss.png';
-import LoopUX from 'assets/images/home_loop_ss.png';
 import { ReactComponent as Youtube } from 'assets/images/youtube.svg';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import {
-  BoltOutlined,
-  Button,
-  Column,
-  Display,
-  Paragraph,
-  QRCode,
-  Row,
-} from 'components/base';
+import { BoltOutlined, Button, Display, Paragraph, QRCode } from 'components/base';
+import AddSession from 'components/connect/AddSession';
 import PurpleButton from 'components/connect/PurpleButton';
 import QRCodeModal from 'components/connect/QRCodeModal';
+import SessionList from 'components/connect/SessionList';
 import YoutubeModal from './YoutubeModal';
 
 const Styled = {
   Wrapper: styled.div`
     padding: 72px 0;
+  `,
+  Actions: styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    /* stretch so the buttons are all the same height as the tallest one */
+    align-items: stretch;
+    margin-bottom: 40px;
+
+    /* size the Create a new session button to match the two connect buttons */
+    > button {
+      font-size: ${props => props.theme.sizes.s};
+      line-height: 24px;
+      padding: 8px 16px;
+      margin-right: 24px;
+    }
+
+    /* the add session form takes over the full row once it is opened */
+    > div {
+      flex: 1 1 100%;
+      margin-top: 16px;
+    }
   `,
   PurpleButton: styled(PurpleButton)`
     font-size: ${props => props.theme.sizes.s};
@@ -37,13 +50,6 @@ const Styled = {
       margin-right: 16px;
     }
   `,
-  Column: styled(Column)`
-    max-width: 480px;
-  `,
-  Image: styled.img`
-    width: 100%;
-    margin-bottom: 24px;
-  `,
 };
 
 const HomePage: React.FC = () => {
@@ -52,6 +58,10 @@ const HomePage: React.FC = () => {
   const [showVideo, setShowVideo] = useState(false);
   const { sessionStore } = useStore();
 
+  useEffect(() => {
+    sessionStore.fetchSessions();
+  }, []);
+
   const openQRModal = useCallback(
     async () => setQrUrl(await sessionStore.getNewSessionUrl()),
     [],
@@ -59,14 +69,14 @@ const HomePage: React.FC = () => {
   const closeQRModal = useCallback(() => setQrUrl(''), []);
   const toggleVideoModal = useCallback(() => setShowVideo(v => !v), []);
 
-  const { Wrapper, PurpleButton, YoutubeButton, Column, Image } = Styled;
+  const { Wrapper, Actions, PurpleButton, YoutubeButton } = Styled;
   return (
     <Wrapper>
       <Display semiBold space={16}>
         {l('pageTitle')}
       </Display>
       <Paragraph space={32}>{l('connectDesc')}</Paragraph>
-      <Paragraph space={40}>
+      <Actions>
         <PurpleButton onClick={sessionStore.connectToTerminalWeb}>
           <BoltOutlined />
           {l('connectTerminalBtn')}
@@ -75,34 +85,15 @@ const HomePage: React.FC = () => {
           <QRCode />
           {l('connectQrBtn')}
         </PurpleButton>
-      </Paragraph>
-      <Paragraph space={32}>{l('learnDesc')}</Paragraph>
+        <AddSession primary />
+      </Actions>
+      <SessionList />
       <Paragraph space={40}>
         <YoutubeButton ghost borderless compact onClick={toggleVideoModal}>
           <Youtube />
           Learn More
         </YoutubeButton>
       </Paragraph>
-      <Display semiBold space={16}>
-        {l('whatsDiff')}
-      </Display>
-      <Paragraph space={24}>{l('diffDesc')}</Paragraph>
-      <Row>
-        <Column>
-          <Image src={LoopUX} alt={l('loopTitle')} />
-          <Paragraph semiBold space={8}>
-            {l('loopTitle')}
-          </Paragraph>
-          <Paragraph muted>{l('loopDesc')}</Paragraph>
-        </Column>
-        <Column>
-          <Image src={DashUX} alt={l('dashTitle')} />
-          <Paragraph semiBold space={8}>
-            {l('dashTitle')}
-          </Paragraph>
-          <Paragraph muted>{l('dashDesc')}</Paragraph>
-        </Column>
-      </Row>
       <QRCodeModal url={qrUrl} visible={!!qrUrl} onClose={closeQRModal} />
       <YoutubeModal
         videoId="5kH1ByxjkTM"

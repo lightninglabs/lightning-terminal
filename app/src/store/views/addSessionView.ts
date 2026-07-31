@@ -263,7 +263,7 @@ export default class AddSessionView {
 
     if (session) {
       this.cancel();
-      this._store.appView.goToConnect();
+      this._store.appView.goToHome();
     }
   }
 

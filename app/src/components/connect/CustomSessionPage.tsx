@@ -101,7 +101,7 @@ const CustomSessionPage: React.FC = () => {
 
   const handleBack = useCallback(() => {
     addSessionView.cancel();
-    appView.goToConnect();
+    appView.goToHome();
   }, [appView]);
 
   const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {

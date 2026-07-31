@@ -90,10 +90,6 @@ const NavMenu: React.FC = () => {
         <NavItem page="history" onClick={appView.goToHistory} />
         <NavItem page="pool" badge={l('common.preview')} onClick={appView.goToPool} />
       </Nav>
-      <NavHeader>{l('connectHeader')}</NavHeader>
-      <Nav>
-        <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
-      </Nav>
     </>
   );
 };

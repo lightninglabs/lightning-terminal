@@ -64,6 +64,14 @@
   sub-servers on startup. If the macaroon already exists but has different
   permissions, it will be automatically regenerated.
 
+* Merged the Lightning Node Connect page into the Home page: "Create a new
+  session" now sits alongside the existing "Connect to Terminal" and "Connect
+  with QR" buttons, with the session list directly below them. The separate
+  `/connect` page and its sidebar entry have been removed, and the custom
+  session form at `/connect/custom` now returns to Home. The "What's different?"
+  section and the Lightning Node Connect explainer copy were dropped to keep the
+  page focused on connecting.
+
 ### Technical and Architectural Updates
 
 * [Report litd's own version for `litd
