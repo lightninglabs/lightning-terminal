@@ -1,4 +1,5 @@
 import {
+  keys,
   makeAutoObservable,
   observable,
   ObservableMap,
@@ -78,7 +79,7 @@ export default class SessionStore {
         });
 
         // remove any sessions in state that are not in the API response
-        const localIds = Object.keys(this.sessions);
+        const localIds = keys(this.sessions).map(key => String(key));
         localIds
           .filter(id => !serverIds.includes(id))
           .forEach(id => this.sessions.delete(id));

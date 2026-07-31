@@ -42,6 +42,11 @@
   configurable, generous timeout (`--lndreadytimeout`, defaulting to 10
   minutes) instead of a fixed attempt count.
 
+* Fixed stale sessions never being cleared from the Terminal UI's state. The
+  cleanup in the session store called `Object.keys()` on a MobX `ObservableMap`,
+  which always returns an empty array, so sessions that no longer exist in the
+  `ListSessions` response were kept in the UI until a page refresh.
+
 ### Functional Changes/Additions
 
 * [Add accounts payments history subcommand](https://github.com/lightninglabs/lightning-terminal/pull/1316):
