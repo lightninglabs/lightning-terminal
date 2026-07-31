@@ -8,7 +8,7 @@ import {
 import { DEV_HOST } from 'config';
 import { AuthenticationError } from 'util/errors';
 import { grpcLog as log } from 'util/log';
-import { sampleApiResponses } from 'util/tests/sampleData';
+import { sampleResponse } from 'util/tests/sampleData';
 
 class GrpcClient {
   /**
@@ -30,7 +30,7 @@ class GrpcClient {
     return new Promise((resolve, reject) => {
       if (this.useSampleData) {
         const endpoint = `${methodDescriptor.service.serviceName}.${methodDescriptor.methodName}`;
-        const data = sampleApiResponses[endpoint];
+        const data = sampleResponse(endpoint, request.toObject());
         // the calling function expects the return value to have a `toObject` function
         const response: any = { toObject: () => data };
         resolve(response);

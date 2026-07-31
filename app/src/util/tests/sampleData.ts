@@ -1100,6 +1100,63 @@ export const litListSessions: LIT.ListSessionsResponse.AsObject = {
   ],
 };
 
+/** incremented to give each new sample session a unique key and pairing phrase */
+let sampleSessionCount = 0;
+
+/**
+ * creates a session from an AddSession request and adds it to the list returned by
+ * ListSessions. sessions created with sample data then behave the same as real ones,
+ * showing up in the list where their pairing phrase can be copied
+ */
+export const litAddSession = (
+  req: LIT.AddSessionRequest.AsObject,
+): LIT.AddSessionResponse.AsObject => {
+  sampleSessionCount++;
+  const words = ['ocean', 'fabric', 'silver', 'bundle', 'atom', 'rocket', 'clever'];
+  const session: LIT.Session.AsObject = {
+    id: '',
+    devServer: req.devServer,
+    expiryTimestampSeconds: req.expiryTimestampSeconds,
+    label: req.label,
+    // the public key is used as the key of the sessions in the store, so it must
+    // be unique for each session that is created
+    localPublicKey: b64(`0${sampleSessionCount}`.slice(-2).repeat(33)),
+    mailboxServerAddr: req.mailboxServerAddr,
+    pairingSecret: 'ZG92xTGDLDXbCM4=',
+    pairingSecretMnemonic: [...words, `sample${sampleSessionCount}`].join(' '),
+    remotePublicKey: '',
+    sessionState: LIT.SessionState.STATE_CREATED,
+    sessionType: req.sessionType,
+    createdAt: '253300000000',
+    revokedAt: '453300000000',
+    groupId: '',
+    accountId: req.accountId,
+    autopilotFeatureInfoMap: [],
+    macaroonRecipe: {
+      permissionsList: [],
+      caveatsList: [],
+    },
+    featureConfigsMap: [],
+    privacyFlags: '0',
+  };
+  litListSessions.sessionsList.push(session);
+  return { session };
+};
+
+/**
+ * revokes a sample session. the backend keeps returning revoked sessions from
+ * ListSessions with an updated state, so the sample data does the same
+ */
+export const litRevokeSession = (
+  req: LIT.RevokeSessionRequest.AsObject,
+): LIT.RevokeSessionResponse.AsObject => {
+  const session = litListSessions.sessionsList.find(
+    s => s.localPublicKey === req.localPublicKey,
+  );
+  if (session) session.sessionState = LIT.SessionState.STATE_REVOKED;
+  return {};
+};
+
 export const litSubServerStatus: STATUS.SubServerStatusResp.AsObject = {
   subServersMap: [
     [
@@ -1195,5 +1252,19 @@ export const sampleApiResponses: Record<string, any> = {
   'poolrpc.Trader.Leases': poolLeases,
   'poolrpc.Trader.RegisterSidecar': poolRegisterSidecar,
   'litrpc.Sessions.ListSessions': litListSessions,
+  'litrpc.Sessions.AddSession': litAddSession,
+  'litrpc.Sessions.RevokeSession': litRevokeSession,
   'litrpc.Status.SubServerStatus': litSubServerStatus,
+};
+
+/**
+ * returns the sample response for a GRPC endpoint. endpoints which modify state
+ * provide a function instead of a static object, so that the sample data can be
+ * updated based on the request, just like the real backend would
+ * @param path the `<service>.<method>` name of the endpoint
+ * @param request the request object sent to the endpoint
+ */
+export const sampleResponse = (path: string, request?: any): any => {
+  const sample = sampleApiResponses[path];
+  return typeof sample === 'function' ? sample(request) : sample;
 };

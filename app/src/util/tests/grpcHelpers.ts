@@ -2,7 +2,7 @@ import { grpc } from '@improbable-eng/grpc-web';
 import { ProtobufMessage } from '@improbable-eng/grpc-web/dist/typings/message';
 import { UnaryMethodDefinition } from '@improbable-eng/grpc-web/dist/typings/service';
 import { UnaryRpcOptions } from '@improbable-eng/grpc-web/dist/typings/unary';
-import { sampleApiResponses } from './sampleData';
+import { sampleResponse } from './sampleData';
 
 const grpcMock = grpc as jest.Mocked<typeof grpc>;
 
@@ -15,13 +15,18 @@ type UnaryFunc = (
 /**
  * Creates a GRPC response containing sample response data
  * @param desc the method descriptor provided by the grpc library
+ * @param props the request props provided by the grpc library
  */
-export const sampleGrpcResponse = (desc: UnaryMethodDefinition<any, any>): any => {
+export const sampleGrpcResponse = (
+  desc: UnaryMethodDefinition<any, any>,
+  props?: UnaryRpcOptions<ProtobufMessage, ProtobufMessage>,
+): any => {
   const path = `${desc.service.serviceName}.${desc.methodName}`;
+  const data = sampleResponse(path, props && props.request.toObject());
   return {
     status: grpc.Code.OK,
     statusMessage: '',
-    message: { toObject: () => sampleApiResponses[path] },
+    message: { toObject: () => data },
     headers: {},
     trailers: {},
   };
@@ -33,7 +38,7 @@ export const sampleGrpcResponse = (desc: UnaryMethodDefinition<any, any>): any =
 export const restoreGrpcSampleDataMock = () => {
   grpcMock.unary.mockImplementation((desc, props) => {
     // return a response by calling the onEnd function
-    props.onEnd(sampleGrpcResponse(desc));
+    props.onEnd(sampleGrpcResponse(desc, props));
     return undefined as any;
   });
 };
@@ -50,7 +55,7 @@ export const injectIntoGrpcUnary = (func: UnaryFunc, methodName?: string) => {
       func(desc, props);
     }
     // return a response by calling the onEnd function
-    props.onEnd(sampleGrpcResponse(desc));
+    props.onEnd(sampleGrpcResponse(desc, props));
     return undefined as any;
   });
 };
@@ -67,7 +72,7 @@ export const throwGrpcError = (errorMessage: string, methodName?: string) => {
       throw new Error(errorMessage);
     }
     // return a response by calling the onEnd function
-    props.onEnd(sampleGrpcResponse(desc));
+    props.onEnd(sampleGrpcResponse(desc, props));
     return undefined as any;
   });
 };
