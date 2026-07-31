@@ -8,6 +8,8 @@ describe('Routes Component', () => {
   let store: Store;
 
   beforeEach(async () => {
+    // jsdom does not implement scrollTo, which some pages call when mounted
+    window.scrollTo = jest.fn();
     store = createStore();
     await store.init();
   });
@@ -26,6 +28,35 @@ describe('Routes Component', () => {
   describe('Authenticated routes', () => {
     beforeEach(async () => {
       await store.authStore.login('pw');
+    });
+
+    it('should display the Home page with the connect UI', async () => {
+      const { findByText, store } = render();
+      act(() => {
+        store.appView.goToHome();
+      });
+      expect(await findByText('Connect to Terminal')).toBeInTheDocument();
+      expect(await findByText('Connect with QR')).toBeInTheDocument();
+      expect(await findByText('Create a new session')).toBeInTheDocument();
+      expect(store.router.location.pathname).toBe('/home');
+    });
+
+    it('should redirect the old Connect route to the Home page', async () => {
+      const { findByText, store } = render();
+      act(() => {
+        store.router.push('/connect');
+      });
+      expect(await findByText('Create a new session')).toBeInTheDocument();
+      expect(store.router.location.pathname).toBe('/home');
+    });
+
+    it('should display the Custom Session page', async () => {
+      const { findByText, store } = render();
+      act(() => {
+        store.appView.goToConnectCustom();
+      });
+      expect(await findByText('Custom Permissions')).toBeInTheDocument();
+      expect(store.router.location.pathname).toBe('/connect/custom');
     });
 
     it('should display the Loop page', async () => {
