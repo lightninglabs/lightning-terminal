@@ -199,6 +199,14 @@ var (
 	ErrPaymentExceedsMaxSize = errors.New("payment amount exceeds the " +
 		"maximum allowed account payment size")
 
+	// ErrBalanceReservationExceeded is returned when the channel-balance
+	// check is enabled and an account balance allocation would push the sum
+	// of all account balances above the node's available local channel
+	// balance.
+	ErrBalanceReservationExceeded = errors.New("account balance " +
+		"allocation would exceed the node's available local channel " +
+		"balance")
+
 	// ErrNotSupportedWithAccounts is the error that is returned when an RPC
 	// is called that isn't supported to be handled by the account
 	// interceptor.

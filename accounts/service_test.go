@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/clock"
 	invpkg "github.com/lightningnetwork/lnd/invoices"
@@ -35,6 +36,29 @@ type mockLnd struct {
 	invoiceSubscriptionErr error
 	invoiceErrChan         chan error
 	invoiceChan            chan *lndclient.Invoice
+
+	// channelBalance is the local channel balance reported by the mocked
+	// ChannelBalance call.
+	channelBalance btcutil.Amount
+
+	channelBalanceCalled  chan struct{}
+	channelBalanceRelease chan struct{}
+}
+
+// ChannelBalance returns the mocked local channel balance.
+func (m *mockLnd) ChannelBalance(_ context.Context) (*lndclient.ChannelBalance,
+	error) {
+
+	if m.channelBalanceCalled != nil {
+		m.channelBalanceCalled <- struct{}{}
+	}
+	if m.channelBalanceRelease != nil {
+		<-m.channelBalanceRelease
+	}
+
+	return &lndclient.ChannelBalance{
+		Balance: m.channelBalance,
+	}, nil
 }
 
 func newMockLnd() *mockLnd {
@@ -875,4 +899,147 @@ func TestAccountService(t *testing.T) {
 // assertEventually asserts that the given predicate is eventually satisfied.
 func assertEventually(t *testing.T, predicate func() bool) {
 	require.Eventually(t, predicate, testTimeout, testInterval)
+}
+
+// TestChannelBalanceReservationCheck tests that, when the channel-balance check
+// is enabled, the accounts service rejects balance allocations that would push
+// the sum of all account balances above the node's available local channel
+// balance (issue #495).
+func TestChannelBalanceReservationCheck(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	lndMock := newMockLnd()
+
+	// The node has a 10 sat (10_000 msat) local channel balance.
+	lndMock.channelBalance = 10
+	routerMock := newMockRouter()
+	errFunc := func(err error) {
+		lndMock.mainErrChan <- err
+	}
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+	service, err := NewService(store, errFunc, WithChannelBalanceCheck())
+	require.NoError(t, err)
+
+	err = service.Start(ctx, lndMock, routerMock, chainParams)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = service.Stop()
+	})
+
+	// Allocating an account within the node's local balance works.
+	acct, err := service.NewAccount(ctx, 6000, testExpiration, "a")
+	require.NoError(t, err)
+
+	// A second account that would push the total allocation over the
+	// available balance is rejected.
+	_, err = service.NewAccount(ctx, 5000, testExpiration, "b")
+	require.ErrorIs(t, err, ErrBalanceReservationExceeded)
+
+	// Crediting the existing account beyond the limit is rejected too.
+	_, err = service.CreditAccount(ctx, acct.ID, 5000)
+	require.ErrorIs(t, err, ErrBalanceReservationExceeded)
+
+	// But a credit that stays within the limit succeeds.
+	updated, err := service.CreditAccount(ctx, acct.ID, 3000)
+	require.NoError(t, err)
+	require.EqualValues(t, 9000, updated.CurrentBalance)
+
+	// Increasing the account balance directly is subject to the same check.
+	_, err = service.UpdateAccount(ctx, acct.ID, 11, -1, "")
+	require.ErrorIs(t, err, ErrBalanceReservationExceeded)
+
+	updated, err = service.UpdateAccount(ctx, acct.ID, 10, -1, "")
+	require.NoError(t, err)
+	require.EqualValues(t, 10_000, updated.CurrentBalance)
+
+	// With the check disabled (the default), over-provisioning is allowed.
+	plainService, err := NewService(store, errFunc)
+	require.NoError(t, err)
+	err = plainService.Start(ctx, lndMock, routerMock, chainParams)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = plainService.Stop()
+	})
+
+	_, err = plainService.NewAccount(ctx, 999999, testExpiration, "c")
+	require.NoError(t, err)
+}
+
+// TestChannelBalanceReservationRequiresLnd tests that the optional channel
+// balance check fails closed if the service has no Lightning client.
+func TestChannelBalanceReservationRequiresLnd(t *testing.T) {
+	t.Parallel()
+
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+	service, err := NewService(
+		store, func(error) {}, WithChannelBalanceCheck(),
+	)
+	require.NoError(t, err)
+
+	_, err = service.NewAccount(
+		context.Background(), 1000, testExpiration, "account",
+	)
+	require.ErrorContains(t, err, "lightning client is not available")
+}
+
+// TestChannelBalanceRequestDoesNotHoldLock tests that a slow ChannelBalance
+// RPC does not block unrelated account operations.
+func TestChannelBalanceRequestDoesNotHoldLock(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	lndMock := newMockLnd()
+	lndMock.channelBalance = 10
+	lndMock.channelBalanceCalled = make(chan struct{}, 1)
+	lndMock.channelBalanceRelease = make(chan struct{})
+
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+	service, err := NewService(
+		store, func(error) {}, WithChannelBalanceCheck(),
+	)
+	require.NoError(t, err)
+	require.NoError(t, service.Start(
+		ctx, lndMock, newMockRouter(), chainParams,
+	))
+	t.Cleanup(func() {
+		_ = service.Stop()
+	})
+
+	accountErr := make(chan error, 1)
+	go func() {
+		_, err := service.NewAccount(
+			ctx, 1000, testExpiration, "account",
+		)
+		accountErr <- err
+	}()
+
+	select {
+	case <-lndMock.channelBalanceCalled:
+	case <-time.After(testTimeout):
+		t.Fatal("ChannelBalance was not called")
+	}
+
+	type accountsResult struct {
+		accounts []*OffChainBalanceAccount
+		err      error
+	}
+	resultChan := make(chan accountsResult, 1)
+	go func() {
+		accounts, err := service.Accounts(ctx)
+		resultChan <- accountsResult{accounts: accounts, err: err}
+	}()
+
+	select {
+	case result := <-resultChan:
+		require.NoError(t, result.err)
+		require.Empty(t, result.accounts)
+
+	case <-time.After(testTimeout):
+		close(lndMock.channelBalanceRelease)
+		t.Fatal("account read blocked by ChannelBalance")
+	}
+
+	close(lndMock.channelBalanceRelease)
+	require.NoError(t, <-accountErr)
 }

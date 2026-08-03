@@ -793,6 +793,13 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 			),
 		)
 	}
+
+	if g.cfg.Accounts.CheckChannelBalance {
+		accountsOpts = append(
+			accountsOpts, accounts.WithChannelBalanceCheck(),
+		)
+	}
+
 	g.accountService, err = accounts.NewService(
 		g.stores.accounts, accountServiceErrCallback, accountsOpts...,
 	)

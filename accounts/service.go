@@ -34,6 +34,22 @@ type Config struct {
 	// It defaults to 0, which disables the cap and preserves the historical
 	// behaviour of allowing payments up to the full account balance.
 	MaxPaymentSizeMsat uint64 `long:"max-payment-size-msat" description:"the maximum total amount in millisatoshis, including fees, that a single account payment may debit; 0 (the default value) disables the cap"`
+
+	// CheckChannelBalance, when set, makes the accounts service reject
+	// account balance allocations (new accounts, administrative credits and
+	// administrative balance increases) that would push the sum of all
+	// account balances above the node's available total local (outbound)
+	// channel balance.
+	//
+	// It defaults to false to preserve the historical behaviour, where the
+	// operator is trusted to manage over-provisioning themselves; accounts
+	// can legitimately be created before channels are opened or funded.
+	//
+	// NOTE: The total channel balance may still decrease below the already
+	// allocated account balance. This can occur if the node operator
+	// decreases the total channel balance through non-account related
+	// activity.
+	CheckChannelBalance bool `long:"check-channel-balance" description:"reject account balance allocations that would push the sum of all account balances above the node's available local channel balance. Note that the total channel balance can still decrease below the already allocated account balance. This can occur if the node operator decreases the total channel balance through non-account related activity."`
 }
 
 // trackedPayment is a struct that holds all information that identifies a
@@ -66,7 +82,13 @@ type InterceptorService struct {
 
 	store Store
 
-	routerClient lndclient.RouterClient
+	routerClient    lndclient.RouterClient
+	lightningClient lndclient.LightningClient
+
+	// checkChannelBalance, when set, makes the service reject account
+	// balance allocations that would exceed the node's available local
+	// channel balance. See Config.CheckChannelBalance.
+	checkChannelBalance bool
 
 	// maxPaymentSize, when greater than zero, is the maximum value that a
 	// single account payment may have. See Config.MaxPaymentSizeMsat.
@@ -105,6 +127,15 @@ func WithMaxPaymentSize(maxPaymentSize lnwire.MilliSatoshi) ServiceOption {
 	}
 }
 
+// WithChannelBalanceCheck enables validation that the sum of all account
+// balances never exceeds the node's available local channel balance when
+// allocating account balances (new accounts, credits and balance increases).
+func WithChannelBalanceCheck() ServiceOption {
+	return func(s *InterceptorService) {
+		s.checkChannelBalance = true
+	}
+}
+
 // NewService returns a service backed by the macaroon Bolt DB stored in the
 // passed-in directory.
 func NewService(store Store, errCallback func(error),
@@ -137,6 +168,7 @@ func (s *InterceptorService) Start(ctx context.Context,
 	s.contextCancel = fn.Some(contextCancel)
 
 	s.routerClient = routerClient
+	s.lightningClient = lightningClient
 	s.checkers = NewAccountChecker(s, params, s.maxPaymentSize)
 
 	s.isEnabled = true
@@ -325,8 +357,21 @@ func (s *InterceptorService) NewAccount(ctx context.Context,
 	expirationDate time.Time, label string) (*OffChainBalanceAccount,
 	error) {
 
+	availableChannelBalance, err := s.fetchChannelBalance(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	s.Lock()
 	defer s.Unlock()
+
+	// Make sure allocating this account's balance doesn't over-provision
+	// the node's available local channel balance (no-op unless enabled).
+	if err := s.checkChannelBalanceReservationUnsafe(
+		ctx, balance, availableChannelBalance,
+	); err != nil {
+		return nil, err
+	}
 
 	return s.store.NewAccount(ctx, balance, expirationDate, label)
 }
@@ -337,6 +382,29 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 	accountID AccountID, accountBalance btcutil.Amount,
 	expirationDate int64, newLabel string) (*OffChainBalanceAccount,
 	error) {
+
+	// Convert the requested account balance to millisatoshis. An empty
+	// option signals that the stored balance should not be updated.
+	var (
+		balance                 fn.Option[int64]
+		availableChannelBalance lnwire.MilliSatoshi
+		err                     error
+	)
+
+	if accountBalance >= 0 {
+		// If the new account balance was set, parse it as
+		// millisatoshis. A value of -1 signals "don't update the
+		// balance".
+		balance = fn.Some(int64(
+			// Convert from satoshis to millisatoshis for storage.
+			lnwire.NewMSatFromSatoshis(accountBalance),
+		))
+
+		availableChannelBalance, err = s.fetchChannelBalance(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	s.Lock()
 	defer s.Unlock()
@@ -361,14 +429,6 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 		expiry = fn.Some(time.Time{})
 	}
 
-	// If the new account balance was set, parse it as millisatoshis. A
-	// value of -1 signals "don't update the balance".
-	var balance fn.Option[int64]
-	if accountBalance >= 0 {
-		// Convert from satoshis to millisatoshis for storage.
-		balance = fn.Some(int64(accountBalance) * 1000)
-	}
-
 	// If a new label was provided, wrap it in an option. An empty
 	// string is treated as "no update requested" because protobuf
 	// cannot distinguish an absent field from the zero value "".
@@ -377,10 +437,32 @@ func (s *InterceptorService) UpdateAccount(ctx context.Context,
 		label = fn.Some(newLabel)
 	}
 
+	// If the balance is being increased, make sure the increase doesn't
+	// over-provision the node's available local channel balance (no-op
+	// unless the `checkChannelBalance` option is enabled).
+	if balance.IsSome() && s.checkChannelBalance {
+		acct, err := s.store.Account(ctx, accountID)
+		if err != nil {
+			return nil, fmt.Errorf("fetching account: %w", err)
+		}
+
+		newBalanceMsat := balance.UnwrapOr(0)
+		requestedBalanceIncrease := newBalanceMsat - acct.CurrentBalance
+
+		if requestedBalanceIncrease > 0 {
+			err := s.checkChannelBalanceReservationUnsafe(
+				ctx,
+				lnwire.MilliSatoshi(requestedBalanceIncrease),
+				availableChannelBalance,
+			)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	// Create the actual account in the macaroon account store.
-	err := s.store.UpdateAccount(
-		ctx, accountID, balance, expiry, label,
-	)
+	err = s.store.UpdateAccount(ctx, accountID, balance, expiry, label)
 	if err != nil {
 		return nil, fmt.Errorf("unable to update account: %w", err)
 	}
@@ -393,6 +475,11 @@ func (s *InterceptorService) CreditAccount(ctx context.Context,
 	accountID AccountID,
 	amount lnwire.MilliSatoshi) (*OffChainBalanceAccount, error) {
 
+	availableChannelBalance, err := s.fetchChannelBalance(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	s.Lock()
 	defer s.Unlock()
 
@@ -404,8 +491,16 @@ func (s *InterceptorService) CreditAccount(ctx context.Context,
 		return nil, ErrAccountServiceDisabled
 	}
 
+	// Make sure crediting this amount doesn't over-provision the node's
+	// available local channel balance (no-op unless enabled).
+	if err := s.checkChannelBalanceReservationUnsafe(
+		ctx, amount, availableChannelBalance,
+	); err != nil {
+		return nil, err
+	}
+
 	// Credit the account in the DB.
-	err := s.store.CreditAccount(ctx, accountID, amount)
+	err = s.store.CreditAccount(ctx, accountID, amount)
 	if err != nil {
 		return nil, fmt.Errorf("unable to credit account: %w", err)
 	}
@@ -502,8 +597,77 @@ func (s *InterceptorService) CheckBalance(ctx context.Context, id AccountID,
 	}
 
 	availableAmount := calcAvailableAccountBalance(account)
-	if availableAmount < int64(requiredBalance) {
+
+	// Ensure that the availableAmount is greater than the requiredBalance.
+	if availableAmount < 0 ||
+		lnwire.MilliSatoshi(availableAmount) < requiredBalance {
+
 		return ErrAccBalanceInsufficient
+	}
+
+	return nil
+}
+
+// fetchChannelBalance fetches the node's available local channel balance. It
+// returns zero without querying the Lightning client if the
+// `checkChannelBalance` option is not enabled.
+//
+// This network call must happen before acquiring the service lock so an
+// unavailable Lightning client doesn't block unrelated account operations.
+func (s *InterceptorService) fetchChannelBalance(ctx context.Context) (
+	lnwire.MilliSatoshi, error) {
+
+	if !s.checkChannelBalance {
+		return 0, nil
+	}
+
+	if s.lightningClient == nil {
+		return 0, errors.New("cannot check channel balance: " +
+			"lightning client is not available")
+	}
+
+	chanBalance, err := s.lightningClient.ChannelBalance(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("error querying channel balance: %w", err)
+	}
+
+	return lnwire.NewMSatFromSatoshis(chanBalance.Balance), nil
+}
+
+// checkChannelBalanceReservationUnsafe ensures that increasing the total
+// allocated account balance by the requested balance increase would not push
+// the sum of all account balances above the node's available local (outbound)
+// channel balance.
+//
+// The function is a no-op if the `checkChannelBalance` config flag isn't set.
+//
+// NOTE: the service lock MUST be held when calling this method.
+func (s *InterceptorService) checkChannelBalanceReservationUnsafe(
+	ctx context.Context, requestedBalanceIncrease lnwire.MilliSatoshi,
+	availableChannelBalance lnwire.MilliSatoshi) error {
+
+	// If the `checkChannelBalance` config flag isn't set, the function is a
+	// no-op.
+	if !s.checkChannelBalance {
+		return nil
+	}
+
+	accounts, err := s.store.Accounts(ctx)
+	if err != nil {
+		return fmt.Errorf("error listing accounts: %w", err)
+	}
+
+	// Calculate the total account balance after applying the requested
+	// allocation, then ensure the node's local balance can cover it.
+	var allocated int64
+	for _, acct := range accounts {
+		allocated += acct.CurrentBalance
+	}
+
+	if allocated+int64(requestedBalanceIncrease) >
+		int64(availableChannelBalance) {
+
+		return ErrBalanceReservationExceeded
 	}
 
 	return nil
@@ -688,15 +852,12 @@ func (s *InterceptorService) TrackPayment(ctx context.Context, id AccountID,
 	// option to ensure that we return an error if the payment has already
 	// succeeded. We can then match on the ErrAlreadySucceeded error and
 	// exit early if it is returned.
+	//
+	// Additionally, we ensure that the account's pending amount is
+	// preserved while the payment is in-flight.
 	opts := []UpsertPaymentOption{
 		WithErrIfAlreadySucceeded(),
-	}
-
-	// There is a case where the passed in fullAmt is zero but the pending
-	// amount is not. In that case, we should not overwrite the pending
-	// amount.
-	if fullAmt == 0 {
-		opts = append(opts, WithPendingAmount())
+		WithPendingAmount(),
 	}
 
 	known, err := s.store.UpsertAccountPayment(
