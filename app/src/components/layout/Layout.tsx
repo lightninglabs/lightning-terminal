@@ -58,6 +58,9 @@ const GlobalStyles = (theme: Theme) => `
   }
 `;
 
+/** the width that the pages which do not reflow are laid out for */
+const DESKTOP_MIN_WIDTH = 1024;
+
 /** the space the sidebar toggle occupies at the top of the page, including its offset */
 const HAMBURGER_HEIGHT = 80;
 
@@ -65,12 +68,15 @@ const HAMBURGER_HEIGHT = 80;
 const SIDEBAR_WIDTH = 285;
 
 const Styled = {
-  Container: styled.div<{ fullWidth: boolean }>`
+  Container: styled.div<{ fullWidth: boolean; responsive: boolean }>`
     position: relative;
     height: 100%;
     max-width: ${props => (props.fullWidth ? '100%' : '1440px')};
     width: ${props => (props.fullWidth ? '100%' : '100%')};
     margin: 0 auto;
+
+    /* pages which do not reflow scroll horizontally rather than being squeezed */
+    ${props => !props.responsive && `min-width: ${DESKTOP_MIN_WIDTH}px;`}
   `,
   Hamburger: styled.span<CollapsedProps>`
     display: inline-block;
@@ -163,7 +169,7 @@ export const Layout: React.FC = ({ children }) => {
       <Aside collapsed={!settingsStore.sidebarVisible}>
         <Sidebar />
       </Aside>
-      <Container fullWidth={appView.fullWidth}>
+      <Container fullWidth={appView.fullWidth} responsive={appView.responsive}>
         <Content collapsed={!settingsStore.sidebarVisible} fullWidth={appView.fullWidth}>
           <Fluid className="container-fluid">{children}</Fluid>
         </Content>

@@ -32,6 +32,15 @@ export default class AppView {
     return this._store.router.location.pathname === `${PUBLIC_URL}/pool`;
   }
 
+  /**
+   * indicates if the current page reflows down to mobile widths. the remaining pages
+   * contain tables and multi column sections which are laid out for desktop widths, so
+   * they keep a minimum width and scroll horizontally instead of being squeezed
+   */
+  get responsive() {
+    return this._store.router.location.pathname === `${PUBLIC_URL}/home`;
+  }
+
   /** navigate to the specified route */
   goTo(route: string) {
     const path = `${PUBLIC_URL}${route}`;
