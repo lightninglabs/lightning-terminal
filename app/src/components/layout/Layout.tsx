@@ -100,12 +100,16 @@ const Styled = {
     left: 0;
     height: 100%;
     z-index: 1;
-    background-color: ${props => props.theme.colors.darkBlue};
+    background-color: ${props => props.theme.colors.lightningBlack};
     overflow: hidden;
 
-    /* change sidebar dimensions based on collapsed toggle */
+    /* change sidebar dimensions based on collapsed toggle. the edge which separates
+       the sidebar from the page is dropped while collapsed, since it would otherwise
+       remain as a line down the left of the window */
     width: ${props => (props.collapsed ? '0' : `${SIDEBAR_WIDTH}px`)};
     padding: ${props => (props.collapsed ? '0' : '0 15px')};
+    border-right: ${props =>
+      props.collapsed ? 'none' : `1px solid ${props.theme.colors.overlay}`};
     transition: all 0.2s;
 
     /* set a width on the child to improve the collapse animation */

@@ -87,6 +87,7 @@
 html,
 body,
 #root {
-  background-color: #252f4a;
+  // matches theme.colors.lightningBlack, which is not reachable from scss
+  background-color: #101727;
   width: 100%;
 }

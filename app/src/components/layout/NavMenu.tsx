@@ -32,7 +32,7 @@ const Styled = {
 
       &:hover {
         text-decoration: none;
-        border-left: 3px solid ${props => props.theme.colors.pink};
+        border-left: 3px solid ${props => props.theme.colors.lightBlue};
         background-color: ${props => props.theme.colors.overlay};
       }
     }
@@ -42,7 +42,7 @@ const Styled = {
       background-color: ${props => props.theme.colors.blue};
 
       &:hover {
-        border-left: 3px solid ${props => props.theme.colors.pink};
+        border-left: 3px solid ${props => props.theme.colors.lightBlue};
       }
     }
   `,
