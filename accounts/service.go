@@ -19,9 +19,21 @@ import (
 )
 
 // Config holds the configuration options for the accounts service.
+//
+//nolint:ll
 type Config struct {
 	// Disable will disable the accounts service if set.
 	Disable bool `long:"disable" description:"disable the accounts service"`
+
+	// MaxPaymentSizeMsat, when greater than zero, is the maximum value (in
+	// millisatoshis) that a single account payment may have. Payments whose
+	// amount exceeds this cap are rejected by the account interceptor. This
+	// provides a guard rail against a compromised or misbehaving account
+	// macaroon draining its balance in a single large payment.
+	//
+	// It defaults to 0, which disables the cap and preserves the historical
+	// behaviour of allowing payments up to the full account balance.
+	MaxPaymentSizeMsat uint64 `long:"max-payment-size-msat" description:"the maximum total amount in millisatoshis, including fees, that a single account payment may debit; 0 (the default value) disables the cap"`
 }
 
 // trackedPayment is a struct that holds all information that identifies a
@@ -56,6 +68,10 @@ type InterceptorService struct {
 
 	routerClient lndclient.RouterClient
 
+	// maxPaymentSize, when greater than zero, is the maximum value that a
+	// single account payment may have. See Config.MaxPaymentSizeMsat.
+	maxPaymentSize lnwire.MilliSatoshi
+
 	mainCtx       context.Context
 	contextCancel fn.Option[context.CancelFunc]
 
@@ -77,12 +93,24 @@ type InterceptorService struct {
 	isEnabled bool
 }
 
+// ServiceOption is a functional option that can be used to modify the behaviour
+// of the InterceptorService.
+type ServiceOption func(*InterceptorService)
+
+// WithMaxPaymentSize sets the maximum value that a single account payment may
+// have. A value of zero (the default) disables the cap.
+func WithMaxPaymentSize(maxPaymentSize lnwire.MilliSatoshi) ServiceOption {
+	return func(s *InterceptorService) {
+		s.maxPaymentSize = maxPaymentSize
+	}
+}
+
 // NewService returns a service backed by the macaroon Bolt DB stored in the
 // passed-in directory.
-func NewService(store Store, errCallback func(error)) (*InterceptorService,
-	error) {
+func NewService(store Store, errCallback func(error),
+	opts ...ServiceOption) (*InterceptorService, error) {
 
-	return &InterceptorService{
+	s := &InterceptorService{
 		store:              store,
 		invoiceToAccount:   make(map[lntypes.Hash]AccountID),
 		pendingPayments:    make(map[lntypes.Hash]*trackedPayment),
@@ -90,7 +118,13 @@ func NewService(store Store, errCallback func(error)) (*InterceptorService,
 		mainErrCallback:    errCallback,
 		quit:               make(chan struct{}),
 		isEnabled:          false,
-	}, nil
+	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	return s, nil
 }
 
 // Start starts the account service and its interceptor capability.
@@ -103,7 +137,7 @@ func (s *InterceptorService) Start(ctx context.Context,
 	s.contextCancel = fn.Some(contextCancel)
 
 	s.routerClient = routerClient
-	s.checkers = NewAccountChecker(s, params)
+	s.checkers = NewAccountChecker(s, params, s.maxPaymentSize)
 
 	s.isEnabled = true
 

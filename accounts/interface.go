@@ -194,6 +194,11 @@ var (
 	// account
 	ErrAccBalanceInsufficient = errors.New("account balance insufficient")
 
+	// ErrPaymentExceedsMaxSize is returned when a maximum account payment
+	// size is configured and a payment's total amount exceeds it.
+	ErrPaymentExceedsMaxSize = errors.New("payment amount exceeds the " +
+		"maximum allowed account payment size")
+
 	// ErrNotSupportedWithAccounts is the error that is returned when an RPC
 	// is called that isn't supported to be handled by the account
 	// interceptor.

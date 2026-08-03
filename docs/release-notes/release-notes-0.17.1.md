@@ -59,6 +59,20 @@
   sub-servers on startup. If the macaroon already exists but has different
   permissions, it will be automatically regenerated.
 
+* [Add a configurable maximum account payment
+  size](https://github.com/lightninglabs/lightning-terminal/pull/1369):
+  Addresses [
+  #583](https://github.com/lightninglabs/lightning-terminal/issues/583).
+  Added an `accounts.max-payment-size-msat` config option. When set to a
+  non-zero value, the account interceptor rejects any single account payment
+  (`SendPaymentV2`/`SendToRouteV2`) whose total amount, including fees,
+  exceeds the configured cap,
+  providing a guard rail against a compromised or misbehaving account macaroon
+  draining its balance in one large payment. It defaults to 0 (no cap),
+  preserving existing behaviour. This is a first step towards the finer-grained
+  per-account spending controls tracked in the issue (e.g. per-interval spend
+  limits).
+
 ### Technical and Architectural Updates
 
 * [Report litd's own version for `litd

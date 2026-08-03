@@ -144,7 +144,7 @@ var _ Service = (*mockService)(nil)
 func TestAccountChecker(t *testing.T) {
 	t.Parallel()
 
-	checker := NewAccountChecker(nil, nil)
+	checker := NewAccountChecker(nil, nil, 0)
 	for checkerName := range checker.checkers {
 		t.Logf("Checker registered: %v", checkerName)
 	}
@@ -442,7 +442,7 @@ func TestAccountCheckers(t *testing.T) {
 			tt.Parallel()
 
 			service := newMockService()
-			checkers := NewAccountChecker(service, chainParams)
+			checkers := NewAccountChecker(service, chainParams, 0)
 			acct := &OffChainBalanceAccount{
 				ID:       testID,
 				Type:     TypeInitialBalance,
@@ -922,4 +922,110 @@ func assertMessagesEqual(t *testing.T, expected, actual proto.Message) {
 	require.NoError(t, err)
 
 	require.Equal(t, string(expectedJSON), string(actualJSON))
+}
+
+// TestSendPaymentV2MaxPaymentSize tests that, when a maximum account payment
+// size is configured, the SendPaymentV2 checker rejects payments whose total
+// amount, including the fee limit, exceeds the cap (issue #583).
+func TestSendPaymentV2MaxPaymentSize(t *testing.T) {
+	var (
+		uri       = "/routerrpc.Router/SendPaymentV2"
+		ctx       = context.Background()
+		requestID uint64
+	)
+
+	nextRequestID := func() uint64 {
+		requestID++
+
+		return requestID
+	}
+
+	lndMock := newMockLnd()
+	routerMock := newMockRouter()
+	errFunc := func(err error) {
+		lndMock.mainErrChan <- err
+	}
+	clk := clock.NewTestClock(time.Now())
+	store := NewTestDB(t, clk)
+	service, err := NewService(store, errFunc, WithMaxPaymentSize(2000))
+	require.NoError(t, err)
+
+	err = service.Start(ctx, lndMock, routerMock, chainParams)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = service.Stop()
+	})
+
+	acct, err := service.NewAccount(
+		ctx, 1_000_000, clk.Now().Add(time.Hour), "max",
+	)
+	require.NoError(t, err)
+
+	ctxWithAcct := AddAccountToContext(ctx, acct)
+
+	// A payment whose total amount is exactly at the cap is allowed.
+	ctx1 := AddRequestIDToContext(ctxWithAcct, nextRequestID())
+	err = service.checkers.checkIncomingRequest(
+		ctx1, uri, &routerrpc.SendPaymentRequest{
+			AmtMsat:     2000,
+			PaymentHash: testHash[:],
+		},
+	)
+	require.NoError(t, err)
+
+	// A payment whose amount exceeds the cap is rejected.
+	ctx2 := AddRequestIDToContext(ctxWithAcct, nextRequestID())
+	err = service.checkers.checkIncomingRequest(
+		ctx2, uri, &routerrpc.SendPaymentRequest{
+			AmtMsat:     2001,
+			PaymentHash: testHash2[:],
+		},
+	)
+	require.ErrorIs(t, err, ErrPaymentExceedsMaxSize)
+
+	// A fee limit that brings an otherwise valid payment over the cap is
+	// rejected as well.
+	ctx3 := AddRequestIDToContext(ctxWithAcct, nextRequestID())
+	err = service.checkers.checkIncomingRequest(
+		ctx3, uri, &routerrpc.SendPaymentRequest{
+			AmtMsat:      1900,
+			FeeLimitMsat: 101,
+			PaymentHash:  testHash3[:],
+		},
+	)
+	require.ErrorIs(t, err, ErrPaymentExceedsMaxSize)
+}
+
+func TestSendToRouteV2MaxPaymentSize(t *testing.T) {
+	const uri = "/routerrpc.Router/SendToRouteV2"
+
+	ctx := context.Background()
+	lndMock := newMockLnd()
+	routerMock := newMockRouter()
+	service, err := NewService(
+		NewTestDB(t, clock.NewTestClock(time.Now())),
+		func(err error) { lndMock.mainErrChan <- err },
+		WithMaxPaymentSize(2000),
+	)
+	require.NoError(t, err)
+	err = service.Start(ctx, lndMock, routerMock, chainParams)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = service.Stop() })
+
+	acct, err := service.NewAccount(
+		ctx, 1_000_000, time.Now().Add(time.Hour), "max",
+	)
+	require.NoError(t, err)
+
+	ctx = AddRequestIDToContext(AddAccountToContext(ctx, acct), 1)
+	err = service.checkers.checkIncomingRequest(
+		ctx, uri, &routerrpc.SendToRouteRequest{
+			PaymentHash: testHash[:],
+			Route: &lnrpc.Route{
+				TotalAmtMsat:  1900,
+				TotalFeesMsat: 101,
+			},
+		},
+	)
+	require.ErrorIs(t, err, ErrPaymentExceedsMaxSize)
 }

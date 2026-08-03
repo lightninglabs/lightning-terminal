@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"fmt"
+	"math/bits"
 
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -79,8 +80,10 @@ type AccountChecker struct {
 
 // NewAccountChecker creates a new account checker that can keep track of all
 // account related requests, including invoices, payments and account balances.
-func NewAccountChecker(service Service,
-	chainParams *chaincfg.Params) *AccountChecker {
+// If maxPaymentSize is greater than zero, payments whose amount exceeds it are
+// rejected.
+func NewAccountChecker(service Service, chainParams *chaincfg.Params,
+	maxPaymentSize lnwire.MilliSatoshi) *AccountChecker {
 
 	// nolint:ll
 	checkers := CheckerMap{
@@ -162,9 +165,9 @@ func NewAccountChecker(service Service,
 				}
 
 				return checkSend(
-					ctx, chainParams, service, r.Amt,
-					r.AmtMsat, r.PaymentRequest,
-					r.PaymentHash,
+					ctx, chainParams, service,
+					maxPaymentSize, r.Amt, r.AmtMsat,
+					r.PaymentRequest, r.PaymentHash,
 					&lnrpc.FeeLimit{
 						Limit: &lnrpc.FeeLimit_FixedMsat{
 							FixedMsat: feeLimitMsat,
@@ -196,7 +199,8 @@ func NewAccountChecker(service Service,
 				r *routerrpc.SendToRouteRequest) error {
 
 				return checkSendToRoute(
-					ctx, service, r.PaymentHash, r.Route,
+					ctx, service, maxPaymentSize,
+					r.PaymentHash, r.Route,
 				)
 			},
 			sendToRouteHTLCResponseHandler(service),
@@ -465,11 +469,22 @@ func filterPayments(ctx context.Context,
 	return filteredPayments, nil
 }
 
+// checkMaxPaymentSize returns an error if a maximum account payment size is
+// configured (non-zero) and the given total payment amount exceeds it.
+func checkMaxPaymentSize(maxPaymentSize, amt lnwire.MilliSatoshi) error {
+	if maxPaymentSize != 0 && amt > maxPaymentSize {
+		return fmt.Errorf("%w: amount %v exceeds the maximum of %v",
+			ErrPaymentExceedsMaxSize, amt, maxPaymentSize)
+	}
+
+	return nil
+}
+
 // checkSend checks if a payment can be initiated by making sure the account in
 // the context has enough balance to pay for it.
 func checkSend(ctx context.Context, chainParams *chaincfg.Params,
-	service Service, amt, amtMsat int64, invoice string,
-	paymentHash []byte, feeLimit *lnrpc.FeeLimit) error {
+	service Service, maxPaymentSize lnwire.MilliSatoshi, amt, amtMsat int64,
+	invoice string, paymentHash []byte, feeLimit *lnrpc.FeeLimit) error {
 
 	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
 	if err != nil {
@@ -540,7 +555,19 @@ func checkSend(ctx context.Context, chainParams *chaincfg.Params,
 		limit = &lnrpc.FeeLimit{}
 	}
 	fee := lnrpc.CalculateFeeLimit(limit, sendAmt)
-	sendAmt += fee
+
+	// Add the fee explicitly and reject amounts that cannot be represented.
+	total, carry := bits.Add64(uint64(sendAmt), uint64(fee), 0)
+	if carry != 0 {
+		return ErrAccBalanceInsufficient
+	}
+	sendAmt = lnwire.MilliSatoshi(total)
+
+	// Enforce the configured maximum payment size on the full amount that
+	// may be debited from the account.
+	if err := checkMaxPaymentSize(maxPaymentSize, sendAmt); err != nil {
+		return err
+	}
 
 	err = service.CheckBalance(ctx, acct.ID, sendAmt)
 	if err != nil {
@@ -607,7 +634,8 @@ func checkSendResponse(ctx context.Context, service Service,
 
 // checkSendToRoute checks if a payment can be sent to the route by making sure
 // the account in the context has enough balance to pay for it.
-func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
+func checkSendToRoute(ctx context.Context, service Service,
+	maxPaymentSize lnwire.MilliSatoshi, paymentHash []byte,
 	route *lnrpc.Route) error {
 
 	log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
@@ -640,7 +668,19 @@ func checkSendToRoute(ctx context.Context, service Service, paymentHash []byte,
 	if lnwire.MilliSatoshi(route.TotalFeesMsat) > fee {
 		fee = lnwire.MilliSatoshi(route.TotalFeesMsat)
 	}
-	sendAmt += fee
+
+	// Add the fee explicitly and reject amounts that cannot be represented.
+	total, carry := bits.Add64(uint64(sendAmt), uint64(fee), 0)
+	if carry != 0 {
+		return ErrAccBalanceInsufficient
+	}
+	sendAmt = lnwire.MilliSatoshi(total)
+
+	// Enforce the configured maximum payment size on the full amount that
+	// may be debited from the account.
+	if err := checkMaxPaymentSize(maxPaymentSize, sendAmt); err != nil {
+		return err
+	}
 
 	err = service.CheckBalance(ctx, acct.ID, sendAmt)
 	if err != nil {
