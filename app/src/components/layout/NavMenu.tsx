@@ -92,7 +92,7 @@ const NavMenu: React.FC = () => {
       </Nav>
       <NavHeader>{l('connectHeader')}</NavHeader>
       <Nav>
-        <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
+        <NavItem page="connect" onClick={appView.goToConnect} />
       </Nav>
     </>
   );

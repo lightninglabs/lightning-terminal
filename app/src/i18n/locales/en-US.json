@@ -18,7 +18,6 @@
   "common.months": "month",
   "common.months_plural": "months",
   "common.preview": "preview",
-  "common.beta": "beta",
   "enums.BalanceMode.receive": "Receiving",
   "enums.BalanceMode.send": "Sending",
   "enums.BalanceMode.routing": "Routing",
