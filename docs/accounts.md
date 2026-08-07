@@ -69,6 +69,25 @@ enforces the following rules on the RPC interface:
   mapped invoice is paid, the amount is credited to that account's virtual
   balance.
 
+## Operator controls
+
+LiT provides optional account safeguards through its configuration:
+
+* `accounts.max-payment-size-msat` limits the total amount a single account
+  payment may debit, including fees. For `SendPaymentV2`, the configured fee
+  limit is included; for `SendToRouteV2`, the route's stated fee is included.
+  The default value of `0` disables this limit.
+* `accounts.check-channel-balance` rejects new accounts, administrative
+  credits and administrative balance increases that would make the sum of all
+  account balances exceed the node's current local channel balance. It is
+  disabled by default. When enabled, allocations fail if LiT cannot query the
+  Lightning client for the channel balance.
+
+  Note: The channel-balance check only applies when a balance is allocated. It
+  cannot prevent the node's local balance from subsequently falling below the
+  allocated account balance if the operator sends non-account Lightning
+  payments or other non-account activity.
+
 ## Use cases
 
 The following (definitely non-exhaustive) list of use cases is made possible by

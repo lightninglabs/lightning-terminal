@@ -58,6 +58,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnwallet"
 	"github.com/lightningnetwork/lnd/lnwallet/btcwallet"
 	"github.com/lightningnetwork/lnd/lnwallet/chancloser"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/msgmux"
 	"github.com/lightningnetwork/lnd/rpcperms"
@@ -782,8 +783,25 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 		return fmt.Errorf("could not start firewall DB: %v", err)
 	}
 
+	var accountsOpts []accounts.ServiceOption
+	if g.cfg.Accounts.MaxPaymentSizeMsat > 0 {
+		accountsOpts = append(
+			accountsOpts, accounts.WithMaxPaymentSize(
+				lnwire.MilliSatoshi(
+					g.cfg.Accounts.MaxPaymentSizeMsat,
+				),
+			),
+		)
+	}
+
+	if g.cfg.Accounts.CheckChannelBalance {
+		accountsOpts = append(
+			accountsOpts, accounts.WithChannelBalanceCheck(),
+		)
+	}
+
 	g.accountService, err = accounts.NewService(
-		g.stores.accounts, accountServiceErrCallback,
+		g.stores.accounts, accountServiceErrCallback, accountsOpts...,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating account service: %v", err)
