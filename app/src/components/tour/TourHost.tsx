@@ -123,12 +123,19 @@ const tourSteps: ReactourStep[] = [
 const Styled = {
   Tour: styled(Tour)`
     &.reactour__helper {
-      border-radius: 10px;
+      border-radius: 12px;
+      background: ${props => props.theme.colors.lightBlue} !important;
+      color: ${props => props.theme.colors.offWhite} !important;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
     }
 
     [data-tour-elem='badge'] {
-      font-family: ${props => props.theme.fonts.open.regular};
-      font-size: ${props => props.theme.sizes.xxs};
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      background: ${props => props.theme.colors.iris} !important;
+      border-radius: 4px;
     }
   `,
 };
@@ -143,7 +150,7 @@ const TourHost: React.FC = () => {
       steps={tourSteps}
       isOpen={appView.tourVisible}
       onRequestClose={appView.closeTour}
-      accentColor={theme.colors.pink}
+      accentColor={theme.colors.iris}
       goToStep={appView.tourActiveStep}
       getCurrentStep={appView.setTourActiveStep}
       showNavigation={false}

@@ -98,9 +98,13 @@ const AlertContainer: React.FC = () => {
   );
   return (
     <>
-      {values(appView.alerts).map(n => (
-        <AlertToast key={n.id} alert={n} onClose={appView.clearAlert} />
-      ))}
+      {values(appView.alerts).map(n =>
+        React.createElement(AlertToast, {
+          key: n.id,
+          alert: n,
+          onClose: appView.clearAlert,
+        }),
+      )}
       <Container position="top-right" autoClose={5 * 1000} closeButton={closeButton} />
     </>
   );

@@ -56,18 +56,16 @@ const BatchList: React.FC = () => {
       <BatchRowHeader />
       <Content>
         <AutoSizer>
-          {({ width, height }) => (
+          {({ width, height }: { width: number; height: number }) => (
             <Observer>
               {() => (
                 <List
                   rowCount={batchStore.sortedBatches.length}
                   rowHeight={ROW_HEIGHT}
-                  rowRenderer={({ index, key, style }) => (
-                    <BatchRow
-                      key={key}
-                      style={style}
-                      batch={batchStore.sortedBatches[index]}
-                    />
+                  rowRenderer={({ index, key, style }: any) => (
+                    <div key={key} style={style}>
+                      <BatchRow batch={batchStore.sortedBatches[index]} />
+                    </div>
                   )}
                   width={width}
                   height={height}

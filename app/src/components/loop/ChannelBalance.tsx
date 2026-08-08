@@ -28,11 +28,11 @@ const Styled = {
     }
   `,
   Section: styled.div`
-    height: 4px;
+    height: 3px;
     border-radius: 2px;
   `,
   Gap: styled.div`
-    width: 10px;
+    width: 4px;
     background-color: transparent;
   `,
 };

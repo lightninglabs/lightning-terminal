@@ -1,53 +1,52 @@
 import React from 'react';
 import { Theme, ThemeProvider as EmotionThemeProvider } from '@emotion/react';
 
-// use the bootstrap font-families as a fallback while custom fonts are being downloaded
 const fallbackFont =
-  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'";
+  "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 const theme: Theme = {
   fonts: {
     open: {
-      light: `'OpenSans Light', ${fallbackFont}`,
-      regular: `'OpenSans Regular', ${fallbackFont}`,
-      semiBold: `'OpenSans SemiBold', ${fallbackFont}`,
-      bold: `'OpenSans Bold', ${fallbackFont}`,
-      extraBold: `'OpenSans ExtraBold', ${fallbackFont}`,
+      light: `${fallbackFont}`,
+      regular: `${fallbackFont}`,
+      semiBold: `${fallbackFont}`,
+      bold: `${fallbackFont}`,
+      extraBold: `${fallbackFont}`,
     },
     work: {
-      light: `'WorkSans Light', ${fallbackFont}`,
-      medium: `'WorkSans Medium', ${fallbackFont}`,
-      semiBold: `'WorkSans SemiBold', ${fallbackFont}`,
+      light: `${fallbackFont}`,
+      medium: `${fallbackFont}`,
+      semiBold: `${fallbackFont}`,
     },
   },
   sizes: {
     xxs: '11px',
-    xs: '14px',
-    s: '16px',
-    m: '18px',
-    l: '22px',
-    xl: '27px',
-    xxl: '45px',
+    xs: '13px',
+    s: '14px',
+    m: '15px',
+    l: '18px',
+    xl: '24px',
+    xxl: '36px',
   },
   colors: {
-    blue: '#252f4a',
-    darkBlue: '#212133',
-    gray: '#848a99',
-    darkGray: '#6b6969ef',
+    blue: '#131620',
+    darkBlue: '#0d1017',
+    gray: '#6b7280',
+    darkGray: '#4b5563',
     white: '#ffffff',
-    offWhite: '#f5f5f5',
-    pink: '#f5406e',
+    offWhite: '#e5e7eb',
+    pink: '#f43f5e',
     green: '#10B981',
     gold: '#F59E0B',
-    purple: '#57038d',
-    overlay: 'rgba(245,245,245,0.04)',
-    gradient: 'linear-gradient(325.53deg, #252F4A 0%, #46547B 100%);',
-    lightBlue: '#384770',
-    paleBlue: '#2E3A5C',
+    purple: '#8b5cf6',
+    overlay: 'rgba(255,255,255,0.04)',
+    gradient: 'linear-gradient(135deg, #131620 0%, #1e2433 100%)',
+    lightBlue: '#1e2433',
+    paleBlue: '#252d3d',
     lightningRed: '#EF4444',
-    lightningGray: '#B9BDC5',
-    lightningNavy: '#1D253A',
-    iris: '#5D5FEF',
+    lightningGray: '#9ca3af',
+    lightningNavy: '#0d1017',
+    iris: '#6366f1',
   },
   breakpoints: {
     s: 'min-width: 576px',

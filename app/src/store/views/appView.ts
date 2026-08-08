@@ -19,6 +19,8 @@ export default class AppView {
   /** indicates if the tour is visible */
   tourVisible = false;
   tourActiveStep = 0;
+  /** which graph view is active: 'mynode' or 'network' */
+  graphViewMode: 'mynode' | 'network' = 'mynode';
   /** a collection of alerts to display as toasts */
   alerts = observable.map<number, Alert>();
 
@@ -40,10 +42,26 @@ export default class AppView {
     }
   }
 
-  /** Change to the Auth page */
+  /** Change to the Welcome/Auth page */
   gotoAuth() {
     this.goTo(`/`);
-    this._store.log.info('Go to the Auth page');
+    this._store.log.info('Go to the Welcome page');
+  }
+
+  /** Change to the Home page (My Node view) */
+  goToMyNode() {
+    this.graphViewMode = 'mynode';
+    this.goTo(`/home`);
+    this._store.settingsStore.autoCollapseSidebar();
+    this._store.log.info('Go to My Node');
+  }
+
+  /** Change to the Home page (Network view) */
+  goToNetwork() {
+    this.graphViewMode = 'network';
+    this.goTo(`/home`);
+    this._store.settingsStore.autoCollapseSidebar();
+    this._store.log.info('Go to Network');
   }
 
   /** Change to the Home page */
@@ -57,10 +75,6 @@ export default class AppView {
   goToLoop() {
     this.goTo(`/loop`);
     this._store.settingsStore.autoCollapseSidebar();
-    if (!this._store.settingsStore.tourAutoShown) {
-      this.showTour();
-      this._store.settingsStore.tourAutoShown = true;
-    }
     this._store.log.info('Go to the Loop page');
   }
 

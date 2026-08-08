@@ -1,10 +1,11 @@
 {
-  "name": "Lightning Labs",
+  "name": "Lightning Terminal",
   "short_name": "Lightning",
+  "description": "Visualize the Lightning Network, manage channels, and connect with the decentralized payment layer.",
   "start_url": "/",
-  "background_color": "#ffffff",
-  "theme_color": "#57038D",
-  "display": "minimal-ui",
+  "background_color": "#0a0c12",
+  "theme_color": "#6366f1",
+  "display": "standalone",
   "icons": [
     {
       "src": "icons/icon-48x48.png",
@@ -29,7 +30,8 @@
     {
       "src": "icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icons/icon-256x256.png",
@@ -44,7 +46,8 @@
     {
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

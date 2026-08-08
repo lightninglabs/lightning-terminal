@@ -6,6 +6,7 @@ import { SubServerStatus } from 'types/state';
 interface SubServers {
   loop: SubServerStatus;
   pool: SubServerStatus;
+  lit: SubServerStatus;
 }
 
 export default class SubServerStore {
@@ -20,6 +21,11 @@ export default class SubServerStore {
       error: '',
     },
     pool: {
+      disabled: false,
+      running: true,
+      error: '',
+    },
+    lit: {
       disabled: false,
       running: true,
       error: '',
@@ -44,6 +50,8 @@ export default class SubServerStore {
             this.subServers.pool = serverStatus;
           } else if (serverName === 'loop') {
             this.subServers.loop = serverStatus;
+          } else if (serverName === 'lit') {
+            this.subServers.lit = serverStatus;
           }
         });
       });

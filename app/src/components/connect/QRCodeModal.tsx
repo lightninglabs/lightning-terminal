@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import { usePrefixedTranslation } from 'hooks';
-import QRCodeImg from 'qrcode.react';
+import { QRCodeSVG as QRCodeImg } from 'qrcode.react';
 import { Paragraph } from 'components/base';
 import Modal from 'components/common/Modal';
 

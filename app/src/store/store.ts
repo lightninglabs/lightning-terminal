@@ -11,8 +11,11 @@ import {
   AuthStore,
   BatchStore,
   ChannelStore,
+  NetworkGraphStore,
+  NodeConnectionStore,
   NodeStore,
   OrderStore,
+  PaymentActivityStore,
   RouterStore,
   SessionStore,
   SettingsStore,
@@ -45,12 +48,15 @@ export class Store {
   authStore = new AuthStore(this);
   batchStore = new BatchStore(this);
   channelStore = new ChannelStore(this);
+  networkGraphStore = new NetworkGraphStore(this);
+  nodeConnectionStore = new NodeConnectionStore(this);
   swapStore = new SwapStore(this);
   nodeStore = new NodeStore(this);
   orderStore = new OrderStore(this);
   settingsStore = new SettingsStore(this);
   sessionStore = new SessionStore(this);
   subServerStore = new SubServerStore(this);
+  paymentActivityStore = new PaymentActivityStore(this);
 
   /** the store which synchronizes with the browser history */
   router: RouterStore;
@@ -120,34 +126,44 @@ export class Store {
     this.settingsStore.init();
     this.swapStore.init();
     this.batchStore.init();
+    this.nodeConnectionStore.init();
     await this.authStore.init();
     runInAction(() => {
       this.initialized = true;
     });
 
-    // this function will automatically run whenever the authenticated
-    // flag is changed
+    // Unauthenticated routes that should not trigger a redirect
+    const publicPaths = [
+      `${PUBLIC_URL}/`,
+      `${PUBLIC_URL}/connect-node`,
+      `${PUBLIC_URL}/get-node`,
+      `${PUBLIC_URL}/explore-network`,
+      `${PUBLIC_URL}/auth`,
+    ];
+
     autorun(
       async () => {
         if (this.authStore.authenticated) {
-          // go to the Loop page when the user is authenticated. it can be from
-          // entering a password or from loading the credentials from storage.
-          // only do this if the auth page is currently being viewed, otherwise
-          // stay on the current page (ex: history, settings)
-          if (document.location.pathname === `${PUBLIC_URL}/`) {
+          // Redirect to home if currently on a public/onboarding page
+          const current = document.location.pathname;
+          const onPublic = publicPaths.some(p => current === p);
+          if (onPublic) {
             runInAction(() => {
               this.appView.goToHome();
             });
           }
-          // also fetch all the data we need
-          this.fetchAllData();
-          // connect and subscribe to the server-side streams
+          this.fetchAllData().then(() => {
+            this.nodeConnectionStore.registerPrimaryNode();
+          });
           this.connectToStreams();
           this.subscribeToStreams();
         } else {
-          // go to auth page if we are not authenticated
-          this.appView.gotoAuth();
-          // unsubscribe from streams since we are no longer authenticated
+          // Only redirect to welcome if on a protected (app) route
+          const current = document.location.pathname;
+          const onPublic = publicPaths.some(p => current === p);
+          if (!onPublic) {
+            this.appView.gotoAuth();
+          }
           this.unsubscribeFromStreams();
         }
       },
@@ -163,7 +179,9 @@ export class Store {
     await this.nodeStore.fetchInfo();
     await this.channelStore.fetchChannels();
     await this.nodeStore.fetchBalances();
-    await this.sessionStore.fetchSessions();
+    if (this.subServerStore.subServers.lit.running) {
+      await this.sessionStore.fetchSessions();
+    }
 
     if (this.swapStore.canFetchData) {
       await this.swapStore.fetchSwaps();
@@ -187,6 +205,7 @@ export class Store {
     const { lnd, loop } = this.api;
     lnd.on('transaction', this.nodeStore.onTransaction);
     lnd.on('channel', this.channelStore.onChannelEvent);
+    lnd.on('invoice', this.paymentActivityStore.onInvoiceUpdate);
     loop.on('monitor', this.swapStore.onSwapUpdate);
   }
 
@@ -197,6 +216,7 @@ export class Store {
     const { lnd, loop } = this.api;
     lnd.off('transaction', this.nodeStore.onTransaction);
     lnd.off('channel', this.channelStore.onChannelEvent);
+    lnd.off('invoice', this.paymentActivityStore.onInvoiceUpdate);
     loop.off('monitor', this.swapStore.onSwapUpdate);
   }
 }

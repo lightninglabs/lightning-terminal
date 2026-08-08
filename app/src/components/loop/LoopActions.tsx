@@ -10,25 +10,24 @@ import SelectedChannels from './SelectedChannels';
 
 const Styled = {
   Wrapper: styled.section`
-    margin: 50px 0;
+    margin: 20px 0 8px;
   `,
   Actions: styled.div`
     display: flex;
     align-items: center;
-    margin-top: -15px;
+    gap: 12px;
   `,
   ActionBar: styled.div`
     display: flex;
     align-items: center;
-    min-width: 595px;
-    padding: 15px;
-    background-color: ${props => props.theme.colors.darkBlue};
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.5);
-    border-radius: 35px;
+    gap: 8px;
+    padding: 8px 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
 
     > button {
-      margin-left: 10px;
-      background-color: ${props => props.theme.colors.overlay};
+      margin-left: 0;
     }
   `,
   CloseIcon: styled(Close)`

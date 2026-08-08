@@ -28,17 +28,19 @@ const LoopHistory: React.FC = () => {
     <>
       {swapStore.lastTwoSwaps.length === 0 && <Small>{l('emptyMsg')}</Small>}
       {swapStore.lastTwoSwaps.map(swap => (
-        <Row key={swap.id}>
-          <Column cols={6}>
-            <SwapDot swap={swap} />
-            <SmallText>{swap.createdOn.toLocaleDateString()}</SmallText>
-          </Column>
-          <RightColumn cols={6}>
-            <SmallText>
-              <Unit sats={swap.amount} />
-            </SmallText>
-          </RightColumn>
-        </Row>
+        <div key={swap.id}>
+          <Row>
+            <Column cols={6}>
+              <SwapDot swap={swap} />
+              <SmallText>{swap.createdOn.toLocaleDateString()}</SmallText>
+            </Column>
+            <RightColumn cols={6}>
+              <SmallText>
+                <Unit sats={swap.amount} />
+              </SmallText>
+            </RightColumn>
+          </Row>
+        </div>
       ))}
     </>
   );

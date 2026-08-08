@@ -7,7 +7,7 @@ import ChannelRow, { ChannelRowHeader, ROW_HEIGHT } from './ChannelRow';
 
 const Styled = {
   Wrapper: styled.section`
-    margin: 50px 0;
+    margin: 24px 0 0;
   `,
   ListContainer: styled.div`
     /**
@@ -36,12 +36,18 @@ const ChannelList: React.FC = () => {
       <ChannelRowHeader />
       <ListContainer>
         <AutoSizer disableHeight>
-          {({ width }) => (
+          {({ width }: { width: number }) => (
             <WindowScroller>
-              {({ height, isScrolling, onChildScroll, scrollTop, registerChild }) => (
+              {({
+                height,
+                isScrolling,
+                onChildScroll,
+                scrollTop,
+                registerChild,
+              }: any) => (
                 <Observer>
                   {() => (
-                    <div ref={ref => ref && registerChild(ref)}>
+                    <div ref={(ref: any) => ref && registerChild(ref)}>
                       <List
                         autoHeight
                         height={height}
@@ -49,12 +55,10 @@ const ChannelList: React.FC = () => {
                         onScroll={onChildScroll}
                         rowCount={buildSwapView.channels.length}
                         rowHeight={ROW_HEIGHT}
-                        rowRenderer={({ index, key, style }) => (
-                          <ChannelRow
-                            key={key}
-                            style={style}
-                            channel={buildSwapView.channels[index]}
-                          />
+                        rowRenderer={({ index, key, style }: any) => (
+                          <div key={key} style={style}>
+                            <ChannelRow channel={buildSwapView.channels[index]} />
+                          </div>
                         )}
                         scrollTop={scrollTop}
                         width={width}

@@ -86,7 +86,12 @@ export default class SessionStore {
         this._store.log.info('updated sessionStore.sessions', toJS(this.sessions));
       });
     } catch (error: any) {
-      this._store.appView.handleError(error, 'Unable to fetch sessions');
+      const msg = error?.message || String(error);
+      if (msg.includes('not ready')) {
+        this._store.log.info('LiT sessions sub-server not ready, skipping');
+      } else {
+        this._store.appView.handleError(error, 'Unable to fetch sessions');
+      }
     }
   }
 
