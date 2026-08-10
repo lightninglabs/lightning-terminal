@@ -26,6 +26,11 @@ env:
   # /dev.Dockerfile
   GO_VERSION: 1.25.11
 
+  # Only applies to the CI jobs below. The note above covers GO_VERSION alone:
+  # /Dockerfile and /dev.Dockerfile pin their own Node version for release
+  # builds, and it does not have to match this one.
+  NODE_VERSION: 24.x
+
 jobs:
   ########################
   # frontend build checks
@@ -36,7 +41,6 @@ jobs:
 
     strategy:
       matrix:
-        node_version: [ 16.x ]
         os: [ ubuntu-latest, windows-latest, macOS-latest ]
 
     steps:
@@ -45,10 +49,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: setup nodejs ${{ matrix.node_version }}
+      - name: setup nodejs ${{ env.NODE_VERSION }}
         uses: ./.github/actions/setup-node
         with:
-          node-version: '${{ matrix.node_version }}'
+          node-version: '${{ env.NODE_VERSION }}'
 
       - name: install dependencies
         working-directory: ./app
@@ -84,10 +88,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: setup nodejs ${{ matrix.node_version }}
+      - name: setup nodejs ${{ env.NODE_VERSION }}
         uses: ./.github/actions/setup-node
         with:
-          node-version: '${{ matrix.node_version }}'
+          node-version: '${{ env.NODE_VERSION }}'
 
       - name: setup go ${{ env.GO_VERSION }}
         uses: ./.github/actions/setup-go
@@ -144,10 +148,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: setup nodejs ${{ matrix.node_version }}
+      - name: setup nodejs ${{ env.NODE_VERSION }}
         uses: ./.github/actions/setup-node
         with:
-          node-version: '${{ matrix.node_version }}'
+          node-version: '${{ env.NODE_VERSION }}'
 
       - name: setup go ${{ env.GO_VERSION }}
         uses: ./.github/actions/setup-go
@@ -324,10 +328,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: setup nodejs ${{ matrix.node_version }}
+      - name: setup nodejs ${{ env.NODE_VERSION }}
         uses: ./.github/actions/setup-node
         with:
-          node-version: '${{ matrix.node_version }}'
+          node-version: '${{ env.NODE_VERSION }}'
 
       - name: setup go ${{ env.GO_VERSION }}
         uses: ./.github/actions/setup-go
