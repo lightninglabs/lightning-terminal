@@ -32,7 +32,7 @@ require (
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.8.0
 	github.com/lightninglabs/taproot-assets/taprpc v1.1.0
-	github.com/lightningnetwork/lnd v0.21.1-beta
+	github.com/lightningnetwork/lnd v0.21.2-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
@@ -75,7 +75,7 @@ require (
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
 	github.com/btcsuite/btcd/v2transport v1.0.1 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
-	github.com/btcsuite/btcwallet v0.16.18 // indirect
+	github.com/btcsuite/btcwallet v0.16.19 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
