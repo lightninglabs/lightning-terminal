@@ -103,8 +103,12 @@
 ## Integrated Binary Updates
 
 ### LND
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1370): Bump:
+  `lnd@v0.21.2-beta`.
 
 ### Loop
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1370): Bump:
+  `loop@v0.34.0-beta`.
 
 ### Pool
 
