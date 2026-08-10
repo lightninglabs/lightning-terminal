@@ -23,8 +23,8 @@ require (
 	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20250610182311-2f1d46ef18b7
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
-	github.com/lightninglabs/lndclient v0.21.0-1
-	github.com/lightninglabs/loop v0.33.3-beta
+	github.com/lightninglabs/lndclient v0.21.0-2
+	github.com/lightninglabs/loop v0.34.0-beta
 	github.com/lightninglabs/loop/looprpc v1.0.14
 	github.com/lightninglabs/loop/swapserverrpc v1.0.21
 	github.com/lightninglabs/pool v0.7.1-beta
@@ -37,7 +37,7 @@ require (
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
-	github.com/lightningnetwork/lnd/kvdb v1.4.16
+	github.com/lightningnetwork/lnd/kvdb v1.5.1
 	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.7

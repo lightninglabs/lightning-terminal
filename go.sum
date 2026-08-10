@@ -606,8 +606,6 @@ github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c/go.mod h1:ukJfTF
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c/go.mod h1:X0CRv0ky0k6m906ixxpzmDRLvX58TFUKS2eePweuyxk=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
-github.com/Masterminds/semver/v3 v3.3.0 h1:B8LGeaivUe71a5qox1ICM/JLl0NqZSW5CHyL+hmvYS0=
-github.com/Masterminds/semver/v3 v3.3.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e h1:n+DcnTNkQnHlwpsrHoQtkrJIO7CBx029fw6oR4vIob4=
@@ -1141,10 +1139,10 @@ github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20250610182
 github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20250610182311-2f1d46ef18b7/go.mod h1:bDnEKRN1u13NFBuy/C+bFLhxA5bfd3clT25y76QY0AM=
 github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7 h1:EU/pEkszIbIJOHwOr67G9Gjmyy4CUXk6StRi9C26sUw=
 github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7/go.mod h1:cQA5pybYbERkMlE8j49LITZZozQZIXABbWJLIpMWnus=
-github.com/lightninglabs/lndclient v0.21.0-1 h1:NuyccCK7tbMaH7hhqtewcx+qeBel4/RLJrlnQ/lMkkY=
-github.com/lightninglabs/lndclient v0.21.0-1/go.mod h1:RUIcfPr82HrvZr3pu9f8nbD5v6VFbm+KgExqNNp5bE4=
-github.com/lightninglabs/loop v0.33.3-beta h1:L8wYQZIrz9Xpsre0eSGEfO0ahthr7sVjLzDBxaedx7w=
-github.com/lightninglabs/loop v0.33.3-beta/go.mod h1:nQIASE+Y6X5x7I0RY9hH/Q748+Oi90OdqibpwYAnAKE=
+github.com/lightninglabs/lndclient v0.21.0-2 h1:gA1utFMoKV6OZfHpYAQ1TX0wVs5cAtgTORRVavHR/ls=
+github.com/lightninglabs/lndclient v0.21.0-2/go.mod h1:RUIcfPr82HrvZr3pu9f8nbD5v6VFbm+KgExqNNp5bE4=
+github.com/lightninglabs/loop v0.34.0-beta h1:21mrMsMAi1ekhHvgwmfkv8MD5NhGxsY+cMj/TaJGmqA=
+github.com/lightninglabs/loop v0.34.0-beta/go.mod h1:APjZa155QHhL/qvW9jshRNwiRAIYKHr4tlgz3D+VY6A=
 github.com/lightninglabs/loop/looprpc v1.0.14 h1:9gaAVGplNZMyalLV8qxILXDD9F8QSgdtOgrtOFw60V4=
 github.com/lightninglabs/loop/looprpc v1.0.14/go.mod h1:vUYOyRjWWKSnCrFyugiXuS90eC/FajYoTY3OE18cRNo=
 github.com/lightninglabs/loop/swapserverrpc v1.0.21 h1:MI8LhS7jtjqI6b7AcE/kHO9WKGVxiWCMmt302dBsM6A=
@@ -1183,8 +1181,8 @@ github.com/lightningnetwork/lnd/fn/v2 v2.0.9 h1:ZytG4ltPac/sCyg1EJDn10RGzPIDJeye
 github.com/lightningnetwork/lnd/fn/v2 v2.0.9/go.mod h1:aPUJHJ31S+Lgoo8I5SxDIjnmeCifqujaiTXKZqpav3w=
 github.com/lightningnetwork/lnd/healthcheck v1.2.6 h1:1sWhqr93GdkWy4+6U7JxBfcyZIE78MhIHTJZfPx7qqI=
 github.com/lightningnetwork/lnd/healthcheck v1.2.6/go.mod h1:Mu02um4CWY/zdTOvFje7WJgJcHyX2zq/FG3MhOAiGaQ=
-github.com/lightningnetwork/lnd/kvdb v1.4.16 h1:9BZgWdDfjmHRHLS97cz39bVuBAqMc4/p3HX1xtUdbDI=
-github.com/lightningnetwork/lnd/kvdb v1.4.16/go.mod h1:HW+bvwkxNaopkz3oIgBV6NEnV4jCEZCACFUcNg4xSjM=
+github.com/lightningnetwork/lnd/kvdb v1.5.1 h1:OG5cDbqggxiCFKAJbSPw0PfQovi+0odCZAAU5r5b+ho=
+github.com/lightningnetwork/lnd/kvdb v1.5.1/go.mod h1:5lubXYoXHDBWBYKmC+2we7qgkjjz0cEZ/5QSQkxQSec=
 github.com/lightningnetwork/lnd/queue v1.2.0 h1:sSrn+u84OLuOT/F+xGxgg8VfknXeIZEAFQoMH6BL60s=
 github.com/lightningnetwork/lnd/queue v1.2.0/go.mod h1:qLNP0L3B7piRGvDyhAyJKic4xTt+Mw4D7mWrQeuAwxY=
 github.com/lightningnetwork/lnd/sqldb v1.0.13 h1:CcG9mrHNW/hIuZnqgosdiNmS7QhjSyfR/XkSFJB7EC8=
