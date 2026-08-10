@@ -1,4 +1,4 @@
-FROM golang:1.25.11-bookworm@sha256:b96f24a8d7d010ea0acb9c3ba99064740f02b6b984612b28bd3c9c5ab9453e38
+FROM golang:1.25.12-bookworm@sha256:908f8ff2ec296df2f349563072c7925775cd28b50361a52ed834a8a37399b9bf
 
 RUN apt-get update && apt-get install -y \
   git \
