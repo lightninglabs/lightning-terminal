@@ -210,13 +210,13 @@ export default class AppView {
   }
 
   /** handle errors by showing a notification and/or the auth screen */
-  handleError(error: Error, title?: string) {
+  handleError(error: unknown, title?: string) {
     if (error instanceof AuthenticationError) {
       // this will automatically redirect to the auth page
       this._store.authStore.authenticated = false;
       this.notify(l('authErrorMsg'), l('authErrorTitle'));
     } else {
-      this.notify(error.message, title);
+      this.notify(error instanceof Error ? error.message : String(error), title);
     }
   }
 }

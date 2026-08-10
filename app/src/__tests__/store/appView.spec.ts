@@ -36,6 +36,16 @@ describe('AppView', () => {
     expect(store.alerts.size).toBe(1);
   });
 
+  it('should handle values thrown that are not Errors', () => {
+    // Nothing in the language guarantees a thrown value is an Error, and
+    // showing the user an empty alert is worse than showing the raw value.
+    store.handleError('something went wrong', 'title');
+    expect(store.alerts.size).toBe(1);
+    const alert = values(store.alerts)[0];
+    expect(alert.message).toBe('something went wrong');
+    expect(alert.title).toBe('title');
+  });
+
   it('should handle authentication errors', () => {
     rootStore.authStore.authenticated = true;
     expect(store.alerts.size).toBe(0);
