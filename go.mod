@@ -20,8 +20,8 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/lightninglabs/faraday v0.2.16-alpha
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
-	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20250610182311-2f1d46ef18b7
-	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7
+	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20260727084653-785ec57e5d1d
+	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lndclient v0.21.0-2
 	github.com/lightninglabs/loop v0.34.0-beta
@@ -147,7 +147,7 @@ require (
 	github.com/libdns/libdns v0.2.1 // indirect
 	github.com/lightninglabs/aperture v0.4.0 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
-	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20250610182311-2f1d46ef18b7 // indirect
+	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20260727084653-785ec57e5d1d // indirect
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/neutrino v0.17.1 // indirect
