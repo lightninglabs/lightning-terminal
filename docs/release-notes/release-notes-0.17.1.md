@@ -16,6 +16,13 @@
 
 ### Bug Fixes
 
+* [Report remote sub-server disconnects at
+  runtime](https://github.com/lightninglabs/lightning-terminal/pull/1373): In
+  remote mode, a sub-server that disconnected after startup was still reported as
+  running by the status server, so `litcli status` kept showing it as healthy.
+  litd now watches each remote sub-server's connection and updates its status
+  when it disconnects or recovers.
+
 * [Gate wallet-ready status on lnd's actual RPC
   readiness](https://github.com/lightninglabs/lightning-terminal/pull/1353):
   Fixed a startup race where litd could report the LND sub-server as "Wallet
