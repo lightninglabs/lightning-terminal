@@ -34,6 +34,13 @@
   while waiting, and aborts immediately if lnd stops or reports an error rather
   than always waiting out the full timeout.
 
+* [Report remote sub-server disconnects at
+  runtime](https://github.com/lightninglabs/lightning-terminal/pull/1373): In
+  remote mode, a sub-server that disconnected after startup was still reported as
+  running by the status server, so `litcli status` kept showing it as healthy.
+  litd now watches each remote sub-server's connection and updates its status
+  when it disconnects or recovers.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
@@ -60,3 +67,4 @@
 # Contributors (Alphabetical Order)
 
 * Elle Mouton
+* Vandit Singh
