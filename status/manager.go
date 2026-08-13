@@ -275,7 +275,7 @@ func (s *Manager) SetErrored(name string, errStr string,
 		return
 	}
 
-	log.Errorf("could not start the %s sub-server: %s", name, errStr)
+	log.Errorf("The %s sub-server errored: %s", name, errStr)
 
 	ss.running = false
 	ss.err = errStr
