@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal
 
-go 1.25.11
+go 1.25.12
 
 require (
 	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
@@ -20,11 +20,11 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/lightninglabs/faraday v0.2.16-alpha
 	github.com/lightninglabs/faraday/frdrpc v1.0.1
-	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20250610182311-2f1d46ef18b7
-	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20250610182311-2f1d46ef18b7
+	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20260727084653-785ec57e5d1d
+	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
-	github.com/lightninglabs/lndclient v0.21.0-1
-	github.com/lightninglabs/loop v0.33.3-beta
+	github.com/lightninglabs/lndclient v0.21.0-2
+	github.com/lightninglabs/loop v0.34.0-beta
 	github.com/lightninglabs/loop/looprpc v1.0.14
 	github.com/lightninglabs/loop/swapserverrpc v1.0.21
 	github.com/lightninglabs/pool v0.7.1-beta
@@ -32,12 +32,12 @@ require (
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.8.0
 	github.com/lightninglabs/taproot-assets/taprpc v1.1.0
-	github.com/lightningnetwork/lnd v0.21.1-beta
+	github.com/lightningnetwork/lnd v0.21.2-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
-	github.com/lightningnetwork/lnd/kvdb v1.4.16
+	github.com/lightningnetwork/lnd/kvdb v1.5.1
 	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0
 	github.com/lightningnetwork/lnd/tlv v1.3.2
 	github.com/lightningnetwork/lnd/tor v1.1.7
@@ -75,7 +75,7 @@ require (
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
 	github.com/btcsuite/btcd/v2transport v1.0.1 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
-	github.com/btcsuite/btcwallet v0.16.18 // indirect
+	github.com/btcsuite/btcwallet v0.16.19 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
@@ -147,7 +147,7 @@ require (
 	github.com/libdns/libdns v0.2.1 // indirect
 	github.com/lightninglabs/aperture v0.4.0 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
-	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20250610182311-2f1d46ef18b7 // indirect
+	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20260727084653-785ec57e5d1d // indirect
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/neutrino v0.17.1 // indirect

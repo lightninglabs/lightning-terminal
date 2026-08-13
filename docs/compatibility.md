@@ -12,6 +12,7 @@ bundled version will always come with the correct compatible versioning.
 
 | LiT               | min LND version |
 |-------------------|-----------------|
+| **v0.17.1-alpha** | v0.19.0-beta    |
 | **v0.17.0-alpha** | v0.19.0-beta    |
 | **v0.16.1-alpha** | v0.19.0-beta    |
 | **v0.16.0-alpha** | v0.19.0-beta    |

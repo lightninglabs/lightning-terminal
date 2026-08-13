@@ -24,7 +24,7 @@ env:
   # If you change this value, please change it in the following files as well:
   # /Dockerfile
   # /dev.Dockerfile
-  GO_VERSION: 1.25.11
+  GO_VERSION: 1.25.12
 
   # Only applies to the CI jobs below. The note above covers GO_VERSION alone:
   # /Dockerfile and /dev.Dockerfile pin their own Node version for release
