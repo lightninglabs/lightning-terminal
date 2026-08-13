@@ -150,7 +150,7 @@ export default class BatchStore {
         this.loading = false;
       });
     } catch (error) {
-      if (error.message !== 'batch snapshot not found') {
+      if (!(error instanceof Error) || error.message !== 'batch snapshot not found') {
         this._store.appView.handleError(error, `Unable to fetch batch with id ${prevId}`);
       }
     }
@@ -171,7 +171,7 @@ export default class BatchStore {
         this._store.log.info('updated batchStore.markets', toJS(this.markets));
       });
     } catch (error) {
-      if (error.message === 'batch snapshot not found') return;
+      if (error instanceof Error && error.message === 'batch snapshot not found') return;
       this._store.appView.handleError(error, 'Unable to fetch the latest batch');
     }
   }

@@ -96,7 +96,10 @@ export default class AppStorage {
         this.set(cacheKey, { expires, data });
         log.info(`updated cache with ${keys.length} new ${cacheKey}`);
       } catch (error) {
-        log.error(`failed to fetch ${cacheKey} from the API`, error.message);
+        log.error(
+          `failed to fetch ${cacheKey} from the API`,
+          error instanceof Error ? error.message : String(error),
+        );
       }
     }
 

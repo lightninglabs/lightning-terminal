@@ -126,7 +126,9 @@ export default class AuthStore {
       this.setCredentials('');
       this._store.log.error('connection failure');
       this.errors = { mainErr: '', litDetail: '', lndDetail: '' };
-      throw new Error(await this.getErrMsg(error.message));
+      throw new Error(
+        await this.getErrMsg(error instanceof Error ? error.message : String(error)),
+      );
     }
   }
 

@@ -111,7 +111,7 @@ const AuthPage: React.FC = () => {
     try {
       await store.authStore.login(pass);
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
       const errors = store.authStore.errors;
       setErrorDetailLit(errors.litDetail);
       setErrorDetailLnd(errors.lndDetail);

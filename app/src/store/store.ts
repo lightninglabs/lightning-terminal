@@ -1,6 +1,6 @@
 import { autorun, makeAutoObservable, runInAction } from 'mobx';
 import { IS_DEV, IS_TEST, USE_SAMPLE_DATA } from 'config';
-import { createBrowserHistory, History } from 'history';
+import { createBrowserHistory, History } from '@remix-run/router';
 import AppStorage from 'util/appStorage';
 import CsvExporter from 'util/csv';
 import { actionLog, Logger } from 'util/log';
@@ -217,7 +217,9 @@ export const createStore = (grpcClient?: GrpcClient, appStorage?: AppStorage) =>
   const poolApi = new PoolApi(grpc);
   const litApi = new LitApi(grpc);
   const csv = new CsvExporter();
-  const history = createBrowserHistory();
+  // v5Compat is required for listeners to be notified of push() and replace()
+  // calls, not just browser back/forward navigation.
+  const history = createBrowserHistory({ v5Compat: true });
 
   const store = new Store(
     lndApi,
