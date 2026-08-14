@@ -92,6 +92,16 @@ const (
 	// stateServicePollInterval is how often we poll lnd's StateService
 	// while waiting for its RPC interceptor to leave WAITING_TO_START.
 	stateServicePollInterval = 200 * time.Millisecond
+
+	// lndReadyLogInterval is how often we log while still waiting for
+	// lnd's RPC interceptor to leave WAITING_TO_START. lnd remains in that
+	// state for the entirety of its database open, which lnd itself warns
+	// "might take a few minutes" on large nodes, so without periodic
+	// feedback a perfectly healthy startup is indistinguishable from a
+	// hang. Chosen to be frequent enough to reassure an operator watching
+	// the logs, but rare enough not to drown out lnd's own migration
+	// progress logs over a multi-minute wait.
+	lndReadyLogInterval = 30 * time.Second
 )
 
 // restRegistration is a function type that represents a REST proxy
@@ -683,9 +693,16 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	// interceptor has advanced far enough to service non-State RPCs. Wait
 	// for that here so that the "Wallet Ready" status set below is not
 	// observed before it's actually true.
+	//
+	// The listener is bound long before lnd opens its databases, so this
+	// wait spans the entire (potentially very long) database open and
+	// migration. We therefore bound it by the same generous, configurable
+	// timeout that the other lnd-readiness wait uses, and abort early if
+	// lnd stops or errors out in the meantime.
 	lndStateClient := lnrpc.NewStateClient(g.lndConn)
 	if err := waitForLndRPCReady(
-		ctx, lndStateClient, defaultConnectTimeout,
+		ctx, lndStateClient, g.cfg.LndReadyTimeout, lndQuit,
+		g.errQueue.ChanOut(),
 	); err != nil {
 		g.statusMgr.SetErrored(
 			subservers.LND, "lnd RPC not ready: %v", err,
