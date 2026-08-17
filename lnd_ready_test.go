@@ -48,10 +48,28 @@ func TestWaitForLndRPCReady(t *testing.T) {
 		State: lnrpc.WalletState_WAITING_TO_START,
 	}
 
+	// stuckClient never leaves WAITING_TO_START, so any test using it only
+	// terminates via the timeout or one of the early-abort channels.
+	stuckClient := func() *fakeStateClient {
+		return &fakeStateClient{
+			responses: []*lnrpc.GetStateResponse{waitingResp},
+			errs:      []error{nil},
+		}
+	}
+
+	closedChan := func() chan struct{} {
+		c := make(chan struct{})
+		close(c)
+
+		return c
+	}
+
 	testCases := []struct {
 		name        string
 		client      *fakeStateClient
 		timeout     time.Duration
+		lndQuit     <-chan struct{}
+		errChan     <-chan error
 		expectError bool
 	}{
 		{
@@ -96,6 +114,29 @@ func TestWaitForLndRPCReady(t *testing.T) {
 			timeout:     300 * time.Millisecond,
 			expectError: true,
 		},
+		{
+			// A long timeout here proves that we abort on the
+			// lndQuit signal rather than waiting out the timer.
+			name:        "lnd stops while waiting",
+			client:      stuckClient(),
+			timeout:     time.Hour,
+			lndQuit:     closedChan(),
+			expectError: true,
+		},
+		{
+			// As above, but for an error surfacing on the error
+			// queue while we're still waiting.
+			name:    "error while waiting",
+			client:  stuckClient(),
+			timeout: time.Hour,
+			errChan: func() <-chan error {
+				c := make(chan error, 1)
+				c <- errors.New("lnd blew up")
+
+				return c
+			}(),
+			expectError: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -105,6 +146,7 @@ func TestWaitForLndRPCReady(t *testing.T) {
 
 			err := waitForLndRPCReady(
 				context.Background(), tc.client, tc.timeout,
+				tc.lndQuit, tc.errChan,
 			)
 
 			if tc.expectError {
