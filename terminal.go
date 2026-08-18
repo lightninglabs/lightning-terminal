@@ -1020,6 +1020,25 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 	// so if we instruct the lndclient to wait for the wallet sync, we
 	// should be fully ready to start all our subservers. This will just
 	// block until lnd signals readiness.
+	//
+	// There is one exception to that: with both lnd and tapd running
+	// in-process, we must not wait for lnd to be synced to chain here. lnd
+	// only reports itself as synced once its blockbeat caught up, and block
+	// processing can be blocked on tapd's aux components. If for example a
+	// channel is being resolved on chain, the sweeper calls into tapd's aux
+	// sweeper, which blocks until tapd is started. As tapd is only started
+	// once we have the client below, waiting here stalls the startup until
+	// lnd gives up on the blocked consumer (60 seconds per block), and for
+	// as long as blocks keep arriving faster than that, we'd retry here
+	// without ever starting tapd.
+	integratedTapd := g.cfg.LndMode == ModeIntegrated &&
+		g.cfg.TaprootAssetsMode == ModeIntegrated
+	blockUntilChainSynced := !integratedTapd
+	if integratedTapd {
+		log.Infof("Not waiting for lnd to be synced to chain, as " +
+			"tapd is running in integrated mode")
+	}
+
 	log.Infof("Connecting full lnd client")
 	for {
 		g.lndClient, err = lndclient.NewLndServices(
@@ -1037,7 +1056,7 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 				RPCTimeout:            g.cfg.LndRPCTimeout,
 				ChainSyncPollInterval: g.cfg.LndConnectInterval,
 
-				BlockUntilChainSynced:   true,
+				BlockUntilChainSynced:   blockUntilChainSynced,
 				BlockUntilUnlocked:      true,
 				BlockUntilChainNotifier: true,
 			},
