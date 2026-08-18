@@ -43,4 +43,8 @@ var allTestCases = []*testCase{
 		name: "faraday forwarding ability",
 		test: testFaradayForwardingAbility,
 	},
+	{
+		name: "terminal tapd startup stall",
+		test: testTapdStartupStall,
+	},
 }
