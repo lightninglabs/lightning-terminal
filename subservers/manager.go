@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"sync"
 	"time"
 
@@ -111,7 +112,7 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, ss := range s.servers {
+	for _, ss := range s.startOrder() {
 		if ss.Remote() {
 			continue
 		}
@@ -131,6 +132,46 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 
 		s.statusServer.SetRunning(ss.Name())
 	}
+}
+
+// startOrder returns the manager's sub-servers in the order they should be
+// started in.
+//
+// tapd is started first, before any sub-server that queries lnd's chain sync
+// state. lnd's block processing can be blocked on tapd's aux components: if a
+// channel is being resolved on chain, the sweeper calls into tapd's aux
+// sweeper, which blocks until tapd is started. While that is the case, any
+// GetInfo call blocks as well, because it asks lnd's blockbeat dispatcher for
+// its current height and that dispatcher is the very goroutine waiting on the
+// aux sweeper. A sub-server that calls GetInfo on startup would therefore stall
+// until lnd gives up on the blocked consumer, and tapd would only be started
+// after that. Starting tapd first releases the aux sweeper immediately.
+//
+// The remaining sub-servers are returned in a stable order, so a startup
+// doesn't depend on Go's map iteration order.
+//
+// NOTE: The caller must hold the manager's mutex.
+func (s *Manager) startOrder() []*subServerWrapper {
+	ordered := make([]*subServerWrapper, 0, len(s.servers))
+	if tapd, ok := s.servers[TAP]; ok {
+		ordered = append(ordered, tapd)
+	}
+
+	names := make([]string, 0, len(s.servers))
+	for name := range s.servers {
+		if name == TAP {
+			continue
+		}
+
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		ordered = append(ordered, s.servers[name])
+	}
+
+	return ordered
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
