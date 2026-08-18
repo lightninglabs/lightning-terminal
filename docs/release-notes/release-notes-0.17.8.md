@@ -4,6 +4,12 @@
 
 ### Bug Fixes
 
+* [Avoid the integrated tapd startup stall](https://github.com/lightninglabs/lightning-terminal/pull/1371):
+  Start tapd before waiting for LND chain sync, since LND's block processing
+  can call tapd's aux sweeper during startup. Loop, Pool and Faraday still
+  start after chain sync. Require the HTLC interceptor when tapd runs in
+  process so forwards cannot bypass its policy checks.
+
 * [Declare the mapped SQL errors on the pointer
   receiver](https://github.com/lightninglabs/lightning-terminal/pull/1439):
   `MapSQLError` builds `ErrSqlUniqueConstraintViolation`,
