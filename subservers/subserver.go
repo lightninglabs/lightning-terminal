@@ -1,6 +1,7 @@
 package subservers
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 )
 
 const (
@@ -57,8 +59,10 @@ func (s *subServerWrapper) setStarted(started bool) {
 // stop the subServer by closing the connection to it if it is remote or by
 // stopping the integrated process.
 func (s *subServerWrapper) stop() error {
-	// If the sub-server has not yet started, then we can exit early.
-	if !s.started() {
+	// An integrated sub-server that never started has nothing to stop. A
+	// remote sub-server has no started flag, so always tear it down to
+	// close its connection and stop its connection watcher.
+	if !s.Remote() && !s.started() {
 		return nil
 	}
 
@@ -149,4 +153,73 @@ func (s *subServerWrapper) connectRemote() error {
 	s.remoteConn = conn
 
 	return nil
+}
+
+// watchRemoteConn watches the remote sub-server's connection and reports its
+// runtime health through the given callbacks. onError is called when the
+// connection is lost after startup and onRunning when it recovers, so the
+// status server reflects a runtime disconnect instead of keeping the
+// sub-server marked as running. The watcher stops when the sub-server is
+// stopped.
+func (s *subServerWrapper) watchRemoteConn(onError func(error),
+	onRunning func()) {
+
+	conn := s.remoteConn
+	if conn == nil {
+		return
+	}
+
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+
+		// Cancel the state-change wait when the sub-server stops.
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		go func() {
+			select {
+			case <-s.quit:
+				cancel()
+			case <-ctx.Done():
+			}
+		}()
+
+		// errored holds the last state we reported so we only push a
+		// status change on an actual transition.
+		var errored bool
+		for {
+			state := conn.GetState()
+			switch state {
+			case connectivity.TransientFailure,
+				connectivity.Shutdown:
+
+				if !errored {
+					errored = true
+					onError(fmt.Errorf("remote sub-server "+
+						"(%s) is disconnected (%s)",
+						s.Name(), state))
+				}
+
+			case connectivity.Ready:
+				if errored {
+					errored = false
+					onRunning()
+				}
+
+			case connectivity.Idle:
+				// A gRPC connection only leaves the idle
+				// state when used, so nudge it to connect.
+				// This keeps the connection observable so a
+				// disconnect is detected even when no
+				// requests are in flight.
+				conn.Connect()
+			}
+
+			// Block until the connection state changes or the
+			// sub-server is stopped.
+			if !conn.WaitForStateChange(ctx, state) {
+				return
+			}
+		}
+	}()
 }
