@@ -45,12 +45,17 @@
 ### LND
 
 ### Loop
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1375): Bump:
+  `loop@v0.34.0-beta-v0.8.1-tapd`, `loop/looprpc@v1.0.15`,
+   `loop/swapserverrpc@v1.0.22`.
 
 ### Pool
 
 ### Faraday
 
 ### Taproot Assets
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1375): Bump:
+  `taproot-assets@v0.8.1`, `taproot-assets/taprpc@v1.2.0`.
 
 # Contributors (Alphabetical Order)
 

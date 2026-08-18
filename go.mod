@@ -24,14 +24,14 @@ require (
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
 	github.com/lightninglabs/lndclient v0.21.0-2
-	github.com/lightninglabs/loop v0.34.0-beta
-	github.com/lightninglabs/loop/looprpc v1.0.14
-	github.com/lightninglabs/loop/swapserverrpc v1.0.21
+	github.com/lightninglabs/loop v0.34.0-beta-v0.8.1-tapd
+	github.com/lightninglabs/loop/looprpc v1.0.15
+	github.com/lightninglabs/loop/swapserverrpc v1.0.22
 	github.com/lightninglabs/pool v0.7.1-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.8.0
-	github.com/lightninglabs/taproot-assets/taprpc v1.1.0
+	github.com/lightninglabs/taproot-assets v0.8.1
+	github.com/lightninglabs/taproot-assets/taprpc v1.2.0
 	github.com/lightningnetwork/lnd v0.21.2-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
