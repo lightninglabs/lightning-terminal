@@ -35,8 +35,9 @@ const (
 	stallObservationWindow = 3 * time.Minute
 
 	// maxResolutionBlocks bounds how many blocks we mine to drive the force
-	// close to resolution. Each block gives the sweeper another blockbeat to
-	// retry on, so this also bounds how many retries we are willing to wait
+	// close to resolution. Each block gives the sweeper another blockbeat
+	// to retry on, so this also bounds how many retries we are willing to
+	// wait
 	// for.
 	maxResolutionBlocks = 15
 
@@ -137,10 +138,10 @@ func testTapdStartupStall(ctx context.Context, net *NetworkHarness,
 	require.NoError(t.t, err, "unable to restart node")
 
 	// We skipped the harness' startup bookkeeping above, so it has to be
-	// restored before anything uses the node's clients again, and on the way
-	// out even if an assertion fails: the deferred shutdown needs a working
-	// client. Failures are only logged because this also runs while a failed
-	// assertion is already unwinding the test.
+	// restored before anything uses the node's clients again, and on the
+	// way out even if an assertion fails: the deferred shutdown needs a
+	// working client. Failures are only logged because this also runs
+	// while a failed assertion is already unwinding the test.
 	restored := false
 	restore := func() {
 		if restored {
@@ -185,12 +186,12 @@ func testTapdStartupStall(ctx context.Context, net *NetworkHarness,
 		elapsed,
 	)
 
-	// Starting promptly is only half of what we need. Any fix that keeps the
-	// startup moving by failing the aux call that arrived too early trades
-	// the stall for a failed sweep attempt, so the sweep has to be retried
-	// once tapd is up. Drive the force close all the way to resolution to
-	// prove that happens: a change that removed the stall by permanently
-	// failing the sweep would pass every assertion above.
+	// Starting promptly is only half of what we need. Any fix that keeps
+	// the startup moving by failing the aux call that arrived too early
+	// trades the stall for a failed sweep attempt, so the sweep has to be
+	// retried once tapd is up. Drive the force close all the way to
+	// resolution to prove that happens: a change that removed the stall by
+	// permanently failing the sweep would pass every assertion above.
 	restore()
 	assertForceCloseResolved(t, net, node)
 }
@@ -203,6 +204,14 @@ func assertForceCloseResolved(t *harnessTest, net *NetworkHarness,
 	node *HarnessNode) {
 
 	t.t.Helper()
+
+	// If the node's lnd client couldn't be restored after the restart,
+	// there is nothing we can assert against here. Fail with that, rather
+	// than panicking on a nil client while the test is already unwinding.
+	require.NotNil(
+		t.t, node.LightningClient, "node has no lnd client, it did "+
+			"not finish starting up",
+	)
 
 	ctx := context.Background()
 	resolved := func() bool {
