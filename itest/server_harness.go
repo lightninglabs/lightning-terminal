@@ -49,7 +49,9 @@ func NewServerHarness(serverHost string) *ServerHarness {
 
 // Stop stops the mock Loop/Pool server.
 func (s *ServerHarness) Stop() {
-	s.mockServer.Stop()
+	if s.mockServer != nil {
+		s.mockServer.Stop()
+	}
 	s.wg.Wait()
 }
 
