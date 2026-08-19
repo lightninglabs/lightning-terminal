@@ -36,6 +36,13 @@
 
 ### Functional Changes/Additions
 
+* [Notify systemd when litd is
+  ready](https://github.com/lightninglabs/lightning-terminal/pull/1380):
+  litd now notifies systemd once it has finished starting, so a unit using
+  `Type=notify` no longer hangs on `systemctl start`. It also notifies systemd
+  on shutdown. Both are no-ops when litd is not run under systemd. An example
+  `contrib/init/litd.service` unit file is included.
+
 ### Technical and Architectural Updates
 
 ## RPC Updates
