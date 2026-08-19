@@ -45,6 +45,7 @@ type RequestInfo struct {
 	MetaInfo        *InterceptMetaInfo
 	Rules           *InterceptRules
 	WithPrivacy     bool
+	RulesCaveat     string
 }
 
 // NewInfoFromRequest parses the given RPC middleware interception request and
@@ -141,12 +142,17 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 			continue
 		}
 
-		// Also apply the rule list sent as a custom caveat. Only the
-		// last set of rules will be considered if there are multiple
-		// caveats.
+		// Also apply the rule list sent as a custom caveat.
 		rules, err := ParseRuleCaveat(ri.Caveats[idx])
 		if err == nil {
+			// A macaroon must not carry more than one rules caveat.
+			if ri.Rules != nil {
+				return nil, fmt.Errorf("macaroon contains " +
+					"multiple rules caveats")
+			}
+
 			ri.Rules = rules
+			ri.RulesCaveat = ri.Caveats[idx]
 
 			// The same caveat can't be a rule list and a privacy
 			// caveat.

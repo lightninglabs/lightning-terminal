@@ -223,7 +223,10 @@ func CaveatFromID(id AccountID) macaroon.Caveat {
 // IDFromCaveats attempts to extract an AccountID from the given set of caveats
 // by looking for the custom caveat that binds a macaroon to a certain account.
 func IDFromCaveats(caveats []macaroon.Caveat) (fn.Option[AccountID], error) {
-	var accountIDStr string
+	var (
+		accountIDStr string
+		seenAccount  bool
+	)
 	for _, caveat := range caveats {
 		// The caveat id has a format of
 		// "lnd-custom [custom-caveat-name] [custom-caveat-condition]"
@@ -235,6 +238,13 @@ func IDFromCaveats(caveats []macaroon.Caveat) (fn.Option[AccountID], error) {
 		if !found {
 			continue
 		}
+
+		// A macaroon must not carry more than one account caveat.
+		if seenAccount {
+			return fn.None[AccountID](), fmt.Errorf("macaroon " +
+				"contains multiple account caveats")
+		}
+		seenAccount = true
 
 		accountIDStr = after
 	}
