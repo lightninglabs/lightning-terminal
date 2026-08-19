@@ -104,8 +104,14 @@ func (p *PrivacyMapper) Intercept(ctx context.Context,
 
 	ri, err := NewInfoFromRequest(req)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing incoming RPC middleware "+
-			"interception request: %v", err)
+		// We reject only the offending request here instead of
+		// returning a fatal error, since a malformed request can be
+		// triggered by any macaroon holder and must not tear down the
+		// interceptor.
+		return mid.RPCErrString(
+			req, "error parsing incoming RPC middleware "+
+				"interception request: %v", err,
+		)
 	}
 
 	sessionID, err := ri.SessionID.UnwrapOrErr(
