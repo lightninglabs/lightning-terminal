@@ -39,7 +39,7 @@ const (
 
 	// appPreRelease MUST only contain characters from semanticAlphabet per
 	// the semantic versioning spec.
-	appPreRelease = "alpha"
+	appPreRelease = "alpha-docker"
 )
 
 // Version returns the application version as a properly formed string per the
