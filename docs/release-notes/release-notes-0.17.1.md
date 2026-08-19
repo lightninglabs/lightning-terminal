@@ -16,6 +16,13 @@
 
 ### Bug Fixes
 
+* [Default the signet autopilot
+  server](https://github.com/lightninglabs/lightning-terminal/pull/1377):
+  Starting `litd` with `--network=signet` failed with `no autopilot server
+  address specified`, because the autopilot address was only defaulted for
+  mainnet and testnet. Signet now defaults to the public signet autopilot
+  server, so a signet node starts without extra configuration.
+
 * [Gate wallet-ready status on lnd's actual RPC
   readiness](https://github.com/lightninglabs/lightning-terminal/pull/1353):
   Fixed a startup race where litd could report the LND sub-server as "Wallet
