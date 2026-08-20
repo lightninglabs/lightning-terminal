@@ -238,16 +238,6 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 		}
 	)
 
-	if cfg.DBBackend == terminal.DatabaseBackendPostgres {
-		args["postgres.host"] = cfg.PostgresConfig.Host
-		args["postgres.port"] = fmt.Sprintf(
-			"%d", cfg.PostgresConfig.Port,
-		)
-		args["postgres.user"] = cfg.PostgresConfig.User
-		args["postgres.password"] = cfg.PostgresConfig.Password
-		args["postgres.dbname"] = cfg.PostgresConfig.DBName
-	}
-
 	for _, arg := range cfg.LitArgs {
 		parts := strings.Split(arg, "=")
 		option := strings.TrimLeft(parts[0], "--")
@@ -257,6 +247,22 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 		case 2:
 			args[option] = parts[1]
 		}
+	}
+
+	// Only hand the node a Postgres connection if it actually runs on the
+	// Postgres backend. A node that overrides the backend must not see the
+	// connection info of the itest fixture, or litd refuses to start
+	// because it finds an existing database of the other SQL backend.
+	if args["databasebackend"] == terminal.DatabaseBackendPostgres &&
+		cfg.PostgresConfig != nil {
+
+		args["postgres.host"] = cfg.PostgresConfig.Host
+		args["postgres.port"] = fmt.Sprintf(
+			"%d", cfg.PostgresConfig.Port,
+		)
+		args["postgres.user"] = cfg.PostgresConfig.User
+		args["postgres.password"] = cfg.PostgresConfig.Password
+		args["postgres.dbname"] = cfg.PostgresConfig.DBName
 	}
 
 	switch cfg.NetParams {
