@@ -12,6 +12,17 @@ describe('AppView', () => {
     store = rootStore.appView;
   });
 
+  it('should only treat the Home page as responsive', () => {
+    store.goToHome();
+    expect(store.responsive).toBe(true);
+    store.goToPool();
+    expect(store.responsive).toBe(false);
+    store.goToLoop();
+    expect(store.responsive).toBe(false);
+    store.goToSettings();
+    expect(store.responsive).toBe(false);
+  });
+
   it('should add an alert', async () => {
     expect(store.alerts.size).toBe(0);
     store.notify('test message', 'test title');
