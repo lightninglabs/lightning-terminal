@@ -35,4 +35,8 @@ var allTestCases = []*testCase{
 		name: "terminal super macaroon on startup",
 		test: testSuperMacaroonOnStartup,
 	},
+	{
+		name: "terminal tapd startup stall",
+		test: testTapdStartupStall,
+	},
 }

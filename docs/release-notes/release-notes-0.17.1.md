@@ -42,6 +42,20 @@
   configurable, generous timeout (`--lndreadytimeout`, defaulting to 10
   minutes) instead of a fixed attempt count.
 
+* [Fix a startup deadlock when tapd runs in integrated
+  mode](https://github.com/lightninglabs/lightning-terminal/pull/1371):
+  litd waited for lnd to be fully synced to chain before starting its
+  sub-servers, but lnd only reports itself as synced once its blockbeat has
+  caught up, and block processing can be blocked on tapd's aux sweeper, which
+  only becomes available once tapd is started. With a channel being resolved on
+  chain, litd stalled for 60 seconds per block, and for as long as blocks kept
+  arriving faster than that, tapd never came up at all. We now skip that wait,
+  and start tapd before the sub-servers that query lnd's chain state, as those
+  would otherwise inherit the same stall. Any channel triggers this, not just
+  asset channels. We additionally require an HTLC interceptor to be attached
+  whenever tapd runs in-process, so lnd fails forwards back instead of
+  forwarding them without any RFQ policy checks.
+
 ### Functional Changes/Additions
 
 * [Add accounts payments history subcommand](https://github.com/lightninglabs/lightning-terminal/pull/1316):
@@ -121,4 +135,5 @@
 * 0xfandom
 * bitromortac
 * Cyberguru1
+* George Tsagkarelis
 * Vandit Singh
