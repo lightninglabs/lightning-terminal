@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightninglabs/lightning-terminal/firewalldb"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/rpcperms"
@@ -914,8 +916,14 @@ func TestPrivacyMapper(t *testing.T) {
 		},
 	}
 
+	// The macaroon must be a session macaroon, meaning its root key ID
+	// must encode the session ID, since the requests below carry the
+	// session ID in their gRPC metadata.
+	fixedSessionID := session.ID{0x01, 0x02, 0x03, 0x04}
+	rootKeyID := litmac.NewSuperMacaroonRootKeyID(fixedSessionID)
+
 	decodedID := &lnrpc.MacaroonId{
-		StorageId: []byte("123"),
+		StorageId: []byte(strconv.FormatUint(rootKeyID, 10)),
 	}
 	b, err := proto.Marshal(decodedID)
 	require.NoError(t, err)

@@ -301,9 +301,13 @@ func (r *RuleEnforcer) handleRequest(ctx context.Context,
 func (r *RuleEnforcer) handleResponse(ctx context.Context,
 	ri *RequestInfo) (proto.Message, error) {
 
-	sessionID, err := session.IDFromMacaroon(ri.Macaroon)
+	// The session ID was bound to the presented macaroon when the request
+	// was parsed, so it can be trusted to identify the session.
+	sessionID, err := ri.SessionID.UnwrapOrErr(
+		fmt.Errorf("no session ID found in request info"),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract ID from macaroon")
+		return nil, err
 	}
 
 	enforcers, err := r.collectEnforcers(ctx, ri, sessionID)
@@ -335,9 +339,13 @@ func (r *RuleEnforcer) handleResponse(ctx context.Context,
 func (r *RuleEnforcer) handleErrorResponse(ctx context.Context,
 	ri *RequestInfo) (error, error) {
 
-	sessionID, err := session.IDFromMacaroon(ri.Macaroon)
+	// The session ID was bound to the presented macaroon when the request
+	// was parsed, so it can be trusted to identify the session.
+	sessionID, err := ri.SessionID.UnwrapOrErr(
+		fmt.Errorf("no session ID found in request info"),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("could not extract ID from macaroon")
+		return nil, err
 	}
 
 	enforcers, err := r.collectEnforcers(ctx, ri, sessionID)
