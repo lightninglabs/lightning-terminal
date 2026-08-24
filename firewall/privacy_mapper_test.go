@@ -241,14 +241,27 @@ func TestPrivacyMapper(t *testing.T) {
 						ChannelPoint: outPoint(
 							clearTxID, 0,
 						),
+						BaseFeeMsat:        1_000,
+						FeePerMil:          250,
+						FeeRate:            0.00025,
+						InboundBaseFeeMsat: 500,
+						InboundFeePerMil:   100,
 					},
 					{
 						ChanId: 321,
 						ChannelPoint: outPoint(
 							clearTxID, 1,
 						),
+						BaseFeeMsat:        2_000,
+						FeePerMil:          300,
+						FeeRate:            0.0003,
+						InboundBaseFeeMsat: -500,
+						InboundFeePerMil:   -100,
 					},
 				},
+				DayFeeSum:   11,
+				WeekFeeSum:  22,
+				MonthFeeSum: 33,
 			},
 			expectedReplacement: &lnrpc.FeeReportResponse{
 				ChannelFees: []*lnrpc.ChannelFeeReport{
@@ -257,14 +270,27 @@ func TestPrivacyMapper(t *testing.T) {
 						ChannelPoint: outPoint(
 							obfusTxID0, obfusOut0,
 						),
+						BaseFeeMsat:        1_000,
+						FeePerMil:          250,
+						FeeRate:            0.00025,
+						InboundBaseFeeMsat: 500,
+						InboundFeePerMil:   100,
 					},
 					{
 						ChanId: 3446430762436373227,
 						ChannelPoint: outPoint(
 							obfusTxID1, obfusOut1,
 						),
+						BaseFeeMsat:        2_000,
+						FeePerMil:          300,
+						FeeRate:            0.0003,
+						InboundBaseFeeMsat: -500,
+						InboundFeePerMil:   -100,
 					},
 				},
+				DayFeeSum:   11,
+				WeekFeeSum:  22,
+				MonthFeeSum: 33,
 			},
 		},
 		{
