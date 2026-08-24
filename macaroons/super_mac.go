@@ -63,13 +63,13 @@ func IsSuperMacaroon(macHex string) bool {
 		return false
 	}
 
-	return isSuperMacaroonRootKeyID(rootKeyID)
+	return IsSuperMacaroonRootKeyID(rootKeyID)
 }
 
-// isSuperMacaroonRootKeyID returns true if the given macaroon root key ID (also
-// known as storage ID) is a super macaroon, which can be identified by its
-// first 4 bytes.
-func isSuperMacaroonRootKeyID(rootKeyID uint64) bool {
+// IsSuperMacaroonRootKeyID returns true if the given macaroon root key ID
+// (also known as storage ID) is a super macaroon, which can be identified by
+// its first 4 bytes.
+func IsSuperMacaroonRootKeyID(rootKeyID uint64) bool {
 	rootKeyBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(rootKeyBytes, rootKeyID)
 	return bytes.HasPrefix(rootKeyBytes, SuperMacaroonRootKeyPrefix[:])

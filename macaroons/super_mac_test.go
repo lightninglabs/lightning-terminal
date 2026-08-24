@@ -36,8 +36,8 @@ func TestSuperMacaroonRootKeyID(t *testing.T) {
 
 	someBytes := [4]byte{02, 03, 44, 88}
 	rootKeyID := NewSuperMacaroonRootKeyID(someBytes)
-	require.True(t, isSuperMacaroonRootKeyID(rootKeyID))
-	require.False(t, isSuperMacaroonRootKeyID(123))
+	require.True(t, IsSuperMacaroonRootKeyID(rootKeyID))
+	require.False(t, IsSuperMacaroonRootKeyID(123))
 }
 
 // TestIsSuperMacaroon tests that we can correctly identify an example super
