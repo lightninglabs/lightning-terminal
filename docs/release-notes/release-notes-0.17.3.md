@@ -16,15 +16,20 @@
 
 ### Bug Fixes
 
+* [Bind session ID to presented
+  macaroon](https://github.com/lightninglabs/lightning-terminal/pull/1387):
+  Firewall now verifies that the session ID supplied in gRPC metadata matches
+  the presented session macaroon.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
 
 ## RPC Updates
 
-[Inbound fees are passed
-through](https://github.com/lightninglabs/lightning-terminal/pull/1382) the
-privacy mapper for the FeeReport endpoint.
+* [Inbound fees are passed
+  through](https://github.com/lightninglabs/lightning-terminal/pull/1382) the
+  privacy mapper for the FeeReport endpoint.
 
 ## Integrated Binary Updates
 
@@ -41,3 +46,4 @@ privacy mapper for the FeeReport endpoint.
 # Contributors (Alphabetical Order)
 
 * bitromortac
+* ViktorT-11
