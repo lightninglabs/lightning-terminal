@@ -1092,8 +1092,7 @@ func validateRemoteModeConfig(cfg *Config) error {
 
 		r.Lnd.MacaroonPath = filepath.Join(
 			defaultLndCfg.DataDir, defaultLndChainSubDir,
-			defaultLndChain, cfg.Network,
-			filepath.Base(defaultLndCfg.AdminMacPath),
+			defaultLndChain, cfg.Network, defaultLndMacaroon,
 		)
 	}
 

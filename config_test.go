@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lightninglabs/lightning-terminal/db"
+	"github.com/lightningnetwork/lnd"
 	"github.com/stretchr/testify/require"
 )
 
@@ -148,4 +149,21 @@ func TestDontBlockPostgresOnlyStartup(t *testing.T) {
 			t.Context(), cfg, litDir,
 		),
 	)
+}
+
+// TestRemoteLndMacaroonPathForNonDefaultNetwork verifies that the default
+// remote lnd macaroon path is adjusted to the admin.macaroon file of the
+// selected network, and not to that network's directory itself.
+func TestRemoteLndMacaroonPathForNonDefaultNetwork(t *testing.T) {
+	cfg := defaultConfig()
+	cfg.Network = "regtest"
+	cfg.Remote.LitLogDir = t.TempDir()
+
+	require.NoError(t, validateRemoteModeConfig(cfg))
+
+	expectedPath := filepath.Join(
+		lnd.DefaultConfig().DataDir, "chain", "bitcoin", "regtest",
+		"admin.macaroon",
+	)
+	require.Equal(t, expectedPath, cfg.Remote.Lnd.MacaroonPath)
 }
