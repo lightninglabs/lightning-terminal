@@ -524,12 +524,15 @@ func handleFeeReportResponse(db firewalldb.PrivacyMapDB,
 					}
 				}
 
+				// nolint:ll
 				chanFees[i] = &lnrpc.ChannelFeeReport{
-					ChanId:       chanID,
-					ChannelPoint: chanPoint,
-					BaseFeeMsat:  c.BaseFeeMsat,
-					FeePerMil:    c.FeePerMil,
-					FeeRate:      c.FeeRate,
+					ChanId:             chanID,
+					ChannelPoint:       chanPoint,
+					BaseFeeMsat:        c.BaseFeeMsat,
+					FeePerMil:          c.FeePerMil,
+					FeeRate:            c.FeeRate,
+					InboundBaseFeeMsat: c.InboundBaseFeeMsat,
+					InboundFeePerMil:   c.InboundFeePerMil,
 				}
 			}
 
