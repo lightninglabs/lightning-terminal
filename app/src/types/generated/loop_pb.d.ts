@@ -325,6 +325,11 @@ export class SwapStatus extends jspb.Message {
   getState(): SwapStateMap[keyof SwapStateMap];
   setState(value: SwapStateMap[keyof SwapStateMap]): void;
 
+  hasStaticLoopInState(): boolean;
+  clearStaticLoopInState(): void;
+  getStaticLoopInState(): StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap];
+  setStaticLoopInState(value: StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap]): void;
+
   getFailureReason(): FailureReasonMap[keyof FailureReasonMap];
   setFailureReason(value: FailureReasonMap[keyof FailureReasonMap]): void;
 
@@ -370,6 +375,7 @@ export class SwapStatus extends jspb.Message {
   getAssetInfo(): AssetLoopOutInfo | undefined;
   setAssetInfo(value?: AssetLoopOutInfo): void;
 
+  getStaticLoopInStateOptionalCase(): SwapStatus.StaticLoopInStateOptionalCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SwapStatus.AsObject;
   static toObject(includeInstance: boolean, msg: SwapStatus): SwapStatus.AsObject;
@@ -387,6 +393,7 @@ export namespace SwapStatus {
     idBytes: Uint8Array | string,
     type: SwapTypeMap[keyof SwapTypeMap],
     state: SwapStateMap[keyof SwapStateMap],
+    staticLoopInState: StaticAddressLoopInSwapStateMap[keyof StaticAddressLoopInSwapStateMap],
     failureReason: FailureReasonMap[keyof FailureReasonMap],
     initiationTime: string,
     lastUpdateTime: string,
@@ -400,6 +407,11 @@ export namespace SwapStatus {
     outgoingChanSetList: Array<string>,
     label: string,
     assetInfo?: AssetLoopOutInfo.AsObject,
+  }
+
+  export enum StaticLoopInStateOptionalCase {
+    STATIC_LOOP_IN_STATE_OPTIONAL_NOT_SET = 0,
+    STATIC_LOOP_IN_STATE = 20,
   }
 }
 
@@ -532,6 +544,16 @@ export class SweepHtlcRequest extends jspb.Message {
   getHtlcAddress(): string;
   setHtlcAddress(value: string): void;
 
+  hasStatelessRecovery(): boolean;
+  clearStatelessRecovery(): void;
+  getStatelessRecovery(): StatelessRecovery | undefined;
+  setStatelessRecovery(value?: StatelessRecovery): void;
+
+  hasCooperative(): boolean;
+  clearCooperative(): void;
+  getCooperative(): CooperativeSweep | undefined;
+  setCooperative(value?: CooperativeSweep): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SweepHtlcRequest.AsObject;
   static toObject(includeInstance: boolean, msg: SweepHtlcRequest): SweepHtlcRequest.AsObject;
@@ -550,6 +572,8 @@ export namespace SweepHtlcRequest {
     preimage: Uint8Array | string,
     publish: boolean,
     htlcAddress: string,
+    statelessRecovery?: StatelessRecovery.AsObject,
+    cooperative?: CooperativeSweep.AsObject,
   }
 }
 
@@ -1664,6 +1688,12 @@ export class InstantOutRequest extends jspb.Message {
   getDestAddr(): string;
   setDestAddr(value: string): void;
 
+  hasMaxSwapFeeSat(): boolean;
+  clearMaxSwapFeeSat(): void;
+  getMaxSwapFeeSat(): string;
+  setMaxSwapFeeSat(value: string): void;
+
+  getMaxSwapFeeCase(): InstantOutRequest.MaxSwapFeeCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InstantOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: InstantOutRequest): InstantOutRequest.AsObject;
@@ -1679,6 +1709,12 @@ export namespace InstantOutRequest {
     reservationIdsList: Array<Uint8Array | string>,
     outgoingChanSetList: Array<string>,
     destAddr: string,
+    maxSwapFeeSat: string,
+  }
+
+  export enum MaxSwapFeeCase {
+    MAX_SWAP_FEE_NOT_SET = 0,
+    MAX_SWAP_FEE_SAT = 4,
   }
 }
 
@@ -2668,6 +2704,68 @@ export namespace AssetLoopOutInfo {
   }
 }
 
+export class StatelessRecovery extends jspb.Message {
+  getServerPubkey(): Uint8Array | string;
+  getServerPubkey_asU8(): Uint8Array;
+  getServerPubkey_asB64(): string;
+  setServerPubkey(value: Uint8Array | string): void;
+
+  getClientPubkey(): Uint8Array | string;
+  getClientPubkey_asU8(): Uint8Array;
+  getClientPubkey_asB64(): string;
+  setClientPubkey(value: Uint8Array | string): void;
+
+  getCltvExpiry(): number;
+  setCltvExpiry(value: number): void;
+
+  getSwapInitiationHeight(): number;
+  setSwapInitiationHeight(value: number): void;
+
+  getKeyScanLimit(): number;
+  setKeyScanLimit(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StatelessRecovery.AsObject;
+  static toObject(includeInstance: boolean, msg: StatelessRecovery): StatelessRecovery.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: StatelessRecovery, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StatelessRecovery;
+  static deserializeBinaryFromReader(message: StatelessRecovery, reader: jspb.BinaryReader): StatelessRecovery;
+}
+
+export namespace StatelessRecovery {
+  export type AsObject = {
+    serverPubkey: Uint8Array | string,
+    clientPubkey: Uint8Array | string,
+    cltvExpiry: number,
+    swapInitiationHeight: number,
+    keyScanLimit: number,
+  }
+}
+
+export class CooperativeSweep extends jspb.Message {
+  getPaymentAddress(): Uint8Array | string;
+  getPaymentAddress_asU8(): Uint8Array;
+  getPaymentAddress_asB64(): string;
+  setPaymentAddress(value: Uint8Array | string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CooperativeSweep.AsObject;
+  static toObject(includeInstance: boolean, msg: CooperativeSweep): CooperativeSweep.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CooperativeSweep, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CooperativeSweep;
+  static deserializeBinaryFromReader(message: CooperativeSweep, reader: jspb.BinaryReader): CooperativeSweep;
+}
+
+export namespace CooperativeSweep {
+  export type AsObject = {
+    paymentAddress: Uint8Array | string,
+  }
+}
+
 export interface AddressTypeMap {
   ADDRESS_TYPE_UNKNOWN: 0;
   TAPROOT_PUBKEY: 1;
@@ -2678,6 +2776,7 @@ export const AddressType: AddressTypeMap;
 export interface SwapTypeMap {
   LOOP_OUT: 0;
   LOOP_IN: 1;
+  STATIC_LOOP_IN: 2;
 }
 
 export const SwapType: SwapTypeMap;

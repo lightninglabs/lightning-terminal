@@ -40,8 +40,8 @@ service SwapClient {
     rpc ListSwaps (ListSwapsRequest) returns (ListSwapsResponse);
 
     /* loop: `sweephtlc`
-    SweepHtlc spends a swap HTLC output via the preimage (success) path using
-    the swap's known preimage or an optionally supplied one.
+    SweepHtlc spends a swap HTLC output via either the preimage success path
+    or the cooperative key path, using stored or stateless recovery data.
     */
     rpc SweepHtlc (SweepHtlcRequest) returns (SweepHtlcResponse);
 
@@ -546,9 +546,16 @@ message SwapStatus {
     SwapType type = 3;
 
     /*
-    State the swap is currently in, see State enum.
+    Generic loop-in/loop-out state for swaps.
     */
     SwapState state = 4;
+
+    oneof static_loop_in_state_optional {
+        /*
+        Static address loop-in FSM state when type is STATIC_LOOP_IN.
+        */
+        StaticAddressLoopInSwapState static_loop_in_state = 20;
+    }
 
     /*
     A failure reason for the swap, only set if the swap has failed.
@@ -608,6 +615,9 @@ enum SwapType {
 
     // LOOP_IN indicates a loop in swap (on-chain to off-chain)
     LOOP_IN = 1;
+
+    // STATIC_LOOP_IN indicates a static address loop in swap.
+    STATIC_LOOP_IN = 2;
 }
 
 enum SwapState {
@@ -767,7 +777,7 @@ message ListSwapsResponse {
     int64 next_start_time = 2 [jstype = JS_STRING];
 }
 
-// SweepHtlcRequest instructs loopd to sweep a swap HTLC via its success path.
+// SweepHtlcRequest instructs loopd to sweep a swap HTLC.
 message SweepHtlcRequest {
     // Optional override for the sweep destination; defaults to a new address
     // derived from the connected lnd wallet.
@@ -779,7 +789,8 @@ message SweepHtlcRequest {
     // HTLC outpoint to sweep, formatted as "txid:vout".
     string outpoint = 3;
 
-    // Optional override for the stored swap preimage.
+    // Optional override for the stored swap preimage. This is required when
+    // stateless_recovery is set.
     bytes preimage = 4;
 
     // If true, publish the sweep transaction immediately.
@@ -788,9 +799,17 @@ message SweepHtlcRequest {
     // The HTLC address whose output is being swept; used to derive the
     // expected pkScript.
     string htlc_address = 6;
+
+    // If set, reconstruct the latest Loop Out HTLC without querying the swap
+    // database.
+    StatelessRecovery stateless_recovery = 7;
+
+    // If set, request the server's MuSig2 signature and spend the HTLC via its
+    // cooperative key path instead of revealing the preimage.
+    CooperativeSweep cooperative = 8;
 }
 
-// SweepHtlcResponse returns the broadcast sweep transaction.
+// SweepHtlcResponse returns the signed sweep transaction and publish outcome.
 message SweepHtlcResponse {
     // Raw sweep transaction bytes.
     bytes sweep_tx = 1;
@@ -1675,6 +1694,16 @@ message InstantOutRequest {
     will be swept to the wallet's internal address.
     */
     string dest_addr = 3;
+
+    oneof max_swap_fee {
+        /*
+        The maximum off-chain swap fee that may be charged for the swap. If
+        this field is omitted, no fee cap is applied for compatibility with
+        clients that predate this field. An explicitly set value of zero
+        rejects any positive swap fee.
+        */
+        int64 max_swap_fee_sat = 4 [jstype = JS_STRING];
+    }
 }
 
 message InstantOutResponse {
@@ -2493,4 +2522,35 @@ message AssetLoopOutInfo {
     The total asset offchain cost of the swap.
     */
     uint64 asset_cost_offchain = 3 [jstype = JS_STRING];
+}
+
+// StatelessRecovery contains the public swap data needed to reconstruct the
+// latest Loop Out HTLC without its database record.
+message StatelessRecovery {
+    // The server's compressed HTLC public key.
+    bytes server_pubkey = 1;
+
+    // The client's compressed HTLC public key. The connected lnd wallet must
+    // be able to derive the corresponding private key.
+    bytes client_pubkey = 2;
+
+    // The absolute CLTV expiry committed to by the Loop Out HTLC.
+    int32 cltv_expiry = 3;
+
+    // The block height at which the swap was initiated. This is used as the
+    // earliest possible confirmation height when locating the HTLC funding
+    // transaction.
+    int32 swap_initiation_height = 4;
+
+    // The maximum number of client keys to scan in Loop's lnd key family if
+    // signing by public key fails. If zero, loopd uses its default limit.
+    uint32 key_scan_limit = 5;
+}
+
+// CooperativeSweep selects a cooperative MuSig2 key-path spend.
+message CooperativeSweep {
+    // The swap invoice payment address used to prove ownership to the server.
+    // Stateful mode obtains this value from the stored swap invoice. Stateless
+    // mode requires it here.
+    bytes payment_address = 1;
 }

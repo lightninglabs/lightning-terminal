@@ -367,6 +367,8 @@ export const loopListSwaps: LOOP.ListSwapsResponse.AsObject = {
     idBytes: '9OsRg4PCsJ2MconOIcJZAM+0VF1GxH7SOjGtKqV86DU=',
     type: (i % 3) as LOOP.SwapStatus.AsObject['type'],
     state: i % 2 ? LOOP.SwapState.SUCCESS : LOOP.SwapState.FAILED,
+    staticLoopInState:
+      LOOP.StaticAddressLoopInSwapState.UNKNOWN_STATIC_ADDRESS_SWAP_STATE,
     failureReason: (i % 2 === 0 ? 0 : i % 7) as LOOP.SwapStatus.AsObject['failureReason'],
     initiationTime: `${1586390353623905000 + i * 100000000000000}`,
     lastUpdateTime: `${1586398369729857000 + i * 200000000000000}`,
