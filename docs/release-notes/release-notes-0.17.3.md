@@ -24,6 +24,9 @@
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
+* The Faraday subserver [is made an active
+  component](https://github.com/lightninglabs/lightning-terminal/pull/1251)
+  instead of only incorporating its RPC server.
 
 ## RPC Updates
 
@@ -40,6 +43,8 @@
 ### Pool
 
 ### Faraday
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1328): Bump:
+  `faraday@v0.2.18-alpha`, `faraday/frdrpc@v1.0.2`
 
 ### Taproot Assets
 
