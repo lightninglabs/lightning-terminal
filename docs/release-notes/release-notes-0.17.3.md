@@ -46,6 +46,8 @@
 ### LND
 
 ### Loop
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1388): Bump:
+  `loop@v0.35.0-beta`, `loop/looprpc@v1.0.16`.
 
 ### Pool
 
