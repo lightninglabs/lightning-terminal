@@ -39,4 +39,8 @@ var allTestCases = []*testCase{
 		name: "terminal lnc concurrent non-lnd calls",
 		test: testLNCConcurrentNonLNDCalls,
 	},
+	{
+		name: "faraday forwarding ability",
+		test: testFaradayForwardingAbility,
+	},
 }
