@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/lightninglabs/lightning-terminal/accounts"
+	litmac "github.com/lightninglabs/lightning-terminal/macaroons"
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -102,12 +103,27 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 	// If there is no macaroon in the request, then there is nothing left
 	// to parse.
 	if len(req.RawMacaroon) == 0 {
+		// A request that claims a session ID but presents no macaroon
+		// can never be bound to that session, so we reject it.
+		if ri.SessionID.IsSome() {
+			return nil, fmt.Errorf("session ID found in gRPC " +
+				"metadata but no macaroon present")
+		}
+
 		return ri, nil
 	}
 
 	ri.Macaroon = &macaroon.Macaroon{}
 	if err := ri.Macaroon.UnmarshalBinary(req.RawMacaroon); err != nil {
 		return nil, fmt.Errorf("error parsing macaroon: %v", err)
+	}
+
+	// The session ID transmitted via gRPC metadata is controlled by the
+	// client and must therefore never be trusted on its own. If one is
+	// set, the presented macaroon must be the session macaroon of that
+	// very session.
+	if err := bindSessionToMacaroon(ri.SessionID, ri.Macaroon); err != nil {
+		return nil, err
 	}
 
 	ri.Caveats = make([]string, len(ri.Macaroon.Caveats()))
@@ -149,6 +165,36 @@ func NewInfoFromRequest(req *lnrpc.RPCMiddlewareRequest) (*RequestInfo, error) {
 	}
 
 	return ri, nil
+}
+
+// bindSessionToMacaroon verifies that if a session ID is set, the given
+// macaroon is the session macaroon of that very session, meaning the session
+// ID encoded in the macaroon's root key ID matches the claimed session ID.
+func bindSessionToMacaroon(sessionID fn.Option[session.ID],
+	mac *macaroon.Macaroon) error {
+
+	if sessionID.IsNone() {
+		return nil
+	}
+
+	rootKeyID, err := litmac.RootKeyIDFromMacaroon(mac)
+	if err != nil {
+		return fmt.Errorf("error extracting root key ID from "+
+			"macaroon: %v", err)
+	}
+
+	if !litmac.IsSuperMacaroonRootKeyID(rootKeyID) {
+		return fmt.Errorf("macaroon with session ID in gRPC " +
+			"metadata is not a session macaroon")
+	}
+
+	macSessionID := session.IDFromMacRootKeyID(rootKeyID)
+	if macSessionID != sessionID.UnwrapOr(session.ID{}) {
+		return fmt.Errorf("session ID in gRPC metadata does not " +
+			"match the macaroon's session")
+	}
+
+	return nil
 }
 
 // String returns the string representation of the request info struct.
