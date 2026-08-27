@@ -152,6 +152,16 @@ var addAutopilotSessionCmd = cli.Command{
 				"flags of the previous session. Example: " +
 				"\"ClearPubkeys|ClearAmounts\"",
 		},
+		cli.BoolFlag{
+			Name: "noprivacy",
+			Usage: `Switch off privacy mapping for this session.
+			This is not recommended except for debugging purposes,
+			as it can leak sensitive information to autopilot
+			servers. If this flag is set, all privacy flags will be
+			ignored and privacy mapping will be turned off for this
+			session.`,
+			Hidden: true,
+		},
 	},
 }
 
@@ -449,6 +459,7 @@ func initAutopilotSession(cli *cli.Context) error {
 			LinkedGroupId:          groupID,
 			PrivacyFlags:           privacyFlags,
 			PrivacyFlagsSet:        privacyFlagsSet,
+			NoPrivacyMapper:        cli.Bool("noprivacy"),
 		},
 	)
 	if err != nil {

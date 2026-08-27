@@ -35,4 +35,12 @@ var allTestCases = []*testCase{
 		name: "terminal super macaroon on startup",
 		test: testSuperMacaroonOnStartup,
 	},
+	{
+		name: "terminal lnc concurrent non-lnd calls",
+		test: testLNCConcurrentNonLNDCalls,
+	},
+	{
+		name: "faraday forwarding ability",
+		test: testFaradayForwardingAbility,
+	},
 }

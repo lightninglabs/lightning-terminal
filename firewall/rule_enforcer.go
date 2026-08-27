@@ -122,6 +122,10 @@ func (r *RuleEnforcer) Intercept(ctx context.Context,
 		return mid.RPCOk(req)
 	}
 
+	if err := r.verifyRulesCaveat(ctx, ri); err != nil {
+		return mid.RPCErrString(req, "%v", err)
+	}
+
 	log.Tracef("RuleEnforcer: Intercepting %v", ri)
 
 	if ri.MetaInfo == nil {
@@ -369,6 +373,63 @@ func (r *RuleEnforcer) handleErrorResponse(ctx context.Context,
 	}
 
 	return parsedErr, nil
+}
+
+// verifyRulesCaveat checks the rules caveat found in the request's macaroon
+// against the rules caveat persisted in the session's macaroon recipe.
+func (r *RuleEnforcer) verifyRulesCaveat(ctx context.Context,
+	ri *RequestInfo) error {
+
+	sessionID, err := ri.SessionID.UnwrapOrErr(
+		fmt.Errorf("no session ID found in request info"),
+	)
+	if err != nil {
+		return err
+	}
+
+	sess, err := r.sessionDB.GetSession(ctx, sessionID)
+	if err != nil {
+		return fmt.Errorf("error fetching session %x: %v", sessionID,
+			err)
+	}
+
+	// Compare the rules caveat in the macaroon with the one persisted in
+	// the session's macaroon recipe.
+	var (
+		persisted string
+		found     bool
+	)
+
+	if sess.MacaroonRecipe != nil {
+		for _, c := range sess.MacaroonRecipe.Caveats {
+			if _, err := ParseRuleCaveat(string(c.Id)); err != nil {
+				continue
+			}
+
+			// A session is only ever expected to have a single
+			// rules caveat persisted in its macaroon recipe.
+			if found {
+				return fmt.Errorf("session %x has multiple "+
+					"persisted firewall rules caveats",
+					sess.ID)
+			}
+
+			persisted = string(c.Id)
+			found = true
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("session %x has no persisted firewall rules",
+			sess.ID)
+	}
+
+	if ri.RulesCaveat != persisted {
+		return fmt.Errorf("rules caveat of session %x does not match "+
+			"the persisted session rules", sess.ID)
+	}
+
+	return nil
 }
 
 // collectRule initialises and returns all the Rules that need to be enforced

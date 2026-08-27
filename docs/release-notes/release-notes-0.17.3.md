@@ -24,12 +24,22 @@
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
+* The Faraday subserver [is made an active
+  component](https://github.com/lightninglabs/lightning-terminal/pull/1251)
+  instead of only incorporating its RPC server.
+* A gRPC interceptor [is
+  added](https://github.com/lightninglabs/lightning-terminal/pull/1271) to be
+  able to apply privacy mapping for non-LND sub-daemon requests (e.g. Faraday)
+  within LNC sessions. Non-mapped subservers calls are blocked.
 
 ## RPC Updates
 
 * [Inbound fees are passed
   through](https://github.com/lightninglabs/lightning-terminal/pull/1382) the
   privacy mapper for the FeeReport endpoint.
+* The Faraday `ForwardingAbility` endpoint [is enabled and its peer pubkeys
+  obfuscated](https://github.com/lightninglabs/lightning-terminal/pull/1321) in
+  the firewall's privacy mapper.
 
 ## Integrated Binary Updates
 
@@ -40,6 +50,8 @@
 ### Pool
 
 ### Faraday
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1328): Bump:
+  `faraday@v0.2.18-alpha`, `faraday/frdrpc@v1.0.2`
 
 ### Taproot Assets
 

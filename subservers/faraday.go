@@ -6,7 +6,6 @@ import (
 	restProxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightninglabs/faraday"
 	"github.com/lightninglabs/faraday/frdrpc"
-	"github.com/lightninglabs/faraday/frdrpcserver"
 	"github.com/lightninglabs/faraday/frdrpcserver/perms"
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightninglabs/taproot-assets/fn"
@@ -17,7 +16,7 @@ import (
 
 // faradaySubServer implements the SubServer interface.
 type faradaySubServer struct {
-	*frdrpcserver.RPCServer
+	*faraday.Faraday
 
 	remote    bool
 	cfg       *faraday.Config
@@ -29,11 +28,11 @@ var _ SubServer = (*faradaySubServer)(nil)
 
 // NewFaradaySubServer returns a new faraday implementation of the SubServer
 // interface.
-func NewFaradaySubServer(cfg *faraday.Config, rpcCfg *frdrpcserver.Config,
-	remoteCfg *RemoteDaemonConfig, remote bool) SubServer {
+func NewFaradaySubServer(cfg *faraday.Config, remoteCfg *RemoteDaemonConfig,
+	remote bool) SubServer {
 
 	return &faradaySubServer{
-		RPCServer: frdrpcserver.NewRPCServer(rpcCfg),
+		Faraday:   faraday.New(cfg),
 		cfg:       cfg,
 		remoteCfg: remoteCfg,
 		remote:    remote,
@@ -69,9 +68,7 @@ func (f *faradaySubServer) RemoteConfig() *RemoteDaemonConfig {
 func (f *faradaySubServer) Start(_ lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
-	return f.StartAsSubserver(
-		lndGrpc.LndServices, withMacaroonService,
-	)
+	return f.StartAsSubserver(lndGrpc, withMacaroonService)
 }
 
 // RegisterGrpcService must register the sub-server's GRPC server with the given

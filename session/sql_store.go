@@ -504,7 +504,7 @@ func (s *SQLStore) GetSessionByLocalPub(ctx context.Context,
 			return fmt.Errorf("unable to get session: %w", err)
 		}
 
-		sess, err = unmarshalSession(ctx, s.db, dbSess)
+		sess, err = unmarshalSession(ctx, db, dbSess)
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal session: %w",
 				err)
@@ -622,7 +622,7 @@ func (s *SQLStore) GetSession(ctx context.Context, alias ID) (*Session, error) {
 			return fmt.Errorf("unable to get session: %w", err)
 		}
 
-		sess, err = unmarshalSession(ctx, s.db, dbSess)
+		sess, err = unmarshalSession(ctx, db, dbSess)
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal session: %w",
 				err)
