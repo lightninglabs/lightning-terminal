@@ -34,6 +34,13 @@
   while waiting, and aborts immediately if lnd stops or reports an error rather
   than always waiting out the full timeout.
 
+* [Default the signet autopilot
+  server](https://github.com/lightninglabs/lightning-terminal/pull/1377):
+  Starting `litd` with `--network=signet` failed with `no autopilot server
+  address specified`, because the autopilot address was only defaulted for
+  mainnet and testnet. Signet now defaults to the public signet autopilot
+  server, so a signet node starts without extra configuration.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
@@ -60,3 +67,4 @@
 # Contributors (Alphabetical Order)
 
 * Elle Mouton
+* Vandit Singh
