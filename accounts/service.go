@@ -574,7 +574,20 @@ func (s *InterceptorService) RemoveAccount(ctx context.Context,
 		}
 	}
 
-	return s.store.RemoveAccount(ctx, id)
+	if err := s.store.RemoveAccount(ctx, id); err != nil {
+		return err
+	}
+
+	// Drop any invoices still mapped to this account. Otherwise a later
+	// settlement of one of these invoices would try to credit a
+	// now-deleted account, which fails and disables the whole service.
+	for hash, acctID := range s.invoiceToAccount {
+		if acctID == id {
+			delete(s.invoiceToAccount, hash)
+		}
+	}
+
+	return nil
 }
 
 // CheckBalance ensures an account is valid and has a balance equal to or larger
