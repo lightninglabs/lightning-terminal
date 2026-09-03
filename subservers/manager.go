@@ -103,17 +103,6 @@ func (s *Manager) GetServer(name string) (SubServer, bool) {
 	return ss.SubServer, true
 }
 
-// StartIntegratedServers starts all the manager's sub-servers that should be
-// started in integrated mode.
-func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
-
-	s.StartTapd(lndClient, lndGrpc, withMacaroonService)
-	s.StartRemainingIntegratedServers(
-		lndClient, lndGrpc, withMacaroonService,
-	)
-}
-
 // StartTapd starts the tapd sub-server if it runs in integrated mode. tapd
 // provides lnd's aux components, and lnd's block processing can be blocked on
 // them: if a channel is being resolved on chain, the sweeper calls into tapd's
