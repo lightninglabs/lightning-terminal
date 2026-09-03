@@ -76,6 +76,7 @@ import (
 const (
 	MainnetServer = "autopilot.lightning.finance:12010"
 	TestnetServer = "test.autopilot.lightning.finance:12010"
+	SignetServer  = "signet.autopilot.lightning.finance:12010"
 
 	// lndWalletReadyStatus is a custom status that will be used with the
 	// LND subserver. If the subserver is in this state then it will allow
@@ -502,6 +503,8 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 				g.cfg.Autopilot.Address = MainnetServer
 			case "testnet":
 				g.cfg.Autopilot.Address = TestnetServer
+			case "signet":
+				g.cfg.Autopilot.Address = SignetServer
 			default:
 				return errors.New("no autopilot server " +
 					"address specified")
