@@ -846,9 +846,24 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 	g.statusMgr.SetRunning(subservers.LND)
 
 	// Both connection types are ready now, let's start our sub-servers if
-	// they should be started locally as an integrated service.
+	// they should be started locally as an integrated service. tapd goes
+	// first: it provides lnd's aux components, and lnd's block processing
+	// can be blocked on them until tapd is started. Only once tapd is up do
+	// we wait for lnd to be synced to chain, so that the remaining
+	// sub-servers still start against a synced lnd, as they did before.
 	createDefaultMacaroons := !g.cfg.statelessInitMode
-	g.subServerMgr.StartIntegratedServers(
+	g.subServerMgr.StartTapd(
+		g.basicClient, g.lndClient, createDefaultMacaroons,
+	)
+
+	if g.integratedTapd() {
+		if err := g.waitForChainSync(ctx); err != nil {
+			return fmt.Errorf("error waiting for lnd chain "+
+				"sync: %w", err)
+		}
+	}
+
+	g.subServerMgr.StartRemainingIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
 	)
 
@@ -1020,6 +1035,24 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 	// so if we instruct the lndclient to wait for the wallet sync, we
 	// should be fully ready to start all our subservers. This will just
 	// block until lnd signals readiness.
+	//
+	// There is one exception to that: with both lnd and tapd running
+	// in-process, we must not wait for lnd to be synced to chain here. lnd
+	// only reports itself as synced once its blockbeat caught up, and block
+	// processing can be blocked on tapd's aux components. If for example a
+	// channel is being resolved on chain, the sweeper calls into tapd's aux
+	// sweeper, which blocks until tapd is started. As tapd is only started
+	// once we have the client below, waiting here stalls the startup until
+	// lnd gives up on the blocked consumer (60 seconds per block), and for
+	// as long as blocks keep arriving faster than that, we'd retry here
+	// without ever starting tapd. In that case we start tapd first and wait
+	// for the chain sync ourselves afterwards, see waitForChainSync.
+	blockUntilChainSynced := !g.integratedTapd()
+	if !blockUntilChainSynced {
+		log.Infof("Not waiting for lnd to be synced to chain yet, as " +
+			"tapd is running in integrated mode")
+	}
+
 	log.Infof("Connecting full lnd client")
 	for {
 		g.lndClient, err = lndclient.NewLndServices(
@@ -1037,7 +1070,7 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 				RPCTimeout:            g.cfg.LndRPCTimeout,
 				ChainSyncPollInterval: g.cfg.LndConnectInterval,
 
-				BlockUntilChainSynced:   true,
+				BlockUntilChainSynced:   blockUntilChainSynced,
 				BlockUntilUnlocked:      true,
 				BlockUntilChainNotifier: true,
 			},
@@ -1087,6 +1120,48 @@ func (g *LightningTerminal) setupFullLNDClient(ctx context.Context,
 	}
 
 	return nil
+}
+
+// integratedTapd returns true if both lnd and tapd run in-process, which is
+// the only combination where tapd's aux components are wired into lnd.
+func (g *LightningTerminal) integratedTapd() bool {
+	return g.cfg.LndMode == ModeIntegrated &&
+		g.cfg.TaprootAssetsMode == ModeIntegrated
+}
+
+// waitForChainSync blocks until lnd reports itself as fully synced to its
+// chain backend, or until the context is canceled. It is the wait we skip in
+// setupFullLNDClient when tapd is integrated, performed once tapd is started
+// and lnd's block processing can no longer be blocked on it. Errors from
+// individual GetInfo calls are logged and retried, as the connection to lnd
+// has already been established at this point.
+func (g *LightningTerminal) waitForChainSync(ctx context.Context) error {
+	log.Infof("Waiting for lnd to be synced to chain")
+
+	for {
+		ctxt, cancel := context.WithTimeout(ctx, g.cfg.LndRPCTimeout)
+		info, err := g.basicClient.GetInfo(
+			ctxt, &lnrpc.GetInfoRequest{},
+		)
+		cancel()
+
+		switch {
+		case err != nil:
+			log.Warnf("Error querying lnd sync state, retrying "+
+				"in %v: %v", g.cfg.LndConnectInterval, err)
+
+		case info.SyncedToChain:
+			log.Infof("lnd is synced to chain")
+
+			return nil
+		}
+
+		select {
+		case <-time.After(g.cfg.LndConnectInterval):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 // startInternalSubServers starts all Litd specific sub-servers.
