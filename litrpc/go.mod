@@ -1,14 +1,14 @@
 module github.com/lightninglabs/lightning-terminal/litrpc
 
-go 1.25.12
+go 1.25.13
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
-	github.com/lightninglabs/faraday/frdrpc v1.0.1
+	github.com/lightninglabs/faraday/frdrpc v1.0.2
 	github.com/lightninglabs/loop/looprpc v1.0.16
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets/taprpc v1.1.0
-	github.com/lightningnetwork/lnd v0.21.2-beta
+	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
+	github.com/lightningnetwork/lnd v0.21.3-beta
 	google.golang.org/grpc v1.83.1
 	google.golang.org/protobuf v1.36.11
 )

@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal
 
-go 1.25.12
+go 1.25.13
 
 require (
 	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
@@ -18,7 +18,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.10.9
-	github.com/lightninglabs/faraday v0.2.18-alpha
+	github.com/lightninglabs/faraday v0.2.19-alpha
 	github.com/lightninglabs/faraday/frdrpc v1.0.2
 	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
@@ -30,9 +30,9 @@ require (
 	github.com/lightninglabs/pool v0.7.1-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.8.1
-	github.com/lightninglabs/taproot-assets/taprpc v1.2.0
-	github.com/lightningnetwork/lnd v0.21.2-beta
+	github.com/lightninglabs/taproot-assets v0.8.3
+	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
+	github.com/lightningnetwork/lnd v0.21.3-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5

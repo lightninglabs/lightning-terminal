@@ -22,7 +22,7 @@ PUBLIC_URL :=
 # GO_VERSION is the Go version used for the release build, docker files, and
 # GitHub Actions. This is the reference version for the project. All other Go
 # versions are checked against this version.
-GO_VERSION = 1.25.12
+GO_VERSION = 1.25.13
 
 LOOP_COMMIT := $(shell cat go.mod | \
 		grep $(LOOP_PKG) | \
