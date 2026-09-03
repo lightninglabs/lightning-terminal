@@ -43,6 +43,7 @@ declare module '@emotion/react' {
       lightningRed: string;
       lightningGray: string;
       lightningNavy: string;
+      lightningBlack: string;
       iris: string;
     };
     breakpoints: {

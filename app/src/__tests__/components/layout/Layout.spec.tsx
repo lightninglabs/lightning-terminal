@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from 'util/tests';
 import { createStore } from 'store';
 import Layout from 'components/layout/Layout';
@@ -23,6 +23,18 @@ describe('Layout component', () => {
     expect(store.settingsStore.sidebarVisible).toBe(false);
     fireEvent.click(getByText('menu.svg'));
     expect(store.settingsStore.sidebarVisible).toBe(true);
+  });
+
+  it('should collapse the sidebar when the window is resized smaller', async () => {
+    const { store } = render();
+    expect(store.settingsStore.sidebarVisible).toBe(true);
+
+    // jsdom's window is narrower than the breakpoint at which the sidebar is
+    // collapsed, so simply firing a resize event is enough to trigger it
+    fireEvent(window, new Event('resize'));
+
+    // the resize handler is debounced, so wait for it to run
+    await waitFor(() => expect(store.settingsStore.sidebarVisible).toBe(false));
   });
 
   it('should navigate to the History page', () => {

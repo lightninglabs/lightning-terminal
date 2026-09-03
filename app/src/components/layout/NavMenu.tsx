@@ -32,7 +32,7 @@ const Styled = {
 
       &:hover {
         text-decoration: none;
-        border-left: 3px solid ${props => props.theme.colors.pink};
+        border-left: 3px solid ${props => props.theme.colors.lightBlue};
         background-color: ${props => props.theme.colors.overlay};
       }
     }
@@ -42,7 +42,7 @@ const Styled = {
       background-color: ${props => props.theme.colors.blue};
 
       &:hover {
-        border-left: 3px solid ${props => props.theme.colors.pink};
+        border-left: 3px solid ${props => props.theme.colors.lightBlue};
       }
     }
   `,
@@ -92,7 +92,7 @@ const NavMenu: React.FC = () => {
       </Nav>
       <NavHeader>{l('connectHeader')}</NavHeader>
       <Nav>
-        <NavItem page="connect" badge={l('common.beta')} onClick={appView.goToConnect} />
+        <NavItem page="connect" onClick={appView.goToConnect} />
       </Nav>
     </>
   );

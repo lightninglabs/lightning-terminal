@@ -1,48 +1,48 @@
 import React, { useCallback, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from '@emotion/styled';
-import DashUX from 'assets/images/home_dash_ss.png';
-import LoopUX from 'assets/images/home_loop_ss.png';
-import { ReactComponent as Youtube } from 'assets/images/youtube.svg';
 import { usePrefixedTranslation } from 'hooks';
 import { useStore } from 'store';
-import {
-  BoltOutlined,
-  Button,
-  Column,
-  Display,
-  Paragraph,
-  QRCode,
-  Row,
-} from 'components/base';
+import { AUTO_COLLAPSE_MAX_WIDTH } from 'store/stores/settingsStore';
+import { BoltOutlined, Button, QRCode } from 'components/base';
+import { Display, Paragraph } from 'components/common/v2/Text';
 import PurpleButton from 'components/connect/PurpleButton';
 import QRCodeModal from 'components/connect/QRCodeModal';
 import YoutubeModal from './YoutubeModal';
 
 const Styled = {
   Wrapper: styled.div`
-    padding: 72px 0;
+    /* while the sidebar is collapsed its toggle floats over the top of the page and
+       the layout reserves space for it, so only a small amount of padding is added on
+       top of that. the full padding is restored once the sidebar is displayed
+       alongside the content again */
+    padding: 16px 0 40px;
+
+    @media (min-width: ${AUTO_COLLAPSE_MAX_WIDTH + 1}px) {
+      padding: 72px 0;
+    }
+  `,
+  /* the connect buttons wrap onto multiple lines when the page is too narrow to fit
+     them all on one line */
+  Buttons: styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
   `,
   PurpleButton: styled(PurpleButton)`
     font-size: ${props => props.theme.sizes.s};
     line-height: 24px;
     padding: 8px 16px;
-    margin-right: 24px;
   `,
-  YoutubeButton: styled(Button)`
+  /* a text button which sits inline at the end of the description paragraph */
+  LearnMoreButton: styled(Button)`
     font-family: ${props => props.theme.fonts.open.semiBold};
-    padding-left: 0;
-
-    svg {
-      margin-right: 16px;
-    }
-  `,
-  Column: styled(Column)`
-    max-width: 480px;
-  `,
-  Image: styled.img`
-    width: 100%;
-    margin-bottom: 24px;
+    /* inherit the metrics of the paragraph, which change on smaller screens */
+    font-size: inherit;
+    line-height: inherit;
+    vertical-align: baseline;
+    padding: 0;
+    margin-left: 8px;
   `,
 };
 
@@ -59,14 +59,19 @@ const HomePage: React.FC = () => {
   const closeQRModal = useCallback(() => setQrUrl(''), []);
   const toggleVideoModal = useCallback(() => setShowVideo(v => !v), []);
 
-  const { Wrapper, PurpleButton, YoutubeButton, Column, Image } = Styled;
+  const { Wrapper, Buttons, PurpleButton, LearnMoreButton } = Styled;
   return (
     <Wrapper>
       <Display semiBold space={16}>
         {l('pageTitle')}
       </Display>
-      <Paragraph space={32}>{l('connectDesc')}</Paragraph>
-      <Paragraph space={40}>
+      <Paragraph space={24} desktopSpace={32}>
+        {l('connectDesc')}
+        <LearnMoreButton ghost borderless compact onClick={toggleVideoModal}>
+          {l('learnMore')}
+        </LearnMoreButton>
+      </Paragraph>
+      <Buttons>
         <PurpleButton onClick={sessionStore.connectToTerminalWeb}>
           <BoltOutlined />
           {l('connectTerminalBtn')}
@@ -75,34 +80,7 @@ const HomePage: React.FC = () => {
           <QRCode />
           {l('connectQrBtn')}
         </PurpleButton>
-      </Paragraph>
-      <Paragraph space={32}>{l('learnDesc')}</Paragraph>
-      <Paragraph space={40}>
-        <YoutubeButton ghost borderless compact onClick={toggleVideoModal}>
-          <Youtube />
-          Learn More
-        </YoutubeButton>
-      </Paragraph>
-      <Display semiBold space={16}>
-        {l('whatsDiff')}
-      </Display>
-      <Paragraph space={24}>{l('diffDesc')}</Paragraph>
-      <Row>
-        <Column>
-          <Image src={LoopUX} alt={l('loopTitle')} />
-          <Paragraph semiBold space={8}>
-            {l('loopTitle')}
-          </Paragraph>
-          <Paragraph muted>{l('loopDesc')}</Paragraph>
-        </Column>
-        <Column>
-          <Image src={DashUX} alt={l('dashTitle')} />
-          <Paragraph semiBold space={8}>
-            {l('dashTitle')}
-          </Paragraph>
-          <Paragraph muted>{l('dashDesc')}</Paragraph>
-        </Column>
-      </Row>
+      </Buttons>
       <QRCodeModal url={qrUrl} visible={!!qrUrl} onClose={closeQRModal} />
       <YoutubeModal
         videoId="5kH1ByxjkTM"

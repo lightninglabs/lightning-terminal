@@ -47,6 +47,7 @@ const theme: Theme = {
     lightningRed: '#EF4444',
     lightningGray: '#B9BDC5',
     lightningNavy: '#1D253A',
+    lightningBlack: '#101727',
     iris: '#5D5FEF',
   },
   breakpoints: {
