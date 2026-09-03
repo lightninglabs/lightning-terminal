@@ -108,29 +108,78 @@ func (s *Manager) GetServer(name string) (SubServer, bool) {
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
 
+	s.StartTapd(lndClient, lndGrpc, withMacaroonService)
+	s.StartRemainingIntegratedServers(
+		lndClient, lndGrpc, withMacaroonService,
+	)
+}
+
+// StartTapd starts the tapd sub-server if it runs in integrated mode. tapd
+// provides lnd's aux components, and lnd's block processing can be blocked on
+// them: if a channel is being resolved on chain, the sweeper calls into tapd's
+// aux sweeper, which blocks until tapd is started. tapd therefore has to be
+// started before anything waits on lnd's chain state, which is why it is
+// started separately from the remaining sub-servers.
+func (s *Manager) StartTapd(lndClient lnrpc.LightningClient,
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, ss := range s.servers {
-		if ss.Remote() {
-			continue
-		}
-
-		err := ss.startIntegrated(
-			lndClient, lndGrpc, withMacaroonService,
-			func(err error) {
-				s.statusServer.SetErrored(
-					ss.Name(), err.Error(),
-				)
-			},
-		)
-		if err != nil {
-			s.statusServer.SetErrored(ss.Name(), err.Error())
-			continue
-		}
-
-		s.statusServer.SetRunning(ss.Name())
+	tapd, ok := s.servers[TAP]
+	if !ok {
+		return
 	}
+
+	s.startIntegratedServer(tapd, lndClient, lndGrpc, withMacaroonService)
+}
+
+// StartRemainingIntegratedServers starts all the manager's sub-servers that
+// should be started in integrated mode, except for tapd, which is started
+// through StartTapd.
+func (s *Manager) StartRemainingIntegratedServers(
+	lndClient lnrpc.LightningClient, lndGrpc *lndclient.GrpcLndServices,
+	withMacaroonService bool) {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for name, ss := range s.servers {
+		if name == TAP {
+			continue
+		}
+
+		s.startIntegratedServer(
+			ss, lndClient, lndGrpc, withMacaroonService,
+		)
+	}
+}
+
+// startIntegratedServer starts a single sub-server in integrated mode and
+// records the outcome with the status server. Remote sub-servers are skipped.
+//
+// NOTE: The caller must hold the manager's mutex.
+func (s *Manager) startIntegratedServer(ss *subServerWrapper,
+	lndClient lnrpc.LightningClient, lndGrpc *lndclient.GrpcLndServices,
+	withMacaroonService bool) {
+
+	if ss.Remote() {
+		return
+	}
+
+	err := ss.startIntegrated(
+		lndClient, lndGrpc, withMacaroonService,
+		func(err error) {
+			s.statusServer.SetErrored(ss.Name(), err.Error())
+		},
+	)
+	if err != nil {
+		s.statusServer.SetErrored(ss.Name(), err.Error())
+
+		return
+	}
+
+	s.statusServer.SetRunning(ss.Name())
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
