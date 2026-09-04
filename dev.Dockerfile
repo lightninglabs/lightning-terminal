@@ -69,6 +69,11 @@ ARG NO_UI
 # to be more clear of the default value.
 ARG CGO_ENABLED=1
 
+# Allow defining a custom set of build tags that override the defaults used
+# by `make`. If not set, the default empty value here causes the defaults
+# to be used.
+ARG BUILD_TAGS=""
+
 # Install dependencies and install/build lightning-terminal.
 # Note: When using `docker build`, setting the environmental variable
 # `DOCKER_BUILDKIT=1` is required to enable
@@ -119,11 +124,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     && go mod tidy; \
   fi \
   && if [ "$NO_UI" -eq "1" ]; then \
-    make go-install-noui \
-    && make go-install-cli-noui; \
+    make go-install-noui tags="$BUILD_TAGS"\
+    && make go-install-cli-noui tags="$BUILD_TAGS"; \
   else \
-    make go-install \
-    && make go-install-cli; \
+    make go-install tags="$BUILD_TAGS" \
+    && make go-install-cli tags="$BUILD_TAGS"; \
   fi
 
 # Start a new, final image to reduce size.
