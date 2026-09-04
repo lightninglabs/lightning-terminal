@@ -20,6 +20,9 @@
   macaroon](https://github.com/lightninglabs/lightning-terminal/pull/1387):
   Firewall now verifies that the session ID supplied in gRPC metadata matches
   the presented session macaroon.
+* [Clear invoice mappings on account
+  removal](https://github.com/lightninglabs/lightning-terminal/pull/1390):
+  Account removal now clears the associated in-memory invoice mappings.
 
 ### Functional Changes/Additions
 
@@ -60,4 +63,5 @@
 # Contributors (Alphabetical Order)
 
 * bitromortac
+* Tyagiquamar
 * ViktorT-11

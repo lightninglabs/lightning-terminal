@@ -1043,3 +1043,82 @@ func TestChannelBalanceRequestDoesNotHoldLock(t *testing.T) {
 	close(lndMock.channelBalanceRelease)
 	require.NoError(t, <-accountErr)
 }
+
+// TestRemoveAccountClearsInvoiceMapping tests that removing an account also
+// drops its in-memory invoice-to-account mapping, so that a later settlement
+// of one of that account's invoices does not try to credit the deleted
+// account and thereby disable the whole accounts service.
+func TestRemoveAccountClearsInvoiceMapping(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	lndMock := newMockLnd()
+	routerMock := newMockRouter()
+	errFunc := func(err error) {
+		lndMock.mainErrChan <- err
+	}
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+	service, err := NewService(store, errFunc)
+	require.NoError(t, err)
+
+	require.NoError(t, service.Start(ctx, lndMock, routerMock, chainParams))
+	t.Cleanup(func() {
+		_ = service.Stop()
+	})
+
+	// The account to be removed, with an invoice associated to it.
+	removedAcct, err := service.NewAccount(
+		ctx, 1000, testExpiration, "gone",
+	)
+	require.NoError(t, err)
+	require.NoError(t, service.AssociateInvoice(
+		ctx, removedAcct.ID, testHash,
+	))
+
+	// A second, surviving account with its own invoice. We use its
+	// settlement as a synchronization point: the invoice subscription
+	// processes updates serially, so once this account has been credited
+	// we know the orphaned invoice update was processed first.
+	survivorAcct, err := service.NewAccount(
+		ctx, 1000, testExpiration, "alive",
+	)
+	require.NoError(t, err)
+	require.NoError(t, service.AssociateInvoice(
+		ctx, survivorAcct.ID, testHash2,
+	))
+
+	// Remove the first account. Its invoice mapping must be cleared too.
+	require.NoError(t, service.RemoveAccount(ctx, removedAcct.ID))
+
+	// Now settle both invoices. The orphaned one (for the removed account)
+	// must be ignored, and the surviving account must still be credited.
+	go func() {
+		lndMock.invoiceChan <- &lndclient.Invoice{
+			AddIndex:    12,
+			SettleIndex: 12,
+			Hash:        testHash,
+			AmountPaid:  777,
+			State:       invpkg.ContractSettled,
+		}
+		lndMock.invoiceChan <- &lndclient.Invoice{
+			AddIndex:    13,
+			SettleIndex: 13,
+			Hash:        testHash2,
+			AmountPaid:  500,
+			State:       invpkg.ContractSettled,
+		}
+	}()
+
+	// The surviving account is credited, which proves the orphaned invoice
+	// update did not disable the service.
+	assertEventually(t, func() bool {
+		acct, err := service.Account(ctx, survivorAcct.ID)
+		require.NoError(t, err)
+
+		return acct.CurrentBalance == 1000+500
+	})
+
+	require.True(t, service.IsRunning())
+	lndMock.assertNoMainErr(t)
+}
