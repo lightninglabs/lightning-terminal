@@ -1068,7 +1068,9 @@ func TestRemoveAccountClearsInvoiceMapping(t *testing.T) {
 	})
 
 	// The account to be removed, with an invoice associated to it.
-	removedAcct, err := service.NewAccount(ctx, 1000, testExpiration, "gone")
+	removedAcct, err := service.NewAccount(
+		ctx, 1000, testExpiration, "gone",
+	)
 	require.NoError(t, err)
 	require.NoError(t, service.AssociateInvoice(
 		ctx, removedAcct.ID, testHash,
