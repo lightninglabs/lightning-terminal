@@ -16,6 +16,13 @@ import { DEFAULT_MAX_BATCH_FEE, DEFAULT_MIN_CHAN_SIZE } from 'store/views/orderF
 
 const { l } = prefixTranslation('stores.settingsStore');
 
+/**
+ * the largest window width at which the sidebar is collapsed automatically. below
+ * this width the page content is not offset by the sidebar, so an expanded sidebar
+ * would cover it
+ */
+export const AUTO_COLLAPSE_MAX_WIDTH = 1200;
+
 export interface PersistentSettings {
   sidebarVisible: boolean;
   unit: Unit;
@@ -121,6 +128,25 @@ export default class SettingsStore {
     if (this.autoCollapse && this.sidebarVisible) {
       this.sidebarVisible = false;
     }
+  }
+
+  /**
+   * enables or disables automatic sidebar collapsing based on the current window
+   * width, collapsing the sidebar on mobile and tablet widths so that it does not
+   * cover the page content
+   * @param force updates the sidebar even if the breakpoint was not crossed. used on
+   * startup so that the sidebar is always expanded by default on desktop, instead of
+   * restoring a collapsed state which was persisted on a smaller screen. while the
+   * app is running the breakpoint must be crossed, so that resizing does not override
+   * the sidebar being toggled manually
+   */
+  syncAutoCollapse(force = false) {
+    const autoCollapse = window.innerWidth <= AUTO_COLLAPSE_MAX_WIDTH;
+    if (!force && autoCollapse === this.autoCollapse) return;
+
+    this.autoCollapse = autoCollapse;
+    this.sidebarVisible = !autoCollapse;
+    this._store.log.info('updated SettingsStore.autoCollapse', toJS(this.autoCollapse));
   }
 
   /**
@@ -303,10 +329,9 @@ export default class SettingsStore {
       this._store.log.info('loaded settings', settings);
     }
 
-    // enable automatic sidebar collapsing for smaller screens
-    if (window.innerWidth && window.innerWidth <= 1200) {
-      this.autoCollapse = true;
-      this.sidebarVisible = false;
-    }
+    // enable automatic sidebar collapsing for smaller screens. this is forced so that
+    // the sidebar is expanded by default on desktop, even if it was collapsed on a
+    // smaller screen the last time the app was used
+    this.syncAutoCollapse(true);
   }
 }

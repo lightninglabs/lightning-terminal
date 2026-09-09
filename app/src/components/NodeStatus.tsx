@@ -11,16 +11,12 @@ import Unit from './common/Unit';
 const Styled = {
   Wrapper: styled.div`
     line-height: 32px;
+    /* preserve the spacing above the nav menu that the divider used to provide */
+    padding-bottom: 40px;
   `,
   Balance: styled.span`
     display: flex;
     align-items: center;
-  `,
-  Divider: styled.div`
-    height: 2px;
-    background-color: ${props => props.theme.colors.darkGray};
-    margin: 20px 0;
-    opacity: 0.5;
   `,
 };
 
@@ -28,7 +24,7 @@ const NodeStatus: React.FC = () => {
   const { l } = usePrefixedTranslation('cmps.NodeStatus');
   const { nodeStore } = useStore();
 
-  const { Wrapper, Balance, Divider } = Styled;
+  const { Wrapper, Balance } = Styled;
   return (
     <Wrapper data-tour="node-status">
       <HeaderFour>{l('title')}</HeaderFour>
@@ -48,7 +44,6 @@ const NodeStatus: React.FC = () => {
           </Balance>
         </Small>
       </Tip>
-      <Divider />
     </Wrapper>
   );
 };

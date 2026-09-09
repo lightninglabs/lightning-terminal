@@ -81,10 +81,13 @@
   font-display: swap;
 }
 
+// the minimum width is not applied globally, since the Home and auth pages reflow
+// down to mobile widths. the pages which are laid out for desktop widths apply it
+// themselves via the Layout component
 html,
 body,
 #root {
-  background-color: #252f4a;
+  // matches theme.colors.lightningBlack, which is not reachable from scss
+  background-color: #101727;
   width: 100%;
-  min-width: 1024px;
 }

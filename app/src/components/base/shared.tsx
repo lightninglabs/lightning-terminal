@@ -9,7 +9,7 @@ export const Background = styled.div<{ gradient?: boolean }>`
   height: 100%;
   color: ${props => props.theme.colors.white};
   background: ${props =>
-    props.gradient ? props.theme.colors.gradient : props.theme.colors.blue};
+    props.gradient ? props.theme.colors.gradient : props.theme.colors.lightningBlack};
   font-family: ${props => props.theme.fonts.open.regular};
   font-size: ${props => props.theme.sizes.m};
 `;

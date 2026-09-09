@@ -84,6 +84,12 @@
   helping operators avoid over-provisioning custodial accounts beyond what the
   node can actually pay out. It defaults to off to preserve existing behaviour.
 
+* [General UI improvements](https://github.com/lightninglabs/lightning-terminal/pull/1368):
+  The sidebar is now pinned to the left edge of the window, collapses on smaller
+  screens instead of covering the page, and no longer shifts the content when it
+  is toggled. The Home page has been simplified, the Home and auth pages reflow
+  down to mobile widths, and the app background is now black.
+
 ### Technical and Architectural Updates
 
 * [Report litd's own version for `litd
