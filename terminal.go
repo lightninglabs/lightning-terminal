@@ -847,10 +847,23 @@ func (g *LightningTerminal) start(ctx context.Context) error {
 
 	// Both connection types are ready now, let's start our sub-servers if
 	// they should be started locally as an integrated service.
+	//
+	// If taproot assets mode is enabled, we treat tapd startup errors as
+	// fatal since lnd may call into tapd when it is enabled and tapd must
+	// be running for those calls to succeed.
 	createDefaultMacaroons := !g.cfg.statelessInitMode
-	g.subServerMgr.StartIntegratedServers(
+	fatalServers := make(map[string]bool)
+	if g.cfg.TaprootAssetsMode != ModeDisable {
+		fatalServers[subservers.TAP] = true
+	}
+	err = g.subServerMgr.StartIntegratedServers(
 		g.basicClient, g.lndClient, createDefaultMacaroons,
+		fatalServers,
 	)
+	if err != nil {
+		return fmt.Errorf("could not start integrated sub-servers: "+
+			"%w", err)
+	}
 
 	err = g.startInternalSubServers(ctx, !g.cfg.statelessInitMode)
 	if err != nil {

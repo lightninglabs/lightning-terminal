@@ -104,9 +104,13 @@ func (s *Manager) GetServer(name string) (SubServer, bool) {
 }
 
 // StartIntegratedServers starts all the manager's sub-servers that should be
-// started in integrated mode.
+// started in integrated mode. The fatalServers parameter is a set of
+// sub-server names whose startup errors should be treated as fatal. If any
+// sub-server in this set fails to start, the error is returned immediately.
+// Errors from sub-servers not in the set are logged but non-fatal.
 func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
-	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) {
+	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool,
+	fatalServers map[string]bool) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -126,11 +130,20 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 		)
 		if err != nil {
 			s.statusServer.SetErrored(ss.Name(), err.Error())
+
+			if fatalServers[ss.Name()] {
+				return fmt.Errorf("could not start "+
+					"required sub-server %s: %w",
+					ss.Name(), err)
+			}
+
 			continue
 		}
 
 		s.statusServer.SetRunning(ss.Name())
 	}
+
+	return nil
 }
 
 // ConnectRemoteSubServers creates connections to all the manager's sub-servers
