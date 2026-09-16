@@ -37,7 +37,10 @@
 ### Faraday
 
 ### Taproot Assets
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1401): Bump:
+  `taproot-assets@v0.8.4`.
 
 # Contributors (Alphabetical Order)
 
 * Tyagiquamar
+* ViktorT-11
