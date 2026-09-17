@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/lightninglabs/lndclient"
 	"github.com/lightningnetwork/lnd/lncfg"
@@ -33,6 +34,10 @@ type subServerWrapper struct {
 	stopped sync.Once
 
 	remoteConn *grpc.ClientConn
+
+	// watching is set once watchRemoteConn has started its watcher, so
+	// extra calls do not start a duplicate one.
+	watching atomic.Bool
 
 	wg   sync.WaitGroup
 	quit chan struct{}
@@ -160,12 +165,12 @@ func (s *subServerWrapper) connectRemote() error {
 // connection is lost after startup and onRunning when it recovers, so the
 // status server reflects a runtime disconnect instead of keeping the
 // sub-server marked as running. The watcher stops when the sub-server is
-// stopped.
+// stopped. Only the first call starts a watcher.
 func (s *subServerWrapper) watchRemoteConn(onError func(error),
 	onRunning func()) {
 
 	conn := s.remoteConn
-	if conn == nil {
+	if conn == nil || !s.watching.CompareAndSwap(false, true) {
 		return
 	}
 
