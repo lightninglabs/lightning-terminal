@@ -20,6 +20,14 @@
   removal](https://github.com/lightninglabs/lightning-terminal/pull/1390):
   Account removal now clears the associated in-memory invoice mappings.
 
+* [Clamp implausible timestamps during KV to SQL session
+  migration](https://github.com/lightninglabs/lightning-terminal/pull/1403):
+  The session store migration now clamps implausible legacy timestamps into
+  the range the SQL stores can represent, instead of aborting with a scan
+  error on every startup. The read-back validation error now also includes
+  the session ID, so the offending record can be identified from the log
+  alone.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
