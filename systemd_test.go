@@ -72,8 +72,9 @@ func TestNotifySystemdStopping(t *testing.T) {
 	requireNotification(t, conn, "STOPPING=1")
 }
 
-// TestNotifySystemdStoppingNoSocket checks that notifySystemdStopping is a no-op
-// when NOTIFY_SOCKET is not set. It reports no notification and no error.
+// TestNotifySystemdStoppingNoSocket checks that notifySystemdStopping is a
+// no-op when NOTIFY_SOCKET is not set. It reports no notification and no
+// error.
 func TestNotifySystemdStoppingNoSocket(t *testing.T) {
 	t.Setenv("NOTIFY_SOCKET", "")
 
