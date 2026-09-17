@@ -120,7 +120,8 @@ func testLitdSurvivesLndShutdown(ctx context.Context, net *NetworkHarness,
 		}
 
 		if litStatus.Error == "" {
-			return fmt.Errorf("lit sub-server error message not set")
+			return fmt.Errorf("lit sub-server error message not " +
+				"set")
 		}
 
 		return nil
