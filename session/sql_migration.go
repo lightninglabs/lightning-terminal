@@ -187,10 +187,15 @@ func migrateSessionsToSQLAndValidate(ctx context.Context, tx *s6.Queries,
 	kvSessions []*Session, migratedOffset, totalCount int) error {
 
 	for i, kvSession := range kvSessions {
+		// Clamp implausible timestamps into the range the SQL stores
+		// can represent, both for the insert below and the comparison
+		// against the read-back session further down.
+		sanitizeSessionTime(kvSession)
+
 		err := migrateSingleSessionToSQL(ctx, tx, kvSession)
 		if err != nil {
-			return fmt.Errorf("unable to migrate session(%v): %w",
-				kvSession.ID, err)
+			return fmt.Errorf("unable to migrate session(%x): %w",
+				kvSession.ID[:], err)
 		}
 
 		migratedSession, err := getAndUnmarshalSession(
@@ -198,7 +203,7 @@ func migrateSessionsToSQLAndValidate(ctx context.Context, tx *s6.Queries,
 		)
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal migrated "+
-				"session: %w", err)
+				"session(%x): %w", kvSession.ID[:], err)
 		}
 
 		overrideSessionTimeZone(kvSession)
@@ -223,8 +228,8 @@ func migrateSessionsToSQLAndValidate(ctx context.Context, tx *s6.Queries,
 			}
 			diffText, _ := difflib.GetUnifiedDiffString(diff)
 
-			return fmt.Errorf("%w: %v.\n%v", ErrMigrationMismatch,
-				kvSession.ID, diffText)
+			return fmt.Errorf("%w: %x.\n%v", ErrMigrationMismatch,
+				kvSession.ID[:], diffText)
 		}
 
 		migratedCount := migratedOffset + i + 1
@@ -634,6 +639,71 @@ func overrideSessionTimeZone(session *Session) {
 	if !session.RevokedAt.IsZero() {
 		session.RevokedAt = fixTime(session.RevokedAt)
 	}
+}
+
+// minSQLTime and maxSQLTime bound the timestamps that can round-trip
+// through the SQL stores. SQLite's TEXT storage of timestamps, as used by
+// the modernc.org/sqlite driver, can only parse times with a four digit
+// year. Any time outside this range is written successfully but comes back
+// as a plain string on read, which fails the scan into time.Time.
+var (
+	// minSQLTime is the earliest time that survives a SQL round-trip.
+	// Any KV timestamp before it is clamped to it. Tagged releases only
+	// accepted future session expiries. Pre-tag builds briefly stored
+	// expiries as Unix nanoseconds, however, so a far-future expiry could
+	// overflow and later be decoded as a negative Unix-seconds value.
+	// Released readers already treated those values as expired after a
+	// restart.
+	minSQLTime = time.Unix(0, 0).UTC()
+
+	// maxSQLTime is the latest time that survives a SQL round-trip.
+	// Any KV timestamp after it is clamped to it, which keeps the
+	// session semantics intact, as such a session never expires either
+	// way. We use sqldb.MaxValidSQLTime, which is the maximum valid
+	// time that can be rendered as a timestamp for SQL.
+	maxSQLTime = sqldb.MaxValidSQLTime
+)
+
+// sanitizeSessionTime clamps the session's timestamps into the range that
+// can be represented in the SQL stores. Legacy bbolt sessions can hold
+// implausible timestamps. In particular, pre-tag builds briefly encoded
+// expiries as Unix nanoseconds, allowing far-future values to overflow;
+// tagged releases encoded Unix seconds and rejected past expiries. An
+// out-of-range value would otherwise abort the KV to SQL migration with a
+// scan error on every startup, as reported in
+// https://github.com/lightninglabs/lightning-terminal/issues/1402.
+func sanitizeSessionTime(session *Session) {
+	clamp := func(t time.Time) time.Time {
+		switch {
+		case t.Before(minSQLTime):
+			return minSQLTime
+		case t.After(maxSQLTime):
+			return maxSQLTime
+		default:
+			return t
+		}
+	}
+
+	// The zero value is used to mark the revoked-at timestamp as unset,
+	// so we leave it alone rather than clamping it to the epoch.
+	clampField := func(field string, t time.Time) time.Time {
+		if t.IsZero() {
+			return t
+		}
+		newT := clamp(t)
+		if !newT.Equal(t) {
+			log.Warnf("Session %x has an implausible %s "+
+				"timestamp %v, clamping to %v for the SQL "+
+				"migration",
+				session.ID[:], field, t, newT)
+			return newT
+		}
+		return t
+	}
+
+	session.Expiry = clampField("expiry", session.Expiry)
+	session.CreatedAt = clampField("created_at", session.CreatedAt)
+	session.RevokedAt = clampField("revoked_at", session.RevokedAt)
 }
 
 // overrideMacaroonRecipe overrides the MacaroonRecipe for the SQL session in a

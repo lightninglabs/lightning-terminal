@@ -343,6 +343,141 @@ func TestSessionsStoreMigration(t *testing.T) {
 			},
 		},
 		{
+			name: "session with implausible expiry",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				_, err := store.NewSession(
+					ctx, "normal", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess, err := store.NewSession(
+					ctx, "bad-expiry", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				// Corrupt the second session's expiry to a
+				// value far outside the range the SQL
+				// stores can represent, as seen in the
+				// wild in issue #1402. Such a value would
+				// previously abort the whole KV to SQL
+				// migration with a scan error on every
+				// startup.
+				err = updateSessionTimeFields(
+					store, sess.ID, time.Unix(-1<<40, 0),
+					sess.CreatedAt,
+				)
+				require.NoError(t, err)
+
+				// The migration clamps the implausible
+				// expiry into the range the SQL store can
+				// represent, so the sessions we expect to
+				// find in the SQL store carry the clamped
+				// value, not the raw KV one.
+				kvSessions := getBoltStoreSessions(t, store)
+				for _, kvSession := range kvSessions {
+					sanitizeSessionTime(kvSession)
+				}
+
+				return kvSessions
+			},
+		},
+		{
+			name: "session with zero timestamps",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				// Although current RPC creation paths reject
+				// these values, a legacy or manually modified
+				// bbolt record can contain them. Verify that
+				// leaving true zero values unclamped still
+				// permits a complete SQL round-trip.
+				sess, err := store.NewSession(
+					ctx, "zero-times", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				err = updateSessionTimeFields(
+					store, sess.ID, time.Time{},
+					time.Time{},
+				)
+				require.NoError(t, err)
+
+				kvSessions := getBoltStoreSessions(t, store)
+				require.Len(t, kvSessions, 1)
+				require.True(t, kvSessions[0].Expiry.IsZero())
+				require.True(
+					t, kvSessions[0].CreatedAt.IsZero(),
+				)
+				require.True(
+					t, kvSessions[0].RevokedAt.IsZero(),
+				)
+
+				return kvSessions
+			},
+		},
+		{
+			name: "pre-tag nanosecond expiry overflow",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				sess, err := store.NewSession(
+					ctx, "legacy-never-expire",
+					TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				err = store.ShiftState(
+					ctx, sess.ID, StateCreated,
+				)
+				require.NoError(t, err)
+
+				// Before the first tagged release, expiries
+				// were serialized using UnixNano. Encoding the
+				// UI's January 1, 9999 sentinel overflowed
+				// int64 to this value, which the later
+				// Unix-seconds decoder interprets as an
+				// implausible negative year.
+				const legacyExpiryUnixNano = int64(
+					-4883652231933722624,
+				)
+				legacyDecodedExpiry := time.Unix(
+					legacyExpiryUnixNano, 0,
+				).UTC()
+
+				err = updateSessionTimeFields(
+					store, sess.ID, legacyDecodedExpiry,
+					sess.CreatedAt,
+				)
+				require.NoError(t, err)
+
+				kvSessions := getBoltStoreSessions(t, store)
+				require.Len(t, kvSessions, 1)
+				require.Equal(
+					t, StateCreated, kvSessions[0].State,
+				)
+				require.True(
+					t,
+					kvSessions[0].Expiry.Before(minSQLTime),
+				)
+
+				sanitizeSessionTime(kvSessions[0])
+				require.Equal(
+					t, minSQLTime, kvSessions[0].Expiry,
+				)
+				require.Equal(
+					t, StateCreated, kvSessions[0].State,
+				)
+
+				return kvSessions
+			},
+		},
+		{
 			name: "one session with a linked account",
 			populateDB: func(t *testing.T, store *BoltStore,
 				acctStore accounts.Store) []*Session {
@@ -1043,6 +1178,33 @@ func shiftStateUnsafe(db *BoltStore, id ID, dest State) error {
 		}
 
 		return putSession(sessionBucket, session)
+	})
+}
+
+// updateSessionTimeFields updates the expiry and creation time of the session
+// with the given ID in the BoltStore, without any validation. It is used to
+// simulate legacy sessions holding timestamp values that current creation
+// paths reject.
+//
+// NOTE: this function should only be used for testing purposes.
+func updateSessionTimeFields(db *BoltStore, id ID, newExpiry,
+	newCreatedAt time.Time) error {
+
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		sess, err := getSessionByID(sessionBkt, id)
+		if err != nil {
+			return err
+		}
+
+		sess.Expiry = newExpiry
+		sess.CreatedAt = newCreatedAt
+
+		return putSession(sessionBkt, sess)
 	})
 }
 
