@@ -343,6 +343,49 @@ func TestSessionsStoreMigration(t *testing.T) {
 			},
 		},
 		{
+			name: "session with implausible expiry",
+			populateDB: func(t *testing.T, store *BoltStore,
+				_ accounts.Store) []*Session {
+
+				_, err := store.NewSession(
+					ctx, "normal", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				sess, err := store.NewSession(
+					ctx, "bad-expiry", TypeMacaroonAdmin,
+					time.Unix(1000, 0), "",
+				)
+				require.NoError(t, err)
+
+				// Corrupt the second session's expiry to a
+				// value far outside the range the SQL
+				// stores can represent, as seen in the
+				// wild in issue #1402. Such a value would
+				// previously abort the whole KV to SQL
+				// migration with a scan error on every
+				// startup.
+				err = updateSessionExpiry(
+					store, sess.ID,
+					time.Unix(-1<<40, 0),
+				)
+				require.NoError(t, err)
+
+				// The migration clamps the implausible
+				// expiry into the range the SQL store can
+				// represent, so the sessions we expect to
+				// find in the SQL store carry the clamped
+				// value, not the raw KV one.
+				kvSessions := getBoltStoreSessions(t, store)
+				for _, kvSession := range kvSessions {
+					sanitizeSessionTime(kvSession)
+				}
+
+				return kvSessions
+			},
+		},
+		{
 			name: "one session with a linked account",
 			populateDB: func(t *testing.T, store *BoltStore,
 				acctStore accounts.Store) []*Session {
@@ -1043,6 +1086,29 @@ func shiftStateUnsafe(db *BoltStore, id ID, dest State) error {
 		}
 
 		return putSession(sessionBucket, session)
+	})
+}
+
+// updateSessionExpiry updates the expiry of the session with the given ID
+// in the BoltStore, without any validation. It is used to simulate legacy
+// sessions holding implausible expiry timestamps.
+//
+// NOTE: this function should only be used for testing purposes.
+func updateSessionExpiry(db *BoltStore, id ID, newExpiry time.Time) error {
+	return db.Update(func(tx *bbolt.Tx) error {
+		sessionBkt, err := getBucket(tx, sessionBucketKey)
+		if err != nil {
+			return err
+		}
+
+		sess, err := getSessionByID(sessionBkt, id)
+		if err != nil {
+			return err
+		}
+
+		sess.Expiry = newExpiry
+
+		return putSession(sessionBkt, sess)
 	})
 }
 
