@@ -433,12 +433,23 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		if errors.Is(startErr, errKVDBToSQLMigrationDeclined) {
 			shutdownInterceptor.RequestShutdown()
 		}
+	} else {
+		// All sub-servers have started, so notify systemd (for a unit
+		// using Type=notify) that litd is ready. The notification is
+		// best-effort and already logs on failure, so the result is
+		// intentionally discarded here.
+		_, _ = notifySystemdReady()
 	}
 
 	// Now block until we receive an error or the main shutdown
 	// signal.
 	<-shutdownInterceptor.ShutdownChannel()
 	log.Infof("Shutdown signal received")
+
+	// Tell systemd we are stopping so it does not treat the shutdown as a
+	// failure. The notification is best-effort and already logs on failure,
+	// so the result is intentionally discarded here.
+	_, _ = notifySystemdStopping()
 
 	err = g.shutdownSubServers()
 	if err != nil {
