@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// nameOnlySubServer is a stub SubServer that only implements Name, which is the
-// only method watchRemoteConn relies on.
+// nameOnlySubServer is a stub SubServer that only implements Name and Remote,
+// the methods that watchRemoteConn and stop rely on.
 type nameOnlySubServer struct {
 	SubServer
 
@@ -21,6 +21,10 @@ type nameOnlySubServer struct {
 
 func (n *nameOnlySubServer) Name() string {
 	return n.name
+}
+
+func (n *nameOnlySubServer) Remote() bool {
+	return true
 }
 
 // TestWatchRemoteConn asserts that a remote sub-server's runtime disconnect and
@@ -44,9 +48,6 @@ func TestWatchRemoteConn(t *testing.T) {
 		addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(t, err)
-	defer func() {
-		_ = conn.Close()
-	}()
 
 	ss := &subServerWrapper{
 		SubServer:  &nameOnlySubServer{name: "test"},
@@ -61,8 +62,7 @@ func TestWatchRemoteConn(t *testing.T) {
 		func() { runningChan <- struct{}{} },
 	)
 	defer func() {
-		close(ss.quit)
-		ss.wg.Wait()
+		require.NoError(t, ss.stop())
 	}()
 
 	// Wait until the connection is ready so the watcher starts from a
