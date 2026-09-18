@@ -57,10 +57,17 @@ func TestWatchRemoteConn(t *testing.T) {
 
 	erroredChan := make(chan struct{}, 8)
 	runningChan := make(chan struct{}, 8)
-	ss.watchRemoteConn(
-		func(error) { erroredChan <- struct{}{} },
-		func() { runningChan <- struct{}{} },
-	)
+	watch := func() {
+		ss.watchRemoteConn(
+			func(error) { erroredChan <- struct{}{} },
+			func() { runningChan <- struct{}{} },
+		)
+	}
+
+	// The second call must not start another watcher, or each transition
+	// would be reported twice.
+	watch()
+	watch()
 	defer func() {
 		require.NoError(t, ss.stop())
 	}()
@@ -80,6 +87,13 @@ func TestWatchRemoteConn(t *testing.T) {
 	case <-erroredChan:
 	case <-time.After(10 * time.Second):
 		t.Fatal("expected the disconnect to be reported")
+	}
+
+	// A second watcher would report the same transition again.
+	select {
+	case <-erroredChan:
+		t.Fatal("disconnect reported twice")
+	case <-time.After(time.Second):
 	}
 
 	// Bring the backend back on the same address: the watcher must report
