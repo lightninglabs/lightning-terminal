@@ -1,9 +1,11 @@
 import * as ACCOUNT from 'types/generated/lit-accounts_pb';
 import * as SESSION from 'types/generated/lit-sessions_pb';
 import * as STATUS from 'types/generated/lit-status_pb';
+import * as PROXY from 'types/generated/proxy_pb';
 import { Accounts } from 'types/generated/lit-accounts_pb_service';
 import { Sessions } from 'types/generated/lit-sessions_pb_service';
 import { Status } from 'types/generated/lit-status_pb_service';
+import { Proxy } from 'types/generated/proxy_pb_service';
 import { b64 } from 'util/strings';
 import { MAX_DATE } from 'util/constants';
 import BaseApi from './base';
@@ -19,6 +21,12 @@ class LitApi extends BaseApi<LitEvents> {
   constructor(grpc: GrpcClient) {
     super();
     this._grpc = grpc;
+  }
+
+  async getInfo(): Promise<PROXY.GetInfoResponse.AsObject> {
+    const req = new PROXY.GetInfoRequest();
+    const res = await this._grpc.request(Proxy.GetInfo, req, this._meta);
+    return res.toObject();
   }
 
   /**
