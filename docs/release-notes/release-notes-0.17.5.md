@@ -24,6 +24,11 @@
 
 ### Technical and Architectural Updates
 
+* [Dump goroutines when an itest node does not
+  stop](https://github.com/lightninglabs/lightning-terminal/pull/1409): When the
+  itest harness times out while stopping a node, it now sends `SIGABRT` to the
+  litd process so the node log shows where litd is stuck.
+
 ## RPC Updates
 
 ## Integrated Binary Updates
@@ -43,4 +48,5 @@
 # Contributors (Alphabetical Order)
 
 * Tyagiquamar
+* Vandit1604
 * ViktorT-11
