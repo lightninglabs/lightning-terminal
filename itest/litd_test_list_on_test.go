@@ -43,4 +43,8 @@ var allTestCases = []*testCase{
 		name: "faraday forwarding ability",
 		test: testFaradayForwardingAbility,
 	},
+	{
+		name: "litd survives lnd shutdown",
+		test: testLitdSurvivesLndShutdown,
+	},
 }
