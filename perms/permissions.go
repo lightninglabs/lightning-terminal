@@ -48,6 +48,10 @@ var (
 			Entity: "account",
 			Action: "read",
 		}},
+		"/litrpc.Accounts/AccountInvoices": {{
+			Entity: "account",
+			Action: "read",
+		}},
 		"/litrpc.Accounts/RemoveAccount": {{
 			Entity: "account",
 			Action: "write",

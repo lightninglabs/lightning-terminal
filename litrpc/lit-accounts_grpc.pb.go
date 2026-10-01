@@ -55,6 +55,9 @@ type AccountsClient interface {
 	// litcli: `accounts payments`
 	// AccountPayments returns the detailed payment history for the given account.
 	AccountPayments(ctx context.Context, in *AccountPaymentsRequest, opts ...grpc.CallOption) (*AccountPaymentsResponse, error)
+	// litcli: `accounts invoices`
+	// AccountInvoices returns the detailed invoice history for the given account.
+	AccountInvoices(ctx context.Context, in *AccountInvoicesRequest, opts ...grpc.CallOption) (*AccountInvoicesResponse, error)
 }
 
 type accountsClient struct {
@@ -137,6 +140,15 @@ func (c *accountsClient) AccountPayments(ctx context.Context, in *AccountPayment
 	return out, nil
 }
 
+func (c *accountsClient) AccountInvoices(ctx context.Context, in *AccountInvoicesRequest, opts ...grpc.CallOption) (*AccountInvoicesResponse, error) {
+	out := new(AccountInvoicesResponse)
+	err := c.cc.Invoke(ctx, "/litrpc.Accounts/AccountInvoices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountsServer is the server API for Accounts service.
 // All implementations must embed UnimplementedAccountsServer
 // for forward compatibility
@@ -178,6 +190,9 @@ type AccountsServer interface {
 	// litcli: `accounts payments`
 	// AccountPayments returns the detailed payment history for the given account.
 	AccountPayments(context.Context, *AccountPaymentsRequest) (*AccountPaymentsResponse, error)
+	// litcli: `accounts invoices`
+	// AccountInvoices returns the detailed invoice history for the given account.
+	AccountInvoices(context.Context, *AccountInvoicesRequest) (*AccountInvoicesResponse, error)
 	mustEmbedUnimplementedAccountsServer()
 }
 
@@ -208,6 +223,9 @@ func (UnimplementedAccountsServer) RemoveAccount(context.Context, *RemoveAccount
 }
 func (UnimplementedAccountsServer) AccountPayments(context.Context, *AccountPaymentsRequest) (*AccountPaymentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountPayments not implemented")
+}
+func (UnimplementedAccountsServer) AccountInvoices(context.Context, *AccountInvoicesRequest) (*AccountInvoicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountInvoices not implemented")
 }
 func (UnimplementedAccountsServer) mustEmbedUnimplementedAccountsServer() {}
 
@@ -366,6 +384,24 @@ func _Accounts_AccountPayments_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Accounts_AccountInvoices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountInvoicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountsServer).AccountInvoices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/litrpc.Accounts/AccountInvoices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountsServer).AccountInvoices(ctx, req.(*AccountInvoicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Accounts_ServiceDesc is the grpc.ServiceDesc for Accounts service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -404,6 +440,10 @@ var Accounts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AccountPayments",
 			Handler:    _Accounts_AccountPayments_Handler,
+		},
+		{
+			MethodName: "AccountInvoices",
+			Handler:    _Accounts_AccountInvoices_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

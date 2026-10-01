@@ -501,3 +501,71 @@ export namespace AccountPaymentsResponse {
   }
 }
 
+export class AccountInvoicesRequest extends jspb.Message {
+  hasAccount(): boolean;
+  clearAccount(): void;
+  getAccount(): AccountIdentifier | undefined;
+  setAccount(value?: AccountIdentifier): void;
+
+  getMaxInvoices(): string;
+  setMaxInvoices(value: string): void;
+
+  getIndexOffset(): string;
+  setIndexOffset(value: string): void;
+
+  getCountTotalInvoices(): boolean;
+  setCountTotalInvoices(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountInvoicesRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountInvoicesRequest): AccountInvoicesRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountInvoicesRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountInvoicesRequest;
+  static deserializeBinaryFromReader(message: AccountInvoicesRequest, reader: jspb.BinaryReader): AccountInvoicesRequest;
+}
+
+export namespace AccountInvoicesRequest {
+  export type AsObject = {
+    account?: AccountIdentifier.AsObject,
+    maxInvoices: string,
+    indexOffset: string,
+    countTotalInvoices: boolean,
+  }
+}
+
+export class AccountInvoicesResponse extends jspb.Message {
+  clearInvoicesList(): void;
+  getInvoicesList(): Array<lnd_pb.Invoice>;
+  setInvoicesList(value: Array<lnd_pb.Invoice>): void;
+  addInvoices(value?: lnd_pb.Invoice, index?: number): lnd_pb.Invoice;
+
+  getFirstIndexOffset(): string;
+  setFirstIndexOffset(value: string): void;
+
+  getLastIndexOffset(): string;
+  setLastIndexOffset(value: string): void;
+
+  getTotalNumInvoices(): string;
+  setTotalNumInvoices(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AccountInvoicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AccountInvoicesResponse): AccountInvoicesResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AccountInvoicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AccountInvoicesResponse;
+  static deserializeBinaryFromReader(message: AccountInvoicesResponse, reader: jspb.BinaryReader): AccountInvoicesResponse;
+}
+
+export namespace AccountInvoicesResponse {
+  export type AsObject = {
+    invoicesList: Array<lnd_pb.Invoice.AsObject>,
+    firstIndexOffset: string,
+    lastIndexOffset: string,
+    totalNumInvoices: string,
+  }
+}
+

@@ -107,6 +107,18 @@ FROM  account_invoices
 WHERE account_id = $1
   AND hash = $2;
 
+-- name: AccountInvoicesPaginated :many
+SELECT *
+FROM account_invoices
+WHERE account_id = $1
+ORDER BY hash ASC
+LIMIT $2 OFFSET $3;
+
+-- name: CountAccountInvoices :one
+SELECT COUNT(*)
+FROM account_invoices
+WHERE account_id = $1;
+
 -- name: SetAccountIndex :exec
 INSERT INTO account_indices (name, value)
 VALUES ($1, $2)
