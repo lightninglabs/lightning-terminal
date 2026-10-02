@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -353,6 +355,11 @@ type HarnessNode struct {
 	// processExit is a channel that's closed once it's detected that the
 	// process this instance of HarnessNode is bound to has exited.
 	processExit chan struct{}
+
+	// abortedOnStop is set when Stop gave up waiting and sent SIGABRT to
+	// dump the goroutines. The resulting exit error is expected, so it
+	// is not reported as a fatal process error.
+	abortedOnStop atomic.Bool
 
 	chanWatchRequests chan *chanWatchRequest
 
@@ -724,6 +731,7 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 	// Launch a new goroutine which that bubbles up any potential fatal
 	// process errors to the goroutine running the tests.
 	hn.processExit = make(chan struct{})
+	hn.abortedOnStop.Store(false)
 	hn.wg.Add(1)
 	go func() {
 		defer hn.wg.Done()
@@ -749,7 +757,7 @@ func (hn *HarnessNode) Start(litdBinary string, litdError chan<- error,
 		// shared across the whole harness, it can still fill, so we
 		// keep processExit signaling and logfile finalization ahead of
 		// the send.
-		if err != nil {
+		if err != nil && !hn.abortedOnStop.Load() {
 			litdError <- fmt.Errorf("%v\n%v\n", err, errb.String())
 		}
 	}()
@@ -1475,7 +1483,19 @@ func (hn *HarnessNode) Stop() error {
 	select {
 	case <-hn.processExit:
 	case <-time.After(lntest.DefaultTimeout * 2):
-		return fmt.Errorf("process did not exit")
+		// litd handles SIGQUIT as a shutdown request, so send SIGABRT
+		// instead: the Go runtime then writes every goroutine's stack
+		// to stderr, which goes to the node's log file, and shows
+		// where the shutdown is stuck.
+		hn.abortedOnStop.Store(true)
+		_ = hn.cmd.Process.Signal(syscall.SIGABRT)
+		select {
+		case <-hn.processExit:
+		case <-time.After(lntest.DefaultTimeout):
+		}
+
+		return fmt.Errorf("process did not exit, goroutine dump " +
+			"written to the node's log file")
 	}
 
 	close(hn.quit)
