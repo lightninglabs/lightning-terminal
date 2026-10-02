@@ -1,0 +1,156 @@
+name: Release build
+
+# Builds the release artifacts for a pushed release tag and attaches them
+# to a draft GitHub release. This is modeled on the release workflows of
+# lnd and taproot-assets, adapted for litd's `make docker-release` build
+# system. The release draft still needs to be edited manually (release
+# notes, database migration notes) before being published.
+on:
+  push:
+    tags:
+      - 'v*'
+  # Manual trigger through the UI for testing the workflow without
+  # pushing a real release tag.
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # If you change this value, please change it in the following files as
+  # well (see the comment in main.yml for the full list):
+  # /Dockerfile
+  # /dev.Dockerfile
+  GO_VERSION: 1.26.8
+
+jobs:
+  ########################
+  # Create release
+  ########################
+  main:
+    name: Release build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: cleanup space
+        uses: ./.github/actions/cleanup-space
+
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Validate release tag ${{ env.RELEASE_VERSION }}
+        run: |
+          # Derive the expected tag name from the version constants in
+          # version.go and make sure it matches the tag that was pushed.
+          app_major=$(grep -oP 'appMajor\s+uint\s*=\s*\K\d+' version.go)
+          app_minor=$(grep -oP 'appMinor\s+uint\s*=\s*\K\d+' version.go)
+          app_patch=$(grep -oP 'appPatch\s+uint\s*=\s*\K\d+' version.go)
+          app_pre_release=$(grep -oP 'appPreRelease\s*=\s*"\K[^"]+' version.go)
+
+          expected_tag="v${app_major}.${app_minor}.${app_patch}"
+          if [ -n "$app_pre_release" ]; then
+            expected_tag="${expected_tag}-${app_pre_release}"
+          fi
+          actual_tag=${{ env.RELEASE_VERSION }}
+
+          if [ "$actual_tag" = "$expected_tag" ]; then
+            echo "Git tag release string is as expected."
+          else
+            echo "Error: Versions are not equal. Actual: $actual_tag, Expected: $expected_tag"
+            exit 1
+          fi
+
+      - name: checkout release tag
+        run: git checkout ${{ env.RELEASE_VERSION }}
+
+      - name: build release for all architectures
+        run: make docker-release tag=${{ env.RELEASE_VERSION }}
+
+      - name: Create Release
+        uses: lightninglabs/gh-actions/action-gh-release@2024.07.24.00
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: litd ${{ env.RELEASE_VERSION }}
+          draft: true
+          prerelease: false
+          files: lightning-terminal-${{ env.RELEASE_VERSION }}/*
+          body: |
+            # Database Migrations
+            TODO
+
+            # Verifying the Release
+
+            The release binaries are fully reproducible. Each archive's
+            SHA-256 hash can be verified against the corresponding entry in
+            `manifest-${{ env.RELEASE_VERSION }}.txt`, which is included in
+            the release artifacts:
+
+            ```
+            shasum -a 256 <filename>
+            ```
+
+            ## Verifying the Release Binaries
+
+            Our release binaries are fully reproducible. Third parties are
+            able to verify that the release binaries were produced properly
+            without having to trust the release manager(s).
+
+            The release binaries are compiled with `go${{ env.GO_VERSION }}`,
+            which is required by verifiers to arrive at the same ones. They
+            include the following build tags: `litd`, `autopilotrpc`,
+            `signrpc`, `walletrpc`, `chainrpc`, `invoicesrpc`,
+            `watchtowerrpc`, `neutrinorpc`, `monitoring`, `peersrpc`,
+            `kvdb_postgres`, `kvdb_etcd` and `kvdb_sqlite`. Note that these
+            are already included in the release script, so they do not need
+            to be provided.
+
+            The `make docker-release tag=<tag>` command can be used to
+            rebuild with the same flags used for the release. If one wishes
+            to build for only a single platform, then
+            `make docker-release tag=<tag> sys=<OS-ARCH>` can be used.
+
+            ## Verifying the Docker Images
+
+            To verify the `litd` and `litcli` binaries inside the docker
+            images against the reproducible release binaries, the manifest
+            file can be used: extract the image, compute the SHA-256 hash
+            of the contained binary with `shasum -a 256 <filename>` and
+            compare it with the corresponding entry in
+            `manifest-${{ env.RELEASE_VERSION }}.txt`.
+
+            # Building the Contained Release
+
+            Users are able to rebuild the target release themselves without
+            having to fetch any of the dependencies. In order to do so,
+            assuming that `vendor.tar.gz` and
+            `lightning-terminal-source-${{ env.RELEASE_VERSION }}.tar.gz`
+            are in the current directory, follow these steps:
+
+            ```
+            tar -xvzf lightning-terminal-source-${{ env.RELEASE_VERSION }}.tar.gz
+            mv vendor.tar.gz lightning-terminal-source/
+            cd lightning-terminal-source
+            tar -xvzf vendor.tar.gz
+            go install -v -mod=vendor -ldflags "-X github.com/lightninglabs/lightning-terminal.Commit=${{ env.RELEASE_VERSION }}" ./cmd/litd
+            go install -v -mod=vendor -ldflags "-X github.com/lightninglabs/lightning-terminal.Commit=${{ env.RELEASE_VERSION }}" ./cmd/litcli
+            ```
+
+            The `-mod=vendor` flag tells the `go build` command that it
+            doesn't need to fetch the dependencies, and instead, they're
+            all enclosed in the local vendor directory.
+
+            ⚡️⚡️⚡️ OK, now to the rest of the release notes! ⚡️⚡️⚡️
+
+            # Release Notes
+            TODO
+
+            # Contributors (Alphabetical Order)
+            TODO
