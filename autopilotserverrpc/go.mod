@@ -1,6 +1,6 @@
 module github.com/lightninglabs/lightning-terminal/autopilotserverrpc
 
-go 1.25.13
+go 1.26.8
 
 require (
 	google.golang.org/grpc v1.83.2

@@ -20,7 +20,7 @@ RUN cd /go/src/github.com/lightninglabs/lightning-terminal/app \
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
-FROM golang:1.25.13-alpine3.23@sha256:42fc3368d1c50170a452f2bf4a1dfd292a065870c3f258d799aad4316671cb69 as golangbuilder
+FROM golang:1.26.8-alpine3.23@sha256:a8fa79c5bd40d880b52bd3b6d7669ecdcfd00e85facdd427d279efb5ddd79cb1 as golangbuilder
 
 # Instead of checking out from git again, we just copy the whole working
 # directory of the previous stage that includes the generated static assets.
