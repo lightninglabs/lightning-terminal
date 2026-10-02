@@ -38,6 +38,9 @@
 
 ### LND
 
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1417): Bump
+  `lnd@v0.21.4-beta`.
+
 ### Loop
 
 ### Pool
