@@ -38,9 +38,6 @@
 
 ### LND
 
-* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1417): Bump
-  `lnd@v0.21.4-beta`.
-
 ### Loop
 
 ### Pool
@@ -50,9 +47,6 @@
 ### Taproot Assets
 * [PR](https://github.com/lightninglabs/lightning-terminal/pull/1401): Bump:
   `taproot-assets@v0.8.4`.
-
-* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1417): Bump:
-  `taproot-assets@v0.8.5`.
 
 # Contributors (Alphabetical Order)
 
