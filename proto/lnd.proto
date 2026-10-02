@@ -1318,6 +1318,10 @@ enum CommitmentType {
     /*
     A channel using the legacy commitment format having tweaked to_remote
     keys.
+
+    This value is only reported for channels that already exist. It is
+    rejected as an input when opening a channel, since lnd no longer opens
+    or accepts channels of this type.
     */
     LEGACY = 1;
 
@@ -2230,8 +2234,13 @@ message BatchOpenChannel {
     bytes pending_chan_id = 8;
 
     /*
-    The explicit commitment type to use. Note this field will only be used if
-    the remote peer supports explicit channel negotiation.
+    The commitment type to request. If UNKNOWN, lnd selects a default from
+    both peers' supported features; the selected type is always sent
+    explicitly.
+
+    LEGACY is rejected: lnd no longer opens or accepts channels of that
+    type. Note that an empty channel type on the wire requests it too, so
+    there is no way to ask for it at all.
     */
     CommitmentType commitment_type = 9;
 
@@ -2403,8 +2412,13 @@ message OpenChannelRequest {
     uint32 max_local_csv = 17;
 
     /*
-    The explicit commitment type to use. Note this field will only be used if
-    the remote peer supports explicit channel negotiation.
+    The commitment type to request. If UNKNOWN, lnd selects a default from
+    both peers' supported features; the selected type is always sent
+    explicitly.
+
+    LEGACY is rejected: lnd no longer opens or accepts channels of that
+    type. Note that an empty channel type on the wire requests it too, so
+    there is no way to ask for it at all.
     */
     CommitmentType commitment_type = 18;
 
