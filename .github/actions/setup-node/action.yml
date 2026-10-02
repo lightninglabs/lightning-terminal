@@ -3,7 +3,8 @@ description: "A reusable workflow that's used to set up the Node environment and
 inputs:
   node-version:
     description: "The version of Node to set up"
-    required: true
+    required: false
+    default: "16.x"
 
 runs:
   using: "composite"
@@ -15,10 +16,37 @@ runs:
         git config --global core.eol lf
         git config --global core.autocrlf false
 
-    - name: setup nodejs v${{ inputs.node-version }}
+    - name: resolve node version
+      id: node-version
+      shell: bash
+      # Several jobs pass `${{ matrix.node_version }}` without defining it in
+      # their matrix, which resolves to an empty string and makes
+      # actions/setup-node a no-op (falling back to the runner's system Node).
+      # Fall back to the default when no version is provided.
+      run: |
+        version="${{ inputs.node-version }}"
+        if [ -z "$version" ]; then
+          version="16.x"
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: setup nodejs v${{ steps.node-version.outputs.version }}
       uses: actions/setup-node@v3
       with:
-        node-version: '${{ inputs.node-version }}'
+        node-version: '${{ steps.node-version.outputs.version }}'
+
+    - name: install yarn
+      shell: bash
+      # The self-hosted runners don't ship yarn, and the system Node install
+      # lives in a root-owned prefix, so a global `npm install -g` fails with
+      # EACCES. Install into a home-directory prefix instead and expose it on
+      # PATH for the following steps.
+      run: |
+        if ! command -v yarn >/dev/null 2>&1; then
+          npm config set prefix "$HOME/.npm-global"
+          npm install -g yarn
+          echo "$HOME/.npm-global/bin" >> "$GITHUB_PATH"
+        fi
 
     - name: get yarn cache dir
       id: yarn-cache-dir
@@ -30,8 +58,8 @@ runs:
       id: yarn-cache
       with:
         path: ${{ env.YARN_CACHE_DIR }}
-        key: litd-${{ runner.os }}-yarn-${{ inputs.node-version }}-${{ hashFiles('**/yarn.lock') }}
+        key: litd-${{ runner.os }}-yarn-${{ steps.node-version.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
-          litd-${{ runner.os }}-yarn-${{ inputs.node-version }}-${{ hashFiles('**/yarn.lock') }}
-          litd-${{ runner.os }}-yarn-${{ inputs.node-version }}-
+          litd-${{ runner.os }}-yarn-${{ steps.node-version.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+          litd-${{ runner.os }}-yarn-${{ steps.node-version.outputs.version }}-
           litd-${{ runner.os }}-yarn-
