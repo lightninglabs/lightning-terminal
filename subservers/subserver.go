@@ -35,8 +35,8 @@ type subServerWrapper struct {
 
 	remoteConn *grpc.ClientConn
 
-	// watching is set once watchRemoteConn has started its watcher, so
-	// extra calls do not start a duplicate one.
+	// watching is set while a watchRemoteConn watcher runs, so extra
+	// calls do not start a duplicate one.
 	watching atomic.Bool
 
 	wg   sync.WaitGroup
@@ -165,7 +165,7 @@ func (s *subServerWrapper) connectRemote() error {
 // connection is lost after startup and onRunning when it recovers, so the
 // status server reflects a runtime disconnect instead of keeping the
 // sub-server marked as running. The watcher stops when the sub-server is
-// stopped. Only the first call starts a watcher.
+// stopped. Only one watcher runs at a time.
 func (s *subServerWrapper) watchRemoteConn(onError func(error),
 	onRunning func()) {
 
@@ -177,6 +177,7 @@ func (s *subServerWrapper) watchRemoteConn(onError func(error),
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
+		defer s.watching.Store(false)
 
 		// Cancel the state-change wait when the sub-server stops.
 		ctx, cancel := context.WithCancel(context.Background())
