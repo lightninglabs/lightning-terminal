@@ -82,8 +82,13 @@ func (s *subServerWrapper) stop() error {
 			s.setStarted(false)
 		}()
 
-		// If running in remote mode, close the connection.
-		if s.Remote() && s.remoteConn != nil {
+		// A remote sub-server has no integrated process to stop, even
+		// if its connection never came up.
+		if s.Remote() {
+			if s.remoteConn == nil {
+				return
+			}
+
 			err := s.remoteConn.Close()
 			if err != nil {
 				returnErr = fmt.Errorf("could not close "+
