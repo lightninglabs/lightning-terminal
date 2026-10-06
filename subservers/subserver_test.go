@@ -116,3 +116,72 @@ func TestWatchRemoteConn(t *testing.T) {
 		t.Fatal("expected the recovery to be reported")
 	}
 }
+
+// TestWatchRemoteConnRearm asserts that once a watcher exits, a later call to
+// watchRemoteConn starts a new one, so a sub-server that reconnects is
+// watched again.
+func TestWatchRemoteConnRearm(t *testing.T) {
+	t.Parallel()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	srv := grpc.NewServer()
+	go func() {
+		_ = srv.Serve(lis)
+	}()
+	defer srv.Stop()
+
+	creds := grpc.WithTransportCredentials(insecure.NewCredentials())
+	dial := func() *grpc.ClientConn {
+		conn, err := grpc.NewClient(lis.Addr().String(), creds)
+		require.NoError(t, err)
+
+		return conn
+	}
+
+	firstConn := dial()
+	ss := &subServerWrapper{
+		SubServer:  &nameOnlySubServer{name: "test"},
+		remoteConn: firstConn,
+		quit:       make(chan struct{}),
+	}
+
+	erroredChan := make(chan struct{}, 8)
+	watch := func() {
+		ss.watchRemoteConn(
+			func(error) { erroredChan <- struct{}{} },
+			func() {},
+		)
+	}
+
+	// End the first watcher the same way stop does.
+	watch()
+	close(ss.quit)
+	ss.wg.Wait()
+	require.False(t, ss.watching.Load())
+	require.NoError(t, firstConn.Close())
+
+	// Re-arm the wrapper on a new connection, as a reconnect would.
+	conn := dial()
+	ss.remoteConn = conn
+	ss.quit = make(chan struct{})
+	watch()
+	defer func() {
+		require.NoError(t, ss.stop())
+	}()
+
+	require.Eventually(t, func() bool {
+		conn.Connect()
+		return conn.GetState() == connectivity.Ready
+	}, 10*time.Second, 50*time.Millisecond)
+
+	// The new watcher must report the disconnect.
+	srv.Stop()
+
+	select {
+	case <-erroredChan:
+	case <-time.After(10 * time.Second):
+		t.Fatal("expected the disconnect to be reported")
+	}
+}
