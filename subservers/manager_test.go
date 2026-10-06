@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"gopkg.in/macaroon-bakery.v2/bakery"
 )
 
 // TestRemoteSubServerStatus asserts that the status server follows a remote
@@ -84,6 +85,68 @@ func TestRemoteSubServerStatus(t *testing.T) {
 	defer srv2.Stop()
 
 	require.Eventually(t, running, 30*time.Second, 200*time.Millisecond)
+}
+
+// stopCountSubServer is a stub SubServer that counts the calls to its
+// integrated Stop.
+type stopCountSubServer struct {
+	SubServer
+
+	name   string
+	remote bool
+	stops  int
+}
+
+func (s *stopCountSubServer) Name() string {
+	return s.name
+}
+
+func (s *stopCountSubServer) Remote() bool {
+	return s.remote
+}
+
+func (s *stopCountSubServer) Stop() error {
+	s.stops++
+	return nil
+}
+
+func (s *stopCountSubServer) ServerErrChan() chan error {
+	return nil
+}
+
+func (s *stopCountSubServer) Permissions() map[string][]bakery.Op {
+	return nil
+}
+
+func (s *stopCountSubServer) WhiteListedURLs() map[string]struct{} {
+	return nil
+}
+
+// TestManagerStopMixed asserts that Manager.Stop only calls the integrated
+// Stop of an integrated sub-server that started. A remote sub-server with no
+// connection and an integrated sub-server that never started have no process
+// to stop.
+func TestManagerStopMixed(t *testing.T) {
+	t.Parallel()
+
+	permsMgr, err := perms.NewManager(false)
+	require.NoError(t, err)
+
+	mgr := NewManager(permsMgr, status.NewStatusManager())
+
+	remote := &stopCountSubServer{name: "remote", remote: true}
+	neverStarted := &stopCountSubServer{name: "never-started"}
+	started := &stopCountSubServer{name: "started"}
+	for _, ss := range []SubServer{remote, neverStarted, started} {
+		require.NoError(t, mgr.AddServer(ss, true))
+	}
+	mgr.servers[started.Name()].setStarted(true)
+
+	require.NoError(t, mgr.Stop())
+
+	require.Zero(t, remote.stops)
+	require.Zero(t, neverStarted.stops)
+	require.Equal(t, 1, started.stops)
 }
 
 // genTestCert writes a self-signed certificate pair to a temporary directory
