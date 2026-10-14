@@ -151,6 +151,19 @@ func (s *Manager) ConnectRemoteSubServers() {
 		}
 
 		s.statusServer.SetRunning(ss.Name())
+
+		// Watch the remote connection so a disconnect at runtime is
+		// reflected in the status server, not just a failure during
+		// startup.
+		name := ss.Name()
+		ss.watchRemoteConn(
+			func(err error) {
+				s.statusServer.SetErrored(name, err.Error())
+			},
+			func() {
+				s.statusServer.SetRunning(name)
+			},
+		)
 	}
 }
 
@@ -350,10 +363,8 @@ func (s *Manager) Stop() error {
 	defer s.mu.RUnlock()
 
 	for _, ss := range s.servers {
-		if ss.Remote() {
-			continue
-		}
-
+		// Remote sub-servers are torn down here too, so their
+		// connection and its runtime watcher stop as well.
 		err := ss.stop()
 		if err != nil {
 			log.Errorf("Error stopping %s: %v", ss.Name(), err)
