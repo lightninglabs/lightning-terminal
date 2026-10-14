@@ -416,6 +416,7 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 	// returned, it means that either one of Lit's internal sub-servers
 	// could not start or LND could not start or be connected to.
 	startErr := g.start(ctx)
+	migrationDeclined := errors.Is(startErr, errKVDBToSQLMigrationDeclined)
 	if startErr != nil {
 		g.statusMgr.SetErrored(
 			subservers.LIT, "could not start Lit: %v", startErr,
@@ -430,14 +431,17 @@ func (g *LightningTerminal) Run(ctx context.Context) error {
 		// Note that no sub-servers, including `lnd`, have been
 		// started/connected to when the migration prompt is shown. We
 		// can therefore safely shut Lit down without affecting them.
-		if errors.Is(startErr, errKVDBToSQLMigrationDeclined) {
+		if migrationDeclined {
 			shutdownInterceptor.RequestShutdown()
 		}
-	} else {
-		// All sub-servers have started, so notify systemd (for a unit
-		// using Type=notify) that litd is ready. The notification is
-		// best-effort and already logs on failure, so the result is
-		// intentionally discarded here.
+	}
+
+	// Unless the migration was declined, litd keeps running even after a
+	// start error so the status server can report it. Notify systemd (for
+	// a unit using Type=notify) that litd is ready in both cases, otherwise
+	// the unit stays "activating" until its start timeout kills litd. The
+	// notification is best-effort and already logs on failure.
+	if !migrationDeclined {
 		_, _ = notifySystemdReady()
 	}
 
