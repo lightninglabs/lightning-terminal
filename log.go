@@ -61,40 +61,35 @@ func UseLogger(logger btclog.Logger) {
 	log = logger
 }
 
-// SetupLoggers initializes all package-global logger variables.
-func SetupLoggers(root *build.SubLoggerManager, intercept signal.Interceptor) {
-	genLogger := genSubLogger(root, intercept)
+// SetupLoggers initializes all package-global logger variables. A critical log
+// in one of litd's own subsystems shuts litd down via litdShutdown.
+func SetupLoggers(root *build.SubLoggerManager, intercept signal.Interceptor,
+	litdShutdown *shutdownSource) {
 
-	log = build.NewSubLogger(Subsystem, genLogger)
 	interceptor = intercept
 
-	// Add the lightning-terminal root logger.
-	lnd.AddSubLogger(root, Subsystem, intercept, UseLogger)
-	lnd.AddSubLogger(root, session.Subsystem, intercept, session.UseLogger)
-	lnd.AddSubLogger(root, mailbox.Subsystem, intercept, mailbox.UseLogger)
-	lnd.AddSubLogger(root, gbn.Subsystem, intercept, gbn.UseLogger)
-	lnd.AddSubLogger(root, mid.Subsystem, intercept, mid.UseLogger)
-	lnd.AddSubLogger(
-		root, accounts.Subsystem, intercept, accounts.UseLogger,
-	)
-	lnd.AddSubLogger(
-		root, firewall.Subsystem, intercept, firewall.UseLogger,
-	)
-	lnd.AddSubLogger(
-		root, firewalldb.Subsystem, intercept, firewalldb.UseLogger,
-	)
-	lnd.AddSubLogger(root, rules.Subsystem, intercept, rules.UseLogger)
-	lnd.AddSubLogger(
-		root, autopilotserver.Subsystem, intercept,
-		autopilotserver.UseLogger,
-	)
-	lnd.AddSubLogger(root, status.Subsystem, intercept, status.UseLogger)
-	lnd.AddSubLogger(
-		root, subservers.Subsystem, intercept, subservers.UseLogger,
-	)
-	lnd.AddSubLogger(root, db.Subsystem, intercept, db.UseLogger)
-	lnd.AddSubLogger(root, sqldb.Subsystem, intercept, sqldb.UseLogger)
-	lnd.AddSubLogger(root, migsets.Subsystem, intercept, migsets.UseLogger)
+	genLogger := genSubLogger(root, litdShutdown)
+	addSubLogger := func(subsystem string, useLogger func(btclog.Logger)) {
+		logger := build.NewSubLogger(subsystem, genLogger)
+		lnd.SetSubLogger(root, subsystem, logger, useLogger)
+	}
+
+	// Add the loggers of litd's own subsystems.
+	addSubLogger(Subsystem, UseLogger)
+	addSubLogger(session.Subsystem, session.UseLogger)
+	addSubLogger(mailbox.Subsystem, mailbox.UseLogger)
+	addSubLogger(gbn.Subsystem, gbn.UseLogger)
+	addSubLogger(mid.Subsystem, mid.UseLogger)
+	addSubLogger(accounts.Subsystem, accounts.UseLogger)
+	addSubLogger(firewall.Subsystem, firewall.UseLogger)
+	addSubLogger(firewalldb.Subsystem, firewalldb.UseLogger)
+	addSubLogger(rules.Subsystem, rules.UseLogger)
+	addSubLogger(autopilotserver.Subsystem, autopilotserver.UseLogger)
+	addSubLogger(status.Subsystem, status.UseLogger)
+	addSubLogger(subservers.Subsystem, subservers.UseLogger)
+	addSubLogger(db.Subsystem, db.UseLogger)
+	addSubLogger(sqldb.Subsystem, sqldb.UseLogger)
+	addSubLogger(migsets.Subsystem, migsets.UseLogger)
 
 	// Add daemon loggers to lnd's root logger.
 	faraday.SetupLoggers(root, intercept)
@@ -103,37 +98,29 @@ func SetupLoggers(root *build.SubLoggerManager, intercept signal.Interceptor) {
 	tap.SetupLoggers(root, intercept)
 
 	// Setup the gRPC loggers too.
-	grpclog.SetLoggerV2(NewGrpcLogLogger(root, intercept, GrpcLogSubsystem))
+	grpclog.SetLoggerV2(NewGrpcLogLogger(
+		root, litdShutdown, GrpcLogSubsystem,
+	))
 }
 
-// genSubLogger creates a logger for a subsystem. We provide an instance of
-// a signal.Interceptor to be able to shutdown in the case of a critical error.
+// genSubLogger creates a logger for a subsystem. A critical log requests litd's
+// shutdown, which in turn also stops lnd.
 func genSubLogger(root *build.SubLoggerManager,
-	interceptor signal.Interceptor) func(string) btclog.Logger {
+	litdShutdown *shutdownSource) func(string) btclog.Logger {
 
-	// Create a shutdown function which will request shutdown from our
-	// interceptor if it is listening.
-	shutdown := func() {
-		if !interceptor.Listening() {
-			return
-		}
-
-		interceptor.RequestShutdown()
-	}
-
-	// Return a function which will create a sublogger from our root
-	// logger without shutdown fn.
 	return func(tag string) btclog.Logger {
-		return root.GenSubLogger(tag, shutdown)
+		return root.GenSubLogger(tag, litdShutdown.RequestShutdown)
 	}
 }
 
 // NewGrpcLogLogger creates a new grpclog compatible logger and attaches it as
 // a sub logger to the passed root logger.
 func NewGrpcLogLogger(root *build.SubLoggerManager,
-	intercept signal.Interceptor, subsystem string) *GrpcLogLogger {
+	litdShutdown *shutdownSource, subsystem string) *GrpcLogLogger {
 
-	logger := build.NewSubLogger(subsystem, genSubLogger(root, intercept))
+	logger := build.NewSubLogger(
+		subsystem, genSubLogger(root, litdShutdown),
+	)
 	lnd.SetSubLogger(root, subsystem, logger)
 	return &GrpcLogLogger{
 		Logger: logger,
