@@ -66,6 +66,11 @@ const (
 	// server to connect to.
 	defaultDevNetLoopMode = ModeDisable
 
+	// defaultTestNetPoolMode is the default pool mode for the regtest,
+	// simnet, signet and testnet4 networks, where there is no pool server
+	// to connect to.
+	defaultTestNetPoolMode = ModeDisable
+
 	defaultConfigFilename = "lit.conf"
 
 	defaultLogLevel = "info"
@@ -301,7 +306,7 @@ type Config struct {
 	LoopMode string        `long:"loop-mode" description:"The mode to run loop in, either 'integrated' (default, except on regtest and simnet where the default is 'disable'), 'remote' or 'disable'. 'integrated' means loopd is started alongside the UI and everything is stored in loop's main data directory, configure everything by using the --loop.* flags. 'remote' means the UI connects to an existing loopd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without loop." choice:"integrated" choice:"remote" choice:"disable"`
 	Loop     *loopd.Config `group:"Integrated loop options (use when loop-mode=integrated)" namespace:"loop"`
 
-	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without pool." choice:"integrated" choice:"remote" choice:"disable"`
+	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default, except on regtest, simnet, signet and testnet4 where the default is 'disable'), 'remote' or 'disable'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without pool." choice:"integrated" choice:"remote" choice:"disable"`
 	Pool     *pool.Config `group:"Integrated pool options (use when pool-mode=integrated)" namespace:"pool"`
 
 	TaprootAssetsMode string         `long:"taproot-assets-mode" description:"The mode to run taproot assets in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means tapd is started alongside the UI and everything is stored in tap's main data directory, configure everything by using the --taproot-assets.* flags. 'remote' means the UI connects to an existing tapd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without tapd" choice:"integrated" choice:"remote" choice:"disable"`
@@ -612,7 +617,6 @@ func defaultConfig() *Config {
 		FaradayMode:          defaultFaradayMode,
 		Faraday:              &faradayDefaultConfig,
 		Loop:                 &loopDefaultConfig,
-		PoolMode:             defaultPoolMode,
 		Pool:                 &poolDefaultConfig,
 		TaprootAssetsMode:    defaultTapMode,
 		TaprootAssets:        &tapDefaultConfig,
@@ -984,8 +988,10 @@ func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
 	}
 
 	// Now that the network is known, we can apply the network dependent
-	// default for the loop mode if the user didn't set one explicitly.
+	// defaults for the loop and pool modes if the user didn't set them
+	// explicitly.
 	setDefaultLoopMode(cfg)
+	setDefaultPoolMode(cfg)
 
 	switch cfg.LndMode {
 	// In case we are running lnd in-process, let's make sure its
@@ -1188,6 +1194,25 @@ func setDefaultLoopMode(cfg *Config) {
 
 	default:
 		cfg.LoopMode = defaultLoopMode
+	}
+}
+
+// setDefaultPoolMode sets the pool mode to its network dependent default if it
+// wasn't explicitly set by the user. Pool is disabled by default on regtest,
+// simnet, signet and testnet4, as there is no pool server available on those
+// networks. Note that defaultConfig intentionally leaves PoolMode empty so we
+// can detect here whether the user set it.
+func setDefaultPoolMode(cfg *Config) {
+	if cfg.PoolMode != "" {
+		return
+	}
+
+	switch cfg.Network {
+	case "regtest", "simnet", "signet", "testnet4":
+		cfg.PoolMode = defaultTestNetPoolMode
+
+	default:
+		cfg.PoolMode = defaultPoolMode
 	}
 }
 
