@@ -228,6 +228,7 @@ func (cfg *LitNodeConfig) defaultLitdArgs() *litArgs {
 			"pool.basedir":           cfg.PoolDir,
 			"taproot-assets.tapddir": cfg.TapdDir,
 			"taproot-assets-mode":    "integrated",
+			"loop-mode":              "integrated",
 			"taproot-assets.allow-public-uni-proof-courier": "",
 			"uipassword":         cfg.UIPassword,
 			"enablerest":         "",

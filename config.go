@@ -61,6 +61,11 @@ const (
 	defaultPoolMode    = ModeIntegrated
 	defaultTapMode     = ModeIntegrated
 
+	// defaultDevNetLoopMode is the default loop mode for the local
+	// development networks (regtest and simnet), where there is no loop
+	// server to connect to.
+	defaultDevNetLoopMode = ModeDisable
+
 	defaultConfigFilename = "lit.conf"
 
 	defaultLogLevel = "info"
@@ -293,7 +298,7 @@ type Config struct {
 	FaradayMode string          `long:"faraday-mode" description:"The mode to run faraday in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means faraday is started alongside the UI and everything is stored in faraday's main data directory, configure everything by using the --faraday.* flags. 'remote' means the UI connects to an existing faraday node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without faraday." choice:"integrated" choice:"remote" choice:"disable"`
 	Faraday     *faraday.Config `group:"Integrated faraday options (use when faraday-mode=integrated)" namespace:"faraday"`
 
-	LoopMode string        `long:"loop-mode" description:"The mode to run loop in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means loopd is started alongside the UI and everything is stored in loop's main data directory, configure everything by using the --loop.* flags. 'remote' means the UI connects to an existing loopd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without loop." choice:"integrated" choice:"remote" choice:"disable"`
+	LoopMode string        `long:"loop-mode" description:"The mode to run loop in, either 'integrated' (default, except on regtest and simnet where the default is 'disable'), 'remote' or 'disable'. 'integrated' means loopd is started alongside the UI and everything is stored in loop's main data directory, configure everything by using the --loop.* flags. 'remote' means the UI connects to an existing loopd node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without loop." choice:"integrated" choice:"remote" choice:"disable"`
 	Loop     *loopd.Config `group:"Integrated loop options (use when loop-mode=integrated)" namespace:"loop"`
 
 	PoolMode string       `long:"pool-mode" description:"The mode to run pool in, either 'integrated' (default), 'remote' or 'disable'. 'integrated' means poold is started alongside the UI and everything is stored in pool's main data directory, configure everything by using the --pool.* flags. 'remote' means the UI connects to an existing poold node and acts as a proxy for gRPC calls to it. 'disable' means that LiT is started without pool." choice:"integrated" choice:"remote" choice:"disable"`
@@ -606,7 +611,6 @@ func defaultConfig() *Config {
 		ConfigFile:           defaultConfigFile,
 		FaradayMode:          defaultFaradayMode,
 		Faraday:              &faradayDefaultConfig,
-		LoopMode:             defaultLoopMode,
 		Loop:                 &loopDefaultConfig,
 		PoolMode:             defaultPoolMode,
 		Pool:                 &poolDefaultConfig,
@@ -979,6 +983,10 @@ func loadConfigFile(preCfg *Config, interceptor signal.Interceptor) (*Config,
 		return nil, err
 	}
 
+	// Now that the network is known, we can apply the network dependent
+	// default for the loop mode if the user didn't set one explicitly.
+	setDefaultLoopMode(cfg)
+
 	switch cfg.LndMode {
 	// In case we are running lnd in-process, let's make sure its
 	// configuration is fully valid. This also sets up the main logger that
@@ -1162,6 +1170,25 @@ func setNetwork(cfg *Config) error {
 	cfg.TaprootAssets.ChainConf.Network = cfg.Network
 
 	return nil
+}
+
+// setDefaultLoopMode sets the loop mode to its network dependent default if it
+// wasn't explicitly set by the user. Loop is disabled by default on regtest and
+// simnet, as there is no loop server available on those networks. Note that
+// defaultConfig intentionally leaves LoopMode empty so we can detect here
+// whether the user set it.
+func setDefaultLoopMode(cfg *Config) {
+	if cfg.LoopMode != "" {
+		return
+	}
+
+	switch cfg.Network {
+	case "regtest", "simnet":
+		cfg.LoopMode = defaultDevNetLoopMode
+
+	default:
+		cfg.LoopMode = defaultLoopMode
+	}
 }
 
 // readUIPassword reads the password for the UI either from the command line
