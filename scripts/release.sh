@@ -23,8 +23,10 @@ BUILD_DATE_STAMP="202001010000.00"
 
 # reproducible_tar_gzip creates a reproducible tar.gz file of a directory. This
 # includes setting all file timestamps and ownership settings uniformly.
+# Passing "keep" as the second argument preserves the source directory.
 function reproducible_tar_gzip() {
   local dir=$1
+  local keep=${2:-}
   local tar_cmd=tar
 
   # MacOS has a version of BSD tar which doesn't support setting the --mtime
@@ -49,7 +51,9 @@ function reproducible_tar_gzip() {
     "--mtime=${BUILD_DATE}" --no-recursion --null --mode=u+rw,go+r-w,a+X \
     --owner=0 --group=0 --numeric-owner -c -T - | gzip -9n > "${dir}.tar.gz"
 
-  rm -r "${dir}"
+  if [ "$keep" != "keep" ]; then
+    rm -r "${dir}"
+  fi
 }
 
 # reproducible_zip creates a reproducible zip file of a directory. This
@@ -101,8 +105,12 @@ required Go version ($goversion)."
   fi
 
   green " - Packaging vendor"
-  go mod vendor
-  reproducible_tar_gzip vendor
+  # Use a checked-in vendor tree when present so private release builds don't
+  # require credentials for another private repository.
+  if [ ! -f vendor/modules.txt ]; then
+    go mod vendor
+  fi
+  reproducible_tar_gzip vendor keep
 
   maindir=$PACKAGE-$tag
   mkdir -p $maindir
