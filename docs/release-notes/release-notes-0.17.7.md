@@ -26,6 +26,12 @@
 
 ### Technical and Architectural Updates
 
+* [Add a release build workflow on tag
+  push](https://github.com/lightninglabs/lightning-terminal/pull/1418):
+  Pushing a release tag builds the release archives in CI and attaches
+  them to a draft GitHub release. The release manager signs and timestamps
+  the manifest before publishing the draft.
+
 ## RPC Updates
 
 ## Integrated Binary Updates
