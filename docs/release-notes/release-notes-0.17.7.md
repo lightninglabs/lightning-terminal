@@ -47,9 +47,10 @@
 
 ### Taproot Assets
 
-* Bump `taproot-assets@v0.8.6`, which fixes canceled asset invoice shards,
-  invoice rate overcredit, standalone sale no-op HTLCs, and invalid address
-  or proof keys. The module is pinned to the exact v0.8.6 tag.
+* [Bump `taproot-assets@v0.8.6`](https://github.com/lightninglabs/lightning-terminal/pull/1432),
+  which fixes canceled asset invoice shards, invoice rate overcredit,
+  standalone sale no-op HTLCs, and invalid address or proof keys. The module
+  is pinned to the exact v0.8.6 tag.
 
 # Contributors (Alphabetical Order)
 
