@@ -4,6 +4,11 @@ include make/compile_flags.mk
 VERSION_TAG = $(shell git describe --abbrev=40 --broken --tags --always --match 'v*')
 VERSION_CHECK = @$(call print, "Building master with date version tag")
 
+ifneq ($(tag),)
+VERSION_TAG = $(tag)
+COMMIT = $(tag)
+endif
+
 DOCKER_RELEASE_HELPER = docker run \
   --rm \
   --user $(shell id -u):$(shell id -g) \
