@@ -1167,8 +1167,8 @@ github.com/lightninglabs/pool/poolrpc v1.0.1 h1:XbNx28TYwEj/PVsnnF9TnveVCMCYfS1v
 github.com/lightninglabs/pool/poolrpc v1.0.1/go.mod h1:836icifg/SBnZbiae0v3jeRRzCrT6LWo32SqCS/JiGk=
 github.com/lightninglabs/protobuf-go-hex-display v1.36.11-hex-display h1:fjePiMfYbg3KodAiSXwkpGZpYdPeNd9VnggJWiY6AaY=
 github.com/lightninglabs/protobuf-go-hex-display v1.36.11-hex-display/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
-github.com/lightninglabs/taproot-assets v0.8.5 h1:N2O1FeJrgSQOLAeKVtHqc2pr5VhuMJTj5pSx9jLNsKY=
-github.com/lightninglabs/taproot-assets v0.8.5/go.mod h1:kiHGnoY4Hl3KS5ld5AYU6ye1PAYi6Yoa/gxGYvae+fM=
+github.com/lightninglabs/taproot-assets v0.8.6 h1:jGqRBjjdHMMC0FjNUAXwG5FCQKdYbYWuWm6Nyk0ROAE=
+github.com/lightninglabs/taproot-assets v0.8.6/go.mod h1:pVEEuvH5TCU2gdXHwq36s6k9UZld6E4y34SHEQ+ggoY=
 github.com/lightninglabs/taproot-assets/taprpc v1.3.3 h1:KwscIMQ7Nyy8SleDiUUTWPCgixpgrN9nunM+QwM/KJQ=
 github.com/lightninglabs/taproot-assets/taprpc v1.3.3/go.mod h1:0dBS6jLkddm8EvpJSpJjPUMWr294/YRoM/IAzdfo3pw=
 github.com/lightningnetwork/lightning-onion v1.3.0 h1:FqILgHjD6euc/Muo1VOzZ4+XDPuFnw6EYROBq0rR/5c=
@@ -1197,8 +1197,6 @@ github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0 h1:c0tt+rlsXCPmPlw641ruOe+EmeyFP
 github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0/go.mod h1:TyfjJz1iAKJA3uw3Tk7Mto0FJZY/MR5mAUc5qI80zB4=
 github.com/lightningnetwork/lnd/ticker v1.1.1 h1:J/b6N2hibFtC7JLV77ULQp++QLtCwT6ijJlbdiZFbSM=
 github.com/lightningnetwork/lnd/ticker v1.1.1/go.mod h1:waPTRAAcwtu7Ji3+3k+u/xH5GHovTsCoSVpho0KDvdA=
-github.com/lightningnetwork/lnd/tlv v1.3.2 h1:MO4FCk7F4k5xPMqVZF6Nb/kOpxlwPrUQpYjmyKny5s0=
-github.com/lightningnetwork/lnd/tlv v1.3.2/go.mod h1:pJuiBj1ecr1WWLOtcZ+2+hu9Ey25aJWFIsjmAoPPnmc=
 github.com/lightningnetwork/lnd/tor v1.1.7 h1:BfY1KQGz3LVaeaAGI4XYGYCwDQR1ADFD1P/uXsS2dQc=
 github.com/lightningnetwork/lnd/tor v1.1.7/go.mod h1:DANQ6QCQBiR+CqrM+mKudgkMy6CR/RS4ALDbjb2W4FU=
 github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796 h1:sjOGyegMIhvgfq5oaue6Td+hxZuf3tDC8lAPrFldqFw=

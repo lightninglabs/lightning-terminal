@@ -30,7 +30,7 @@ require (
 	github.com/lightninglabs/pool v0.7.1-beta
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
-	github.com/lightninglabs/taproot-assets v0.8.5
+	github.com/lightninglabs/taproot-assets v0.8.6
 	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
 	github.com/lightningnetwork/lnd v0.21.4-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
@@ -263,4 +263,7 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
 
+tool github.com/lightninglabs/taproot-assets/cmd/tapcli
+
+// Use the locally patched TLV module until the upstream fix is released.
 replace github.com/lightningnetwork/lnd/tlv => ./third_party/lnd/tlv

@@ -31,6 +31,7 @@
   Pushing a release tag builds the release archives in CI and attaches
   them to a draft GitHub release. The release manager signs and timestamps
   the manifest before publishing the draft.
+* Vendor the Go dependency graph for contained, reproducible builds.
 
 ## RPC Updates
 
@@ -46,6 +47,11 @@
 
 ### Taproot Assets
 
+* Bump `taproot-assets@v0.8.6`, which fixes canceled asset invoice shards,
+  invoice rate overcredit, standalone sale no-op HTLCs, and invalid address
+  or proof keys. The module is pinned to the exact v0.8.6 tag.
+
 # Contributors (Alphabetical Order)
 
-Leonhard Weese
+* Leonhard Weese
+* Olaoluwa Osuntokun
