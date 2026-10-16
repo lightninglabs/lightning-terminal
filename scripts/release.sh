@@ -105,8 +105,7 @@ required Go version ($goversion)."
   fi
 
   green " - Packaging vendor"
-  # Use a checked-in vendor tree when present so private release builds don't
-  # require credentials for another private repository.
+  # Reuse a checked-in vendor tree when present.
   if [ ! -f vendor/modules.txt ]; then
     go mod vendor
   fi
