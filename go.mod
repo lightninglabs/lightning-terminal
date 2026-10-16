@@ -262,3 +262,5 @@ replace github.com/golang-migrate/migrate/v4 => github.com/lightninglabs/migrate
 
 // The upstream nhooyr.io/websocket repository has been moved to github.com/coder/websocket.
 replace nhooyr.io/websocket => github.com/coder/websocket v1.8.7
+
+replace github.com/lightningnetwork/lnd/tlv => ./third_party/lnd/tlv

@@ -1,0 +1,1 @@
+Source: github.com/lightningnetwork/lnd/tlv v1.3.2 (upstream source hash 92a5d35cff49ddd8ad289afa29bf21de9ed3a0d8). Security fix and regression tests backported from lightninglabs/lnd commit 0ef15c2a1a25436b75239580fab4d0683b74f0e0 (PR #119).
