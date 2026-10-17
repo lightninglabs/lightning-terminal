@@ -18,6 +18,14 @@
 
 ### Functional Changes/Additions
 
+* [Add accounts invoices
+  subcommand](https://github.com/lightninglabs/lightning-terminal/pull/1393):
+  Addresses
+  [#936](https://github.com/lightninglabs/lightning-terminal/issues/936).
+  Added the `litcli accounts invoices` subcommand and corresponding gRPC
+  endpoint `AccountInvoices` to retrieve the invoice history of an
+  account, supporting pagination and settlement status.
+
 ### Technical and Architectural Updates
 
 ## RPC Updates
@@ -42,4 +50,5 @@
 
 # Contributors (Alphabetical Order)
 
+* Cyberguru1
 * ViktorT-11

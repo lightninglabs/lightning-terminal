@@ -500,6 +500,57 @@ func (s *BoltStore) CountAccountPayments(ctx context.Context,
 	return uint64(len(account.Payments)), nil
 }
 
+// ListAccountInvoices returns a paginated list of invoice payment hashes
+// associated with the given account, sorted in ascending lexicographical
+// order of their payment hash.
+func (s *BoltStore) ListAccountInvoices(ctx context.Context, id AccountID,
+	offset, limit int32) ([]lntypes.Hash, error) {
+
+	account, err := s.Account(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchedInvoices []lntypes.Hash
+	for hash := range account.Invoices {
+		matchedInvoices = append(matchedInvoices, hash)
+	}
+
+	// Sort target hashes lexicographically to ensure pagination is
+	// deterministic across all store backends.
+	sort.Slice(matchedInvoices, func(i, j int) bool {
+		hashI := matchedInvoices[i][:]
+		hashJ := matchedInvoices[j][:]
+		return bytes.Compare(hashI, hashJ) < 0
+	})
+
+	// Apply pagination limits and offsets.
+	total := int32(len(matchedInvoices))
+	if offset >= total {
+		return nil, nil
+	}
+
+	end := offset + limit
+	if limit < 0 || end > total {
+		end = total
+	}
+
+	return matchedInvoices[offset:end], nil
+}
+
+// CountAccountInvoices returns the total number of invoices associated with
+// the given account.
+func (s *BoltStore) CountAccountInvoices(ctx context.Context,
+	id AccountID) (uint64, error) {
+
+	account, err := s.Account(ctx, id)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(len(account.Invoices)), nil
+}
+
 func (s *BoltStore) updateAccount(id AccountID,
 	updateFn func(*OffChainBalanceAccount) error) error {
 

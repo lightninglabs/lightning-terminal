@@ -308,6 +308,16 @@ type Store interface {
 	// with the given account.
 	CountAccountPayments(ctx context.Context, id AccountID) (uint64, error)
 
+	// ListAccountInvoices returns a paginated list of invoice payment
+	// hashes associated with the given account, sorted in ascending
+	// lexicographical order of their payment hash.
+	ListAccountInvoices(ctx context.Context, id AccountID, offset,
+		limit int32) ([]lntypes.Hash, error)
+
+	// CountAccountInvoices returns the total number of invoices associated
+	// with the given account.
+	CountAccountInvoices(ctx context.Context, id AccountID) (uint64, error)
+
 	// RemoveAccount finds an account by its ID and removes it from the¨
 	// store.
 	RemoveAccount(ctx context.Context, id AccountID) error

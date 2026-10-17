@@ -980,3 +980,71 @@ func TestListAccountPayments(t *testing.T) {
 	require.Len(t, payments, 1)
 	require.Equal(t, hash2, payments[0].Hash)
 }
+
+// TestListAccountInvoices tests listing and counting invoice entries associated
+// with a given account.
+func TestListAccountInvoices(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	store := NewTestDB(t, clock.NewTestClock(time.Now()))
+
+	// Listing invoices for non-existent account should fail.
+	_, err := store.ListAccountInvoices(
+		ctx, AccountID{}, 0, 0,
+	)
+	require.ErrorIs(t, err, ErrAccNotFound)
+
+	acct, err := store.NewAccount(
+		ctx, 10000, time.Time{}, "invoice-list",
+	)
+	require.NoError(t, err)
+
+	// Initially, there should be no invoices.
+	invoices, err := store.ListAccountInvoices(
+		ctx, acct.ID, 0, 0,
+	)
+	require.NoError(t, err)
+	require.Empty(t, invoices)
+
+	count, err := store.CountAccountInvoices(ctx, acct.ID)
+	require.NoError(t, err)
+	require.Zero(t, count)
+
+	// Add 3 invoices.
+	hash1 := lntypes.Hash{1}
+	hash2 := lntypes.Hash{2}
+	hash3 := lntypes.Hash{3}
+
+	err = store.AddAccountInvoice(ctx, acct.ID, hash1)
+	require.NoError(t, err)
+
+	err = store.AddAccountInvoice(ctx, acct.ID, hash2)
+	require.NoError(t, err)
+
+	err = store.AddAccountInvoice(ctx, acct.ID, hash3)
+	require.NoError(t, err)
+
+	// Test counting all invoices.
+	count, err = store.CountAccountInvoices(ctx, acct.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, 3, count)
+
+	// List all invoices in default order (ascending by hash).
+	invoices, err = store.ListAccountInvoices(
+		ctx, acct.ID, 0, 3,
+	)
+	require.NoError(t, err)
+	require.Len(t, invoices, 3)
+	require.Equal(t, hash1, invoices[0])
+	require.Equal(t, hash2, invoices[1])
+	require.Equal(t, hash3, invoices[2])
+
+	// Test offset and limit.
+	invoices, err = store.ListAccountInvoices(
+		ctx, acct.ID, 1, 1,
+	)
+	require.NoError(t, err)
+	require.Len(t, invoices, 1)
+	require.Equal(t, hash2, invoices[0])
+}
