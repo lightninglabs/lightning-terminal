@@ -3,12 +3,15 @@ module github.com/lightninglabs/lightning-terminal
 go 1.26.8
 
 require (
-	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
-	github.com/btcsuite/btcd/btcec/v2 v2.3.6
-	github.com/btcsuite/btcd/btcutil v1.1.6
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
+	github.com/btcsuite/btcd/address/v2 v2.0.0
+	github.com/btcsuite/btcd/btcec/v2 v2.5.0
+	github.com/btcsuite/btcd/btcutil/v2 v2.0.0
+	github.com/btcsuite/btcd/chaincfg/v2 v2.0.0
+	github.com/btcsuite/btcd/chainhash/v2 v2.0.0
+	github.com/btcsuite/btcd/txscript/v2 v2.0.0
+	github.com/btcsuite/btcd/wire/v2 v2.0.0
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b
-	github.com/btcsuite/btcwallet/walletdb v1.5.1
+	github.com/btcsuite/btcwallet/walletdb v1.6.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-errors/errors v1.0.1
 	github.com/golang-migrate/migrate/v4 v4.19.0
@@ -23,7 +26,7 @@ require (
 	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
-	github.com/lightninglabs/lndclient v0.21.0-2
+	github.com/lightninglabs/lndclient v0.21.0-3
 	github.com/lightninglabs/loop v0.35.0-beta
 	github.com/lightninglabs/loop/looprpc v1.0.16
 	github.com/lightninglabs/loop/swapserverrpc v1.0.22
@@ -39,8 +42,8 @@ require (
 	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
 	github.com/lightningnetwork/lnd/kvdb v1.5.1
 	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0
-	github.com/lightningnetwork/lnd/tlv v1.3.2
-	github.com/lightningnetwork/lnd/tor v1.1.7
+	github.com/lightningnetwork/lnd/tlv v1.4.0
+	github.com/lightningnetwork/lnd/tor v1.2.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
 	github.com/ory/dockertest/v3 v3.10.0
@@ -60,7 +63,14 @@ require (
 	pgregory.net/rapid v1.2.0
 )
 
-require github.com/cenkalti/backoff/v5 v5.0.3 // indirect
+require (
+	github.com/btcsuite/btcd v0.26.0 // indirect
+	github.com/btcsuite/btcd/psbt/v2 v2.0.0 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
+	github.com/kcalvinalvin/anet v0.0.0-20251112173137-d8ddc1f6dbee // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
+)
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
@@ -74,14 +84,13 @@ require (
 	github.com/aead/siphash v1.0.1 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
 	github.com/btcsuite/btcd/v2transport v1.0.1 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
-	github.com/btcsuite/btcwallet v0.16.20-0.20260915140118-f2c79d772865 // indirect
-	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
-	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
-	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
-	github.com/btcsuite/btcwallet/wtxmgr v1.5.7-0.20260915140118-f2c79d772865 // indirect
+	github.com/btcsuite/btcwallet v0.18.0 // indirect
+	github.com/btcsuite/btcwallet/wallet/txauthor v1.4.0 // indirect
+	github.com/btcsuite/btcwallet/wallet/txrules v1.3.0 // indirect
+	github.com/btcsuite/btcwallet/wallet/txsizes v1.3.0 // indirect
+	github.com/btcsuite/btcwallet/wtxmgr v1.6.0 // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/btcsuite/winsvc v1.0.0 // indirect
@@ -98,14 +107,14 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
-	github.com/decred/dcrd/lru v1.1.2 // indirect
+	github.com/decred/dcrd/lru v1.1.3 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v29.4.1+incompatible // indirect
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/fergusstrange/embedded-postgres v1.25.0 // indirect
 	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
@@ -115,7 +124,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -132,10 +141,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgtype v1.14.4 // indirect
-	github.com/jackc/pgx/v4 v4.18.3 // indirect
 	github.com/jackc/pgx/v5 v5.11.0 // indirect
-	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jackpal/gateway v1.0.5 // indirect
 	github.com/jackpal/go-nat-pmp v0.0.0-20170405195558-28a68d0c24ad // indirect
@@ -144,17 +150,17 @@ require (
 	github.com/jrick/logrotate v1.1.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
-	github.com/lightninglabs/aperture v0.4.0 // indirect
+	github.com/lightninglabs/aperture v0.5.1-0.20260706191149-3c889b604a94 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20260727084653-785ec57e5d1d // indirect
 	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
 	github.com/lightninglabs/lightning-terminal/perms v1.0.1
-	github.com/lightninglabs/neutrino v0.17.1 // indirect
-	github.com/lightninglabs/neutrino/cache v1.1.3 // indirect
-	github.com/lightningnetwork/lightning-onion v1.3.0 // indirect
+	github.com/lightninglabs/neutrino v0.18.0 // indirect
+	github.com/lightninglabs/neutrino/cache v1.1.4 // indirect
+	github.com/lightningnetwork/lightning-onion v1.4.0 // indirect
 	github.com/lightningnetwork/lnd/actor v0.0.6 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
 	github.com/lightningnetwork/lnd/queue v1.2.0 // indirect
@@ -163,7 +169,6 @@ require (
 	github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mholt/acmez v1.0.4 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -177,10 +182,10 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runc v1.3.6 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
-	github.com/prometheus/client_model v0.4.0 // indirect
-	github.com/prometheus/common v0.37.0 // indirect
-	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/prometheus/client_golang v1.23.2 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
+	github.com/prometheus/common v0.66.1 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
@@ -267,3 +272,23 @@ tool github.com/lightninglabs/taproot-assets/cmd/tapcli
 
 // Use the locally patched TLV module until the upstream fix is released.
 replace github.com/lightningnetwork/lnd/tlv => ./third_party/lnd/tlv
+
+// Use the pgx v5 migration until lnd publishes a matching sqldb release.
+replace github.com/lightningnetwork/lnd/sqldb v1.0.13 => github.com/lightningnetwork/lnd/sqldb v1.0.13-0.20260514041430-e9b422f78581
+
+// Keep the combined daemon on the btcd v2 dependency line until the
+// companion migrations land: loop#1199, pool#524, faraday#255, and
+// taproot-assets#2366.
+replace github.com/lightninglabs/loop => github.com/hieblmi/loop v0.0.0-20261021103203-0bbf6562d1b3
+
+replace github.com/lightninglabs/loop/looprpc => github.com/hieblmi/loop/looprpc v0.0.0-20261021103203-0bbf6562d1b3
+
+replace github.com/lightninglabs/loop/swapserverrpc => github.com/hieblmi/loop/swapserverrpc v0.0.0-20261021103203-0bbf6562d1b3
+
+replace github.com/lightninglabs/pool => github.com/hieblmi/pool v0.0.0-20261021103117-b1f41ffacb23
+
+replace github.com/lightninglabs/faraday => github.com/hieblmi/faraday v0.2.19-alpha.0.20261021101401-1a328a0ef4ee
+
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.21.0-beta.rc2.0.20260903094101-d66a7c137d32
+
+replace github.com/lightninglabs/taproot-assets => github.com/hieblmi/taro v0.1.0-alpha.0.20261021103040-eb0af6086f65
