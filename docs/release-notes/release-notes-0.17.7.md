@@ -34,6 +34,9 @@
   configure another Loop mode.
 
 ### Technical and Architectural Updates
+* [Update the Go toolchain and upstream dependencies](https://github.com/lightninglabs/lightning-terminal/pull/1440):
+  This updates the build toolchain to Go 1.27.3 and aligns LND and Loop
+  dependencies.
 
 * [Add a release build workflow on tag
   push](https://github.com/lightninglabs/lightning-terminal/pull/1418):
