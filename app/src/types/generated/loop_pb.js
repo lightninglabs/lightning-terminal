@@ -83,6 +83,7 @@ goog.exportSymbol('proto.looprpc.LoopStats', null, global);
 goog.exportSymbol('proto.looprpc.MonitorRequest', null, global);
 goog.exportSymbol('proto.looprpc.NewStaticAddressRequest', null, global);
 goog.exportSymbol('proto.looprpc.NewStaticAddressResponse', null, global);
+goog.exportSymbol('proto.looprpc.OnchainCostStatus', null, global);
 goog.exportSymbol('proto.looprpc.OutQuoteResponse', null, global);
 goog.exportSymbol('proto.looprpc.OutTermsResponse', null, global);
 goog.exportSymbol('proto.looprpc.ProbeRequest', null, global);
@@ -17991,7 +17992,9 @@ proto.looprpc.Deposit.toObject = function(includeInstance, msg) {
     value: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     confirmationHeight: jspb.Message.getFieldWithDefault(msg, 5, "0"),
     blocksUntilExpiry: jspb.Message.getFieldWithDefault(msg, 6, "0"),
-    swapHash: msg.getSwapHash_asB64()
+    swapHash: msg.getSwapHash_asB64(),
+    costOnchain: jspb.Message.getFieldWithDefault(msg, 8, "0"),
+    costOnchainStatus: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -18055,6 +18058,14 @@ proto.looprpc.Deposit.deserializeBinaryFromReader = function(msg, reader) {
     case 7:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setSwapHash(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readInt64String());
+      msg.setCostOnchain(value);
+      break;
+    case 9:
+      var value = /** @type {!proto.looprpc.OnchainCostStatus} */ (reader.readEnum());
+      msg.setCostOnchainStatus(value);
       break;
     default:
       reader.skipField();
@@ -18131,6 +18142,20 @@ proto.looprpc.Deposit.serializeBinaryToWriter = function(message, writer) {
   if (f.length > 0) {
     writer.writeBytes(
       7,
+      f
+    );
+  }
+  f = message.getCostOnchain();
+  if (parseInt(f, 10) !== 0) {
+    writer.writeInt64String(
+      8,
+      f
+    );
+  }
+  f = message.getCostOnchainStatus();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      9,
       f
     );
   }
@@ -18308,6 +18333,42 @@ proto.looprpc.Deposit.prototype.getSwapHash_asU8 = function() {
  */
 proto.looprpc.Deposit.prototype.setSwapHash = function(value) {
   return jspb.Message.setProto3BytesField(this, 7, value);
+};
+
+
+/**
+ * optional int64 cost_onchain = 8;
+ * @return {string}
+ */
+proto.looprpc.Deposit.prototype.getCostOnchain = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, "0"));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.looprpc.Deposit} returns this
+ */
+proto.looprpc.Deposit.prototype.setCostOnchain = function(value) {
+  return jspb.Message.setProto3StringIntField(this, 8, value);
+};
+
+
+/**
+ * optional OnchainCostStatus cost_onchain_status = 9;
+ * @return {!proto.looprpc.OnchainCostStatus}
+ */
+proto.looprpc.Deposit.prototype.getCostOnchainStatus = function() {
+  return /** @type {!proto.looprpc.OnchainCostStatus} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/**
+ * @param {!proto.looprpc.OnchainCostStatus} value
+ * @return {!proto.looprpc.Deposit} returns this
+ */
+proto.looprpc.Deposit.prototype.setCostOnchainStatus = function(value) {
+  return jspb.Message.setProto3EnumField(this, 9, value);
 };
 
 
@@ -18671,7 +18732,8 @@ proto.looprpc.StaticAddressLoopInSwap.toObject = function(includeInstance, msg) 
     lastUpdateTime: jspb.Message.getFieldWithDefault(msg, 8, "0"),
     costServer: jspb.Message.getFieldWithDefault(msg, 9, "0"),
     costOnchain: jspb.Message.getFieldWithDefault(msg, 10, "0"),
-    costOffchain: jspb.Message.getFieldWithDefault(msg, 11, "0")
+    costOffchain: jspb.Message.getFieldWithDefault(msg, 11, "0"),
+    costOnchainStatus: jspb.Message.getFieldWithDefault(msg, 12, 0)
   };
 
   if (includeInstance) {
@@ -18752,6 +18814,10 @@ proto.looprpc.StaticAddressLoopInSwap.deserializeBinaryFromReader = function(msg
     case 11:
       var value = /** @type {string} */ (reader.readInt64String());
       msg.setCostOffchain(value);
+      break;
+    case 12:
+      var value = /** @type {!proto.looprpc.OnchainCostStatus} */ (reader.readEnum());
+      msg.setCostOnchainStatus(value);
       break;
     default:
       reader.skipField();
@@ -18857,6 +18923,13 @@ proto.looprpc.StaticAddressLoopInSwap.serializeBinaryToWriter = function(message
   if (parseInt(f, 10) !== 0) {
     writer.writeInt64String(
       11,
+      f
+    );
+  }
+  f = message.getCostOnchainStatus();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      12,
       f
     );
   }
@@ -19121,6 +19194,24 @@ proto.looprpc.StaticAddressLoopInSwap.prototype.getCostOffchain = function() {
  */
 proto.looprpc.StaticAddressLoopInSwap.prototype.setCostOffchain = function(value) {
   return jspb.Message.setProto3StringIntField(this, 11, value);
+};
+
+
+/**
+ * optional OnchainCostStatus cost_onchain_status = 12;
+ * @return {!proto.looprpc.OnchainCostStatus}
+ */
+proto.looprpc.StaticAddressLoopInSwap.prototype.getCostOnchainStatus = function() {
+  return /** @type {!proto.looprpc.OnchainCostStatus} */ (jspb.Message.getFieldWithDefault(this, 12, 0));
+};
+
+
+/**
+ * @param {!proto.looprpc.OnchainCostStatus} value
+ * @return {!proto.looprpc.StaticAddressLoopInSwap} returns this
+ */
+proto.looprpc.StaticAddressLoopInSwap.prototype.setCostOnchainStatus = function(value) {
+  return jspb.Message.setProto3EnumField(this, 12, value);
 };
 
 
@@ -21771,6 +21862,16 @@ proto.looprpc.DepositState = {
   EXPIRED: 10,
   OPENING_CHANNEL: 11,
   CHANNEL_PUBLISHED: 12
+};
+
+/**
+ * @enum {number}
+ */
+proto.looprpc.OnchainCostStatus = {
+  ONCHAIN_COST_STATUS_UNKNOWN: 0,
+  ONCHAIN_COST_STATUS_PARTIAL: 1,
+  ONCHAIN_COST_STATUS_COMPLETE: 2,
+  ONCHAIN_COST_STATUS_PENDING: 3
 };
 
 /**

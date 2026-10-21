@@ -37,6 +37,8 @@
 * [Update the Go toolchain and upstream dependencies](https://github.com/lightninglabs/lightning-terminal/pull/1440):
   This updates the build toolchain to Go 1.27.3 and aligns LND and Loop
   dependencies.
+  Loop's generated clients now include on-chain cost and status fields for
+  deposits and static-address loop-ins.
 
 * [Add a release build workflow on tag
   push](https://github.com/lightninglabs/lightning-terminal/pull/1418):

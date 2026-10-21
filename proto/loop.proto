@@ -590,7 +590,14 @@ message SwapStatus {
     // Swap server cost
     int64 cost_server = 8 [jstype = JS_STRING];
 
-    // On-chain transaction cost
+    // On-chain transaction cost. For static address loop-ins it is the sum of
+    // the on-chain costs of the deposits the swap spent. It doesn't say
+    // whether that cost is known: an unknown cost is zero and a partial or
+    // pending cost is only its known part. ListStaticAddressSwaps reports
+    // whether it is unknown, partial, complete or pending. A swap update is
+    // only sent when the swap changes state, so a pending cost isn't updated
+    // here until the swap's next state, and not at all once the swap is
+    // final.
     int64 cost_onchain = 9 [jstype = JS_STRING];
 
     // Off-chain routing fees
@@ -1697,10 +1704,9 @@ message InstantOutRequest {
 
     oneof max_swap_fee {
         /*
-        The maximum off-chain swap fee that may be charged for the swap. If
-        this field is omitted, no fee cap is applied for compatibility with
-        clients that predate this field. An explicitly set value of zero
-        rejects any positive swap fee.
+        The maximum off-chain swap fee that may be charged for the swap. This
+        field must be set. An explicitly set value of zero rejects any
+        positive swap fee.
         */
         int64 max_swap_fee_sat = 4 [jstype = JS_STRING];
     }
@@ -2106,6 +2112,32 @@ message Deposit {
     set if the deposit is part of a loop-in swap.
     */
     bytes swap_hash = 7;
+
+    /*
+    The on-chain cost of the deposit in satoshis: its share of the fee of the
+    transaction that funded it. The fee is split by value across the
+    transaction's deposit outputs, so if the transaction also paid someone
+    else, its whole fee is charged to the deposits. Change that a partial
+    loop-in or withdrawal sent back to the static address costs nothing.
+    loopd determines the cost within about 10 seconds of finding the deposit,
+    also before the deposit confirms, and reports it as pending until then.
+
+    To add up the on-chain cost of deposits, only use the deposits of
+    ListStaticAddressDeposits. The deposits of a swap or withdrawal can
+    include deposits that another swap or withdrawal also lists, for example
+    deposits that a failed swap gave back.
+    */
+    int64 cost_onchain = 8 [jstype = JS_STRING];
+
+    /*
+    Whether cost_onchain is known: ONCHAIN_COST_STATUS_COMPLETE if the client
+    wallet knows the fee of the deposit's funding transaction,
+    ONCHAIN_COST_STATUS_UNKNOWN if it doesn't, for example for a deposit
+    funded by an external wallet, or ONCHAIN_COST_STATUS_PENDING if the cost
+    hasn't been determined yet. The cost of a single deposit is never
+    partial.
+    */
+    OnchainCostStatus cost_onchain_status = 9;
 }
 
 message StaticAddressWithdrawal {
@@ -2189,7 +2221,18 @@ message StaticAddressLoopInSwap {
     int64 cost_server = 9 [jstype = JS_STRING];
 
     /*
-    On-chain transaction cost.
+    On-chain cost: the sum of the on-chain costs of the deposits the swap
+    spent, see Deposit.cost_onchain. A deposit's whole fee share counts for
+    the swap that spends it, also if the swap only loops in part of it, and
+    its change costs nothing. A swap that wasn't paid but whose htlc spent
+    its deposits has this cost once its htlc timed out, also if it failed
+    after publishing its htlc timeout sweep, but the fees of the htlc and its
+    timeout sweep are not included. Any other failed swap reports an unknown
+    cost. In the rare case that a swap takes back deposits that a later swap
+    had already taken, their cost is reported for the later swap if it was
+    paid, and otherwise for neither swap. Don't add this cost to the cost of
+    the swap's deposits: it includes them, and can be lower than their sum,
+    for example if the swap failed or still waits for its payment.
     */
     int64 cost_onchain = 10 [jstype = JS_STRING];
 
@@ -2197,6 +2240,56 @@ message StaticAddressLoopInSwap {
     Off-chain routing fees.
     */
     int64 cost_offchain = 11 [jstype = JS_STRING];
+
+    /*
+    Whether cost_onchain is unknown, partial, complete or pending.
+    */
+    OnchainCostStatus cost_onchain_status = 12;
+}
+
+enum OnchainCostStatus {
+    /*
+    The on-chain cost is unknown and zero. This is also the value if the
+    daemon doesn't report the on-chain cost.
+
+    For a deposit, the client wallet doesn't know the fee of its funding
+    transaction, for example because an external wallet funded it or because
+    the wallet doesn't have the transaction. Once a daemon that reports the
+    on-chain cost has set this status for a deposit, it doesn't change.
+
+    For a static loop-in, either the swap wasn't paid and its htlc hasn't
+    timed out, for example because it is still pending or failed before its
+    htlc timeout sweep was published, or none of its deposits count for it,
+    or the funding fee of none of its deposits is known, for example because
+    they were all funded by an external wallet. A pending swap can still get
+    a cost once it is paid or its htlc times out.
+    */
+    ONCHAIN_COST_STATUS_UNKNOWN = 0;
+
+    /*
+    The funding fees of some of a swap's deposits are known, and cost_onchain
+    only includes those. The others are left out, for example a deposit
+    funded by an external wallet. cost_onchain can be zero if the known
+    deposits are change, which costs nothing.
+    */
+    ONCHAIN_COST_STATUS_PARTIAL = 1;
+
+    /*
+    The funding fees of all deposits are known and included in the cost.
+    Fees of the htlc timeout path are never included. For a deposit, its
+    cost is known.
+    */
+    ONCHAIN_COST_STATUS_COMPLETE = 2;
+
+    /*
+    The on-chain cost hasn't been determined yet. loopd looks it up within
+    about 10 seconds of finding a deposit, and keeps trying while lnd isn't
+    synced to the chain or the lookup fails. For a deposit, cost_onchain is
+    zero. For a static loop-in, the cost of a deposit the swap spent hasn't
+    been determined yet, and cost_onchain only includes the deposits whose
+    funding fee is known so far.
+    */
+    ONCHAIN_COST_STATUS_PENDING = 3;
 }
 
 enum StaticAddressLoopInSwapState {

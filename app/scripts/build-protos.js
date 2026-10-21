@@ -12,8 +12,8 @@ const appPath = join(__dirname, '..');
  * root directory's go.mod file.
  */
 const LND_VERSION_PATTERN = /^\tgithub\.com\/lightningnetwork\/lnd (v[\d.]+-beta(?:\.rc\d)?)/ms;
-const LOOP_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/loop (v[\d.]+-beta)/ms;
-const POOL_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/pool (v[\d.]+-beta)/ms;
+const LOOP_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/loop (v[\d.]+-beta(?:\.0\.\d{14}-([0-9a-f]+))?)/ms;
+const POOL_VERSION_PATTERN = /^\tgithub\.com\/lightninglabs\/pool (v[\d.]+-beta(?:\.0\.\d{14}-([0-9a-f]+))?)/ms;
 
 /** mapping of proto files to the github url to download each from */
 const protoSources = async () => {
@@ -27,26 +27,29 @@ const protoSources = async () => {
   }
 
   const loopVersion = goModSource.match(LOOP_VERSION_PATTERN);
-  if (!loopVersion || loopVersion.length !== 2) {
+  if (!loopVersion || !loopVersion[1]) {
     throw new Error(`go.mod did not match pattern ${LOOP_VERSION_PATTERN}`);
   }
 
   const poolVersion = goModSource.match(POOL_VERSION_PATTERN);
-  if (!poolVersion || poolVersion.length !== 2) {
+  if (!poolVersion || !poolVersion[1]) {
     throw new Error(`go.mod did not match pattern ${POOL_VERSION_PATTERN}`);
   }
+
+  const loopRef = loopVersion[2] || loopVersion[1];
+  const poolRef = poolVersion[2] || poolVersion[1];
 
   console.log(
     `Found:\n LND ${lndVersion[1]}\n Loop ${loopVersion[1]}\n Pool ${poolVersion[1]}`,
   );
   return {
     lnd: `lightningnetwork/lnd/${lndVersion[1]}/lnrpc/lightning.proto`,
-    loop: `lightninglabs/loop/${loopVersion[1]}/looprpc/client.proto`,
-    'swapserverrpc/server': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/server.proto`,
-    'swapserverrpc/common': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/common.proto`,
-    'swapserverrpc/reservation': `lightninglabs/loop/${loopVersion[1]}/swapserverrpc/reservation.proto`,
-    trader: `lightninglabs/pool/${poolVersion[1]}/poolrpc/trader.proto`,
-    'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolVersion[1]}/auctioneerrpc/auctioneer.proto`,
+    loop: `lightninglabs/loop/${loopRef}/looprpc/client.proto`,
+    'swapserverrpc/server': `lightninglabs/loop/${loopRef}/swapserverrpc/server.proto`,
+    'swapserverrpc/common': `lightninglabs/loop/${loopRef}/swapserverrpc/common.proto`,
+    'swapserverrpc/reservation': `lightninglabs/loop/${loopRef}/swapserverrpc/reservation.proto`,
+    trader: `lightninglabs/pool/${poolRef}/poolrpc/trader.proto`,
+    'auctioneerrpc/auctioneer': `lightninglabs/pool/${poolRef}/auctioneerrpc/auctioneer.proto`,
   };
 };
 
