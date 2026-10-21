@@ -38,7 +38,7 @@ require (
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
-	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
+	github.com/lightningnetwork/lnd/fn/v2 v2.0.10-0.20260925031608-f2963ce1fd19
 	github.com/lightningnetwork/lnd/kvdb v1.5.1
 	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0
 	github.com/lightningnetwork/lnd/tlv v1.4.0
@@ -85,11 +85,11 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/v2transport v1.0.1 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
-	github.com/btcsuite/btcwallet v0.18.0 // indirect
+	github.com/btcsuite/btcwallet v0.18.1-0.20260903142755-a960541f35ed // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.4.0 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.3.0 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.3.0 // indirect
-	github.com/btcsuite/btcwallet/wtxmgr v1.6.0 // indirect
+	github.com/btcsuite/btcwallet/wtxmgr v1.6.1-0.20260903142755-a960541f35ed // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/btcsuite/winsvc v1.0.0 // indirect
@@ -159,7 +159,7 @@ require (
 	github.com/lightningnetwork/lightning-onion v1.4.0 // indirect
 	github.com/lightningnetwork/lnd/actor v0.0.6 // indirect
 	github.com/lightningnetwork/lnd/healthcheck v1.2.6 // indirect
-	github.com/lightningnetwork/lnd/queue v1.2.0 // indirect
+	github.com/lightningnetwork/lnd/queue v1.2.1-0.20260925031608-f2963ce1fd19 // indirect
 	github.com/lightningnetwork/lnd/sqldb v1.0.13 // indirect
 	github.com/lightningnetwork/lnd/ticker v1.1.1 // indirect
 	github.com/ltcsuite/ltcd v0.0.0-20190101042124-f37f8bf35796 // indirect
@@ -269,22 +269,22 @@ tool github.com/lightninglabs/taproot-assets/cmd/tapcli
 // Use the locally patched TLV module until the upstream fix is released.
 replace github.com/lightningnetwork/lnd/tlv => ./third_party/lnd/tlv
 
-// Use the pgx v5 migration until lnd publishes a matching sqldb release.
-replace github.com/lightningnetwork/lnd/sqldb v1.0.13 => github.com/lightningnetwork/lnd/sqldb v1.0.13-0.20260514041430-e9b422f78581
-
 // Keep the combined daemon on the btcd v2 dependency line until the
 // companion migrations land: loop#1199, pool#524, faraday#255, and
 // taproot-assets#2366.
-replace github.com/lightninglabs/loop => github.com/hieblmi/loop v0.0.0-20261021105917-6a0dcea594bd
+replace github.com/lightninglabs/loop => github.com/hieblmi/loop v0.0.0-20261021114658-8742b15d99fb
 
-replace github.com/lightninglabs/loop/looprpc => github.com/hieblmi/loop/looprpc v0.0.0-20261021105917-6a0dcea594bd
+replace github.com/lightninglabs/loop/looprpc => github.com/hieblmi/loop/looprpc v0.0.0-20261021114658-8742b15d99fb
 
-replace github.com/lightninglabs/loop/swapserverrpc => github.com/hieblmi/loop/swapserverrpc v0.0.0-20261021105917-6a0dcea594bd
+replace github.com/lightninglabs/loop/swapserverrpc => github.com/hieblmi/loop/swapserverrpc v0.0.0-20261021114658-8742b15d99fb
 
-replace github.com/lightninglabs/pool => github.com/hieblmi/pool v0.0.0-20261021104223-4ea4941ce0b2
+replace github.com/lightninglabs/pool => github.com/hieblmi/pool v0.0.0-20261021113856-89bd3a9d334f
 
-replace github.com/lightninglabs/faraday => github.com/hieblmi/faraday v0.2.19-alpha.0.20261021101401-1a328a0ef4ee
+replace github.com/lightninglabs/faraday => github.com/hieblmi/faraday v0.2.19-alpha.0.20261021113856-b6e623e477b7
 
-replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.21.0-beta.rc2.0.20260903094101-d66a7c137d32
+// Retain the v0.21.4 forwarding-response recovery and replay fixes.
+replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.21.0-beta.rc2.0.20260925031608-f2963ce1fd19
 
-replace github.com/lightninglabs/taproot-assets => github.com/hieblmi/taro v0.1.0-alpha.0.20261021105727-9b4c853b36ca
+replace github.com/lightninglabs/taproot-assets => github.com/hieblmi/taro v0.1.0-alpha.0.20261021113806-b47086671590
+
+replace github.com/lightningnetwork/lnd/sqldb => github.com/lightningnetwork/lnd/sqldb v1.0.13-0.20260925031608-f2963ce1fd19
