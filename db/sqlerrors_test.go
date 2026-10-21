@@ -33,24 +33,27 @@ func TestMappedErrorsOnlyImplementErrorAsPointers(t *testing.T) {
 		ErrSchemaError{},
 	}
 
+	const valueErrMsg = "%s must not implement error as a value; " +
+		"declare Error and Unwrap on the pointer receiver so that " +
+		"matching on the value type is a compile error rather than " +
+		"a silent mismatch"
+
 	for _, value := range values {
 		valueType := reflect.TypeOf(value)
+		ptrType := reflect.PointerTo(valueType)
+		name := valueType.Name()
 
-		t.Run(valueType.Name(), func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			require.Truef(
-				t, reflect.PointerTo(valueType).Implements(errType),
-				"*%s must implement error", valueType.Name(),
+				t, ptrType.Implements(errType),
+				"*%s must implement error", name,
 			)
 
 			require.Falsef(
 				t, valueType.Implements(errType),
-				"%s must not implement error as a value; "+
-					"declare Error and Unwrap on the pointer "+
-					"receiver so that matching on the value "+
-					"type is a compile error rather than a "+
-					"silent mismatch", valueType.Name(),
+				valueErrMsg, name,
 			)
 		})
 	}
