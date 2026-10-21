@@ -18,7 +18,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.10.9
-	github.com/lightninglabs/faraday v0.2.19-alpha
+	github.com/lightninglabs/faraday v0.2.19-alpha.0.20261021211916-b547baea0f95
 	github.com/lightninglabs/faraday/frdrpc v1.0.2
 	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
@@ -29,7 +29,7 @@ require (
 	github.com/lightninglabs/loop v0.35.1-beta.0.20261021185954-333ed1efccdd
 	github.com/lightninglabs/loop/looprpc v1.0.17-0.20261021185954-333ed1efccdd
 	github.com/lightninglabs/loop/swapserverrpc v1.0.22
-	github.com/lightninglabs/pool v0.7.1-beta
+	github.com/lightninglabs/pool v0.7.1-beta.0.20261021211827-262af739b741
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.8.6
