@@ -17,7 +17,6 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/improbable-eng/grpc-web v0.12.0
-	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.10.9
@@ -136,12 +135,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.11.0 // indirect
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jackpal/gateway v1.0.5 // indirect
 	github.com/jackpal/go-nat-pmp v0.0.0-20170405195558-28a68d0c24ad // indirect
@@ -279,16 +275,16 @@ replace github.com/lightningnetwork/lnd/sqldb v1.0.13 => github.com/lightningnet
 // Keep the combined daemon on the btcd v2 dependency line until the
 // companion migrations land: loop#1199, pool#524, faraday#255, and
 // taproot-assets#2366.
-replace github.com/lightninglabs/loop => github.com/hieblmi/loop v0.0.0-20261021103203-0bbf6562d1b3
+replace github.com/lightninglabs/loop => github.com/hieblmi/loop v0.0.0-20261021105917-6a0dcea594bd
 
-replace github.com/lightninglabs/loop/looprpc => github.com/hieblmi/loop/looprpc v0.0.0-20261021103203-0bbf6562d1b3
+replace github.com/lightninglabs/loop/looprpc => github.com/hieblmi/loop/looprpc v0.0.0-20261021105917-6a0dcea594bd
 
-replace github.com/lightninglabs/loop/swapserverrpc => github.com/hieblmi/loop/swapserverrpc v0.0.0-20261021103203-0bbf6562d1b3
+replace github.com/lightninglabs/loop/swapserverrpc => github.com/hieblmi/loop/swapserverrpc v0.0.0-20261021105917-6a0dcea594bd
 
-replace github.com/lightninglabs/pool => github.com/hieblmi/pool v0.0.0-20261021103117-b1f41ffacb23
+replace github.com/lightninglabs/pool => github.com/hieblmi/pool v0.0.0-20261021104223-4ea4941ce0b2
 
 replace github.com/lightninglabs/faraday => github.com/hieblmi/faraday v0.2.19-alpha.0.20261021101401-1a328a0ef4ee
 
 replace github.com/lightningnetwork/lnd => github.com/lightningnetwork/lnd v0.21.0-beta.rc2.0.20260903094101-d66a7c137d32
 
-replace github.com/lightninglabs/taproot-assets => github.com/hieblmi/taro v0.1.0-alpha.0.20261021103040-eb0af6086f65
+replace github.com/lightninglabs/taproot-assets => github.com/hieblmi/taro v0.1.0-alpha.0.20261021105727-9b4c853b36ca
