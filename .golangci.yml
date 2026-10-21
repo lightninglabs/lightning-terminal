@@ -54,6 +54,11 @@ linters:
       checks: ["S*"]
 
   exclusions:
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
       # Exclude gosec for tests that use weak randomness.
       - path: _test\.go
