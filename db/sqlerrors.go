@@ -119,7 +119,7 @@ type ErrSqlUniqueConstraintViolation struct {
 	DbError error
 }
 
-func (e ErrSqlUniqueConstraintViolation) Error() string {
+func (e *ErrSqlUniqueConstraintViolation) Error() string {
 	return fmt.Sprintf("sql unique constraint violation: %v", e.DbError)
 }
 
@@ -131,12 +131,12 @@ type ErrSerializationError struct {
 }
 
 // Unwrap returns the wrapped error.
-func (e ErrSerializationError) Unwrap() error {
+func (e *ErrSerializationError) Unwrap() error {
 	return e.DbError
 }
 
 // Error returns the error message.
-func (e ErrSerializationError) Error() string {
+func (e *ErrSerializationError) Error() string {
 	return e.DbError.Error()
 }
 
@@ -147,12 +147,12 @@ type ErrDeadlockError struct {
 }
 
 // Unwrap returns the wrapped error.
-func (e ErrDeadlockError) Unwrap() error {
+func (e *ErrDeadlockError) Unwrap() error {
 	return e.DbError
 }
 
 // Error returns the error message.
-func (e ErrDeadlockError) Error() string {
+func (e *ErrDeadlockError) Error() string {
 	return e.DbError.Error()
 }
 
@@ -182,12 +182,12 @@ type ErrSchemaError struct {
 }
 
 // Unwrap returns the wrapped error.
-func (e ErrSchemaError) Unwrap() error {
+func (e *ErrSchemaError) Unwrap() error {
 	return e.DbError
 }
 
 // Error returns the error message.
-func (e ErrSchemaError) Error() string {
+func (e *ErrSchemaError) Error() string {
 	return e.DbError.Error()
 }
 
