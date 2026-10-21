@@ -5,7 +5,7 @@ package perms
 import (
 	"net"
 
-	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/v2"
 	"github.com/lightningnetwork/lnd/autopilot"
 	"github.com/lightningnetwork/lnd/chainreg"
 	graphdb "github.com/lightningnetwork/lnd/graph/db"
