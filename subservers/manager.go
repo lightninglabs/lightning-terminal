@@ -118,6 +118,9 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 
 		err := ss.startIntegrated(
 			lndClient, lndGrpc, withMacaroonService,
+			func() {
+				s.statusServer.SetRunning(ss.Name())
+			},
 			func(err error) {
 				s.statusServer.SetErrored(
 					ss.Name(), err.Error(),
@@ -128,8 +131,6 @@ func (s *Manager) StartIntegratedServers(lndClient lnrpc.LightningClient,
 			s.statusServer.SetErrored(ss.Name(), err.Error())
 			continue
 		}
-
-		s.statusServer.SetRunning(ss.Name())
 	}
 }
 

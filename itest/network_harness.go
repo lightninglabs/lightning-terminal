@@ -891,8 +891,9 @@ func (n *NetworkHarness) OpenChannel(srcNode, destNode *HarnessNode,
 	// The cancel is intentionally left out here because the returned
 	// item(open channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
-	//
-	// nolint:govet
+	// Timeout bounds lifetime; early cancel would terminate the RPC stream.
+	// The caller relies on that stream remaining active.
+	//nolint:govet,gosec
 	ctx, _ := context.WithTimeout(ctxb, wait.ChannelOpenTimeout)
 
 	// Wait until srcNode and destNode have the latest chain synced.
@@ -1084,8 +1085,9 @@ func (n *NetworkHarness) CloseChannel(lnNode *HarnessNode,
 	// The cancel is intentionally left out here because the returned
 	// item(close channel client) relies on the context being active. This
 	// will be fixed once we finish refactoring the NetworkHarness.
-	//
-	// nolint: govet
+	// Timeout bounds lifetime; early cancel would terminate the RPC stream.
+	// The caller relies on that stream remaining active.
+	//nolint:govet,gosec
 	ctx, _ := context.WithTimeout(ctxb, wait.ChannelCloseTimeout)
 
 	// Create a channel outpoint that we can use to compare to channels

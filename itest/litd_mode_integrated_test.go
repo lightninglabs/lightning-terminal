@@ -1635,7 +1635,8 @@ func testSuperMacaroonOnStartup(ctx context.Context, net *NetworkHarness,
 	// Drain the expected process exit error from the error channel to
 	// prevent it from failing the test runner at the end of the test.
 	select {
-	case <-net.lndErrorChan:
+	case err := <-net.lndErrorChan:
+		require.Error(t.t, err)
 	case <-time.After(defaultTimeout):
 		t.t.Fatalf("expected process exit error in lndErrorChan")
 	}

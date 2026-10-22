@@ -1,0 +1,29 @@
+# Release Notes
+
+## Lightning Terminal
+
+### Bug Fixes
+
+* [Declare the mapped SQL errors on the pointer
+  receiver](https://github.com/lightninglabs/lightning-terminal/pull/1439):
+  `MapSQLError` builds `ErrSqlUniqueConstraintViolation`,
+  `ErrSerializationError`, `ErrDeadlockError` and `ErrSchemaError` as
+  pointers, but `Error` and `Unwrap` were declared on the value receiver, so
+  the value type satisfied `error` too. Matching one of these errors against
+  the value type never succeeded, and did so silently instead of failing to
+  compile.
+
+* [Fix integrated sub-server shutdown](https://github.com/lightninglabs/lightning-terminal/pull/1440):
+  Keep runtime error receivers active while stopping sub-servers, and
+  clean up initialized sub-servers even after they report an error.
+
+### Technical and Architectural Updates
+
+* [Update the Go toolchain and upstream dependencies](https://github.com/lightninglabs/lightning-terminal/pull/1440):
+  Release binaries are built with Go 1.27.3. We update LND to
+  `v0.21.5-beta.rc1` and pin the Go-only Loop, Pool and Faraday updates to
+  their public source commits.
+  Loop and its generated RPC clients use the same source revision and
+  include on-chain cost and status fields for deposits and static-address
+  loop-ins. The existing Taproot Assets `v0.8.6` dependency is unchanged and
+  is compiled with the same Go 1.27.3 toolchain.

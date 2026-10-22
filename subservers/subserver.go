@@ -36,8 +36,8 @@ type subServerWrapper struct {
 	quit chan struct{}
 }
 
-// started returns true if the subServer has been started. This only applies if
-// the subServer is running in integrated mode.
+// started reports whether the integrated sub-server was initialized and still
+// needs cleanup. Runtime readiness is tracked by the status manager.
 func (s *subServerWrapper) started() bool {
 	s.startedMu.RLock()
 	defer s.startedMu.RUnlock()
@@ -64,8 +64,14 @@ func (s *subServerWrapper) stop() error {
 
 	var returnErr error
 	s.stopped.Do(func() {
-		close(s.quit)
-		s.wg.Wait()
+		// Keep consuming errors until their producers have stopped. A
+		// producer may report an error while its Stop method is waiting
+		// for its goroutines to exit.
+		defer func() {
+			close(s.quit)
+			s.wg.Wait()
+			s.setStarted(false)
+		}()
 
 		// If running in remote mode, close the connection.
 		if s.Remote() && s.remoteConn != nil {
@@ -101,13 +107,17 @@ func (s *subServerWrapper) stop() error {
 // startIntegrated starts the subServer in integrated mode.
 func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool,
-	onError func(error)) error {
+	onStarted func(), onError func(error)) error {
 
 	err := s.Start(lndClient, lndGrpc, withMacaroonService)
 	if err != nil {
 		return err
 	}
 	s.setStarted(true)
+
+	// Publish readiness before an already-buffered runtime error can
+	// mark the sub-server as errored.
+	onStarted()
 
 	if s.ServerErrChan() == nil {
 		return nil
@@ -117,19 +127,23 @@ func (s *subServerWrapper) startIntegrated(lndClient lnrpc.LightningClient,
 	go func() {
 		defer s.wg.Done()
 
-		select {
-		case err := <-s.ServerErrChan():
-			// The sub server should shut itself down if an error
-			// happens. We don't need to try to stop it again.
-			s.setStarted(false)
+		const errFormat = "received critical error from " +
+			"sub-server (%s), shutting down: %v"
 
-			onError(
-				fmt.Errorf("received critical error from "+
-					"sub-server (%s), shutting down: %v",
-					s.Name(), err),
-			)
+		for {
+			select {
+			case err, ok := <-s.ServerErrChan():
+				if !ok {
+					return
+				}
 
-		case <-s.quit:
+				// Errors affect readiness, but cleanup is
+				// still required after successful startup.
+				onError(fmt.Errorf(errFormat, s.Name(), err))
+
+			case <-s.quit:
+				return
+			}
 		}
 	}()
 

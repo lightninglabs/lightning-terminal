@@ -16,15 +16,6 @@
 
 ### Bug Fixes
 
-* [Declare the mapped SQL errors on the pointer
-  receiver](https://github.com/lightninglabs/lightning-terminal/pull/1439):
-  `MapSQLError` builds `ErrSqlUniqueConstraintViolation`,
-  `ErrSerializationError`, `ErrDeadlockError` and `ErrSchemaError` as
-  pointers, but `Error` and `Unwrap` were declared on the value receiver, so
-  the value type satisfied `error` too. Matching one of these errors against
-  the value type never succeeded, and did so silently instead of failing to
-  compile.
-
 ### Functional Changes/Additions
 
 * [Disable Loop by default on regtest and

@@ -32,7 +32,7 @@ RUN apk add --no-cache --update alpine-sdk \
 
 # The first stage is already done and all static assets should now be generated
 # in the app/build sub directory.
-FROM golang:1.26.8-alpine3.23@sha256:a8fa79c5bd40d880b52bd3b6d7669ecdcfd00e85facdd427d279efb5ddd79cb1 as golangbuilder
+FROM golang:1.27.3-alpine3.23@sha256:895e5feab11a4b3774d24ee3c9579028456b82ad37f42a9eb6f82adaf776a201 as golangbuilder
 
 # Instead of checking out from git again, we just copy the whole working
 # directory of the previous stage that includes the generated static assets.

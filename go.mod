@@ -1,10 +1,10 @@
 module github.com/lightninglabs/lightning-terminal
 
-go 1.26.8
+go 1.27.3
 
 require (
 	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
-	github.com/btcsuite/btcd/btcec/v2 v2.3.6
+	github.com/btcsuite/btcd/btcec/v2 v2.5.0
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b
@@ -18,28 +18,30 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20240316143900-6e2875d9b438
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.10.9
-	github.com/lightninglabs/faraday v0.2.19-alpha
+	github.com/lightninglabs/faraday v0.2.19-alpha.0.20261021211916-b547baea0f95
 	github.com/lightninglabs/faraday/frdrpc v1.0.2
 	github.com/lightninglabs/lightning-node-connect/gbn v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-node-connect/mailbox v1.0.2-0.20260727084653-785ec57e5d1d
 	github.com/lightninglabs/lightning-terminal/autopilotserverrpc v0.0.3
+	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
+	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/lndclient v0.21.0-2
-	github.com/lightninglabs/loop v0.35.0-beta
-	github.com/lightninglabs/loop/looprpc v1.0.16
+	github.com/lightninglabs/loop v0.35.1-beta.0.20261021185954-333ed1efccdd
+	github.com/lightninglabs/loop/looprpc v1.0.17-0.20261021185954-333ed1efccdd
 	github.com/lightninglabs/loop/swapserverrpc v1.0.22
-	github.com/lightninglabs/pool v0.7.1-beta
+	github.com/lightninglabs/pool v0.7.1-beta.0.20261021211827-262af739b741
 	github.com/lightninglabs/pool/auctioneerrpc v1.1.3
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.8.6
 	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
-	github.com/lightningnetwork/lnd v0.21.4-beta
+	github.com/lightningnetwork/lnd v0.21.5-beta.rc1
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
-	github.com/lightningnetwork/lnd/fn/v2 v2.0.9
+	github.com/lightningnetwork/lnd/fn/v2 v2.0.10
 	github.com/lightningnetwork/lnd/kvdb v1.5.1
 	github.com/lightningnetwork/lnd/sqldb/v2 v2.0.0
-	github.com/lightningnetwork/lnd/tlv v1.3.2
+	github.com/lightningnetwork/lnd/tlv v1.4.1
 	github.com/lightningnetwork/lnd/tor v1.1.7
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 	github.com/mwitkow/grpc-proxy v0.0.0-20230212185441-f345521cb9c9
@@ -60,8 +62,6 @@ require (
 	pgregory.net/rapid v1.2.0
 )
 
-require github.com/cenkalti/backoff/v5 v5.0.3 // indirect
-
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
@@ -75,18 +75,20 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.10 // indirect
+	github.com/btcsuite/btcd/chainhash/v2 v2.0.0 // indirect
 	github.com/btcsuite/btcd/v2transport v1.0.1 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
-	github.com/btcsuite/btcwallet v0.16.20-0.20260915140118-f2c79d772865 // indirect
+	github.com/btcsuite/btcwallet v0.16.20-0.20261020152346-4423f4716968 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
-	github.com/btcsuite/btcwallet/wtxmgr v1.5.7-0.20260915140118-f2c79d772865 // indirect
+	github.com/btcsuite/btcwallet/wtxmgr v1.5.7-0.20261020152322-a4ace3b44809 // indirect
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd // indirect
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792 // indirect
 	github.com/btcsuite/winsvc v1.0.0 // indirect
 	github.com/caddyserver/certmagic v0.17.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coder/websocket v1.8.13 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
@@ -144,14 +146,12 @@ require (
 	github.com/jrick/logrotate v1.1.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kkdai/bstream v1.0.0 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/libdns/libdns v0.2.1 // indirect
 	github.com/lightninglabs/aperture v0.4.0 // indirect
 	github.com/lightninglabs/gozmq v0.0.0-20191113021534-d20a764486bf // indirect
 	github.com/lightninglabs/lightning-node-connect/hashmailrpc v1.0.4-0.20260727084653-785ec57e5d1d // indirect
-	github.com/lightninglabs/lightning-terminal/litrpc v1.0.2
-	github.com/lightninglabs/lightning-terminal/perms v1.0.1
 	github.com/lightninglabs/neutrino v0.17.1 // indirect
 	github.com/lightninglabs/neutrino/cache v1.1.3 // indirect
 	github.com/lightningnetwork/lightning-onion v1.3.0 // indirect

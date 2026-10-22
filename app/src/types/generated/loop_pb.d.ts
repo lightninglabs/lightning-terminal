@@ -2292,6 +2292,12 @@ export class Deposit extends jspb.Message {
   getSwapHash_asB64(): string;
   setSwapHash(value: Uint8Array | string): void;
 
+  getCostOnchain(): string;
+  setCostOnchain(value: string): void;
+
+  getCostOnchainStatus(): OnchainCostStatusMap[keyof OnchainCostStatusMap];
+  setCostOnchainStatus(value: OnchainCostStatusMap[keyof OnchainCostStatusMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Deposit.AsObject;
   static toObject(includeInstance: boolean, msg: Deposit): Deposit.AsObject;
@@ -2311,6 +2317,8 @@ export namespace Deposit {
     confirmationHeight: string,
     blocksUntilExpiry: string,
     swapHash: Uint8Array | string,
+    costOnchain: string,
+    costOnchainStatus: OnchainCostStatusMap[keyof OnchainCostStatusMap],
   }
 }
 
@@ -2396,6 +2404,9 @@ export class StaticAddressLoopInSwap extends jspb.Message {
   getCostOffchain(): string;
   setCostOffchain(value: string): void;
 
+  getCostOnchainStatus(): OnchainCostStatusMap[keyof OnchainCostStatusMap];
+  setCostOnchainStatus(value: OnchainCostStatusMap[keyof OnchainCostStatusMap]): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StaticAddressLoopInSwap.AsObject;
   static toObject(includeInstance: boolean, msg: StaticAddressLoopInSwap): StaticAddressLoopInSwap.AsObject;
@@ -2419,6 +2430,7 @@ export namespace StaticAddressLoopInSwap {
     costServer: string,
     costOnchain: string,
     costOffchain: string,
+    costOnchainStatus: OnchainCostStatusMap[keyof OnchainCostStatusMap],
   }
 }
 
@@ -2859,6 +2871,15 @@ export interface DepositStateMap {
 }
 
 export const DepositState: DepositStateMap;
+
+export interface OnchainCostStatusMap {
+  ONCHAIN_COST_STATUS_UNKNOWN: 0;
+  ONCHAIN_COST_STATUS_PARTIAL: 1;
+  ONCHAIN_COST_STATUS_COMPLETE: 2;
+  ONCHAIN_COST_STATUS_PENDING: 3;
+}
+
+export const OnchainCostStatus: OnchainCostStatusMap;
 
 export interface StaticAddressLoopInSwapStateMap {
   UNKNOWN_STATIC_ADDRESS_SWAP_STATE: 0;
