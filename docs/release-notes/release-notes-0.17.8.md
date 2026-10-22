@@ -13,6 +13,10 @@
   the value type never succeeded, and did so silently instead of failing to
   compile.
 
+* [Fix integrated sub-server shutdown](https://github.com/lightninglabs/lightning-terminal/pull/1440):
+  Keep runtime error receivers active while stopping sub-servers, and
+  clean up initialized sub-servers even after they report an error.
+
 ### Technical and Architectural Updates
 
 * [Update the Go toolchain and upstream dependencies](https://github.com/lightninglabs/lightning-terminal/pull/1440):
