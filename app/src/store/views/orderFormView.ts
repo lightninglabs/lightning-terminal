@@ -119,9 +119,12 @@ export default class OrderFormView {
 
     const selectedDuration = this._store.batchStore.selectedLeaseDuration;
     const selectedState = this._store.batchStore.leaseDurations.get(selectedDuration);
-    if (selectedState) {
-      // add a default option with a value of zero to signify that the duration
-      // currently being displayed should be used
+    const alreadyListed = durations.some(
+      option => option.value === `${selectedDuration}`,
+    );
+    // A closed market is not in the list. Keep one placeholder so the form can
+    // still follow the duration currently on screen.
+    if (selectedState && !alreadyListed) {
       durations.unshift({
         label: `${l('inView')} (${blocksToTime(selectedDuration)}, ${
           labels[selectedState]
@@ -130,6 +133,18 @@ export default class OrderFormView {
       });
     }
     return durations;
+  }
+
+  /**
+   * The select value for the duration field. An explicit choice wins. Otherwise
+   * the market on screen is selected when it is already an option, so that
+   * market is not listed a second time.
+   */
+  get durationSelectValue() {
+    if (this.duration) return `${this.duration}`;
+    const selected = `${this._store.batchStore.selectedLeaseDuration}`;
+    const listed = this.durationOptions.some(option => option.value === selected);
+    return listed ? selected : '0';
   }
 
   /** determines if the lease duration field should be visible */

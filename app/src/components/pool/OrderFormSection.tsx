@@ -142,7 +142,7 @@ const OrderFormSection: React.FC = () => {
             <FormField label={l('durationLabel')}>
               <FormSelect
                 label={l('durationLabel')}
-                value={orderFormView.duration.toString()}
+                value={orderFormView.durationSelectValue}
                 onChange={v => orderFormView.setDuration(parseInt(v) as LeaseDuration)}
                 options={orderFormView.durationOptions}
               />
