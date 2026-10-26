@@ -215,9 +215,12 @@ func (s *subServerWrapper) watchRemoteConn(onError func(error),
 		for {
 			state := conn.GetState()
 			switch state {
-			case connectivity.TransientFailure,
-				connectivity.Shutdown:
+			// Only a local Close moves the connection to
+			// Shutdown, so this is a stop, not a disconnect.
+			case connectivity.Shutdown:
+				return
 
+			case connectivity.TransientFailure:
 				if !errored {
 					errored = true
 					onError(fmt.Errorf("remote sub-server "+
