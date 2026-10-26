@@ -134,9 +134,10 @@ export default class Session {
     switch (field) {
       case 'label':
         return a.label.toLowerCase() > b.label.toLowerCase() ? 1 : -1;
-      case 'stateLabel':
-        return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
-      case 'typeLabel':
+      case 'state':
+        // The State column renders pairedLabel, not the raw session state.
+        return a.pairedLabel.toLowerCase() > b.pairedLabel.toLowerCase() ? 1 : -1;
+      case 'type':
         return a.typeLabel.toLowerCase() > b.typeLabel.toLowerCase() ? 1 : -1;
       case 'expiry':
       default:
