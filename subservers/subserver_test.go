@@ -185,3 +185,52 @@ func TestWatchRemoteConnRearm(t *testing.T) {
 		t.Fatal("expected the disconnect to be reported")
 	}
 }
+
+// TestStopRemoteNoDisconnect asserts that stopping a healthy remote sub-server
+// is not reported as a disconnect, so a clean shutdown does not mark it as
+// errored.
+func TestStopRemoteNoDisconnect(t *testing.T) {
+	t.Parallel()
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	srv := grpc.NewServer()
+	go func() {
+		_ = srv.Serve(lis)
+	}()
+	defer srv.Stop()
+
+	conn, err := grpc.NewClient(
+		lis.Addr().String(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+
+	ss := &subServerWrapper{
+		SubServer:  &nameOnlySubServer{name: "test"},
+		remoteConn: conn,
+		quit:       make(chan struct{}),
+	}
+
+	erroredChan := make(chan error, 8)
+	ss.watchRemoteConn(
+		func(err error) { erroredChan <- err },
+		func() {},
+	)
+
+	require.Eventually(t, func() bool {
+		conn.Connect()
+		return conn.GetState() == connectivity.Ready
+	}, 10*time.Second, 50*time.Millisecond)
+
+	// Stop waits for the watcher to exit, so any report it made is
+	// already in the channel.
+	require.NoError(t, ss.stop())
+
+	select {
+	case err := <-erroredChan:
+		t.Fatalf("clean stop reported as a disconnect: %v", err)
+	default:
+	}
+}
