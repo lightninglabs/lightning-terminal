@@ -131,13 +131,21 @@ export default class Session {
    * a negative number if `a`'s field is less than `b`'s, or zero otherwise
    */
   static compare(a: Session, b: Session, field: SortParams<Session>['field']): number {
+    const byText = (left: string, right: string) => {
+      const aText = left.toLowerCase();
+      const bText = right.toLowerCase();
+      if (aText === bText) return 0;
+      return aText > bText ? 1 : -1;
+    };
+
     switch (field) {
       case 'label':
-        return a.label.toLowerCase() > b.label.toLowerCase() ? 1 : -1;
-      case 'stateLabel':
-        return a.stateLabel.toLowerCase() > b.stateLabel.toLowerCase() ? 1 : -1;
-      case 'typeLabel':
-        return a.typeLabel.toLowerCase() > b.typeLabel.toLowerCase() ? 1 : -1;
+        return byText(a.label, b.label);
+      case 'state':
+        // The State column renders pairedLabel, not the raw session state.
+        return byText(a.pairedLabel, b.pairedLabel);
+      case 'type':
+        return byText(a.typeLabel, b.typeLabel);
       case 'expiry':
       default:
         return a.expiry.getTime() - b.expiry.getTime();
