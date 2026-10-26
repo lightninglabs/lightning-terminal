@@ -40,4 +40,23 @@ describe('Session.compare', () => {
     expect(Session.compare(created, paired, 'state')).toBeLessThan(0);
     expect(Session.compare(paired, created, 'expiry')).toBeLessThan(0);
   });
+
+  it('treats equal labels as a tie', () => {
+    const first = session({
+      label: 'Same',
+      type: LIT.SessionType.TYPE_MACAROON_ADMIN,
+      remotePublicKey: 'aa',
+      expiry: new Date('2020-01-01T00:00:00Z'),
+    });
+    const second = session({
+      label: 'same',
+      type: LIT.SessionType.TYPE_MACAROON_ADMIN,
+      remotePublicKey: 'bb',
+      expiry: new Date('2030-01-01T00:00:00Z'),
+    });
+
+    expect(Session.compare(first, second, 'label')).toBe(0);
+    expect(Session.compare(first, second, 'type')).toBe(0);
+    expect(Session.compare(first, second, 'state')).toBe(0);
+  });
 });
