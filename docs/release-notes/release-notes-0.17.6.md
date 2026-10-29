@@ -16,6 +16,12 @@
 
 ### Bug Fixes
 
+* [Reject session expiry timestamps outside SQL-supported
+  range](https://github.com/lightninglabs/lightning-terminal/pull/1423):
+  The session RPC server now rejects session and autopilot session expiry
+  timestamps exceeding the SQL-supported time range or 64-bit integer limits,
+  preventing database conversion errors.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates
@@ -41,3 +47,6 @@
   `taproot-assets@v0.8.5`.
 
 # Contributors (Alphabetical Order)
+
+* Tyagiquamar
+
