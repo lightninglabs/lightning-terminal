@@ -2,6 +2,8 @@ module github.com/lightninglabs/lightning-terminal
 
 go 1.27.3
 
+godebug multipathtcp=0
+
 require (
 	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
 	github.com/btcsuite/btcd/btcec/v2 v2.5.0
