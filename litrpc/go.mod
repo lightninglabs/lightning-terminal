@@ -8,7 +8,7 @@ require (
 	github.com/lightninglabs/loop/looprpc v1.0.17
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
-	github.com/lightningnetwork/lnd v0.21.5-beta
+	github.com/lightningnetwork/lnd v0.21.6-beta
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.11
 )
