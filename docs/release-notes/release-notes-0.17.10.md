@@ -34,8 +34,8 @@
 ## Integrated Binary Updates
 
 ### LND
-* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1450): Bump:
-  `lnd@v0.21.5-beta`.
+* [PR](https://github.com/lightninglabs/lightning-terminal/pull/1457): Bump:
+  `lnd@v0.21.6-beta`.
 
 ### Loop
 * [PR](https://github.com/lightninglabs/lightning-terminal/pull/1450): Bump:

@@ -1175,8 +1175,8 @@ github.com/lightninglabs/taproot-assets/taprpc v1.3.3 h1:KwscIMQ7Nyy8SleDiUUTWPC
 github.com/lightninglabs/taproot-assets/taprpc v1.3.3/go.mod h1:0dBS6jLkddm8EvpJSpJjPUMWr294/YRoM/IAzdfo3pw=
 github.com/lightningnetwork/lightning-onion v1.3.0 h1:FqILgHjD6euc/Muo1VOzZ4+XDPuFnw6EYROBq0rR/5c=
 github.com/lightningnetwork/lightning-onion v1.3.0/go.mod h1:nP85zMHG7c0si/eHBbSQpuDCtnIXfSvFrK3tW6YWzmU=
-github.com/lightningnetwork/lnd v0.21.5-beta h1:ekjtGR9/hLGVB1KsJBF/MhobMekdk212GBdyxYuTJbc=
-github.com/lightningnetwork/lnd v0.21.5-beta/go.mod h1:swhvM2tER6jSZZ2TyaMZYV6oIMFsX3GU/Dhi+9AoQt0=
+github.com/lightningnetwork/lnd v0.21.6-beta h1:3M0YRmDGrCG4PTMdjPRagTXETtIqJIq5ddQoOsEJWHw=
+github.com/lightningnetwork/lnd v0.21.6-beta/go.mod h1:yOVip0RTeIBGsazNORUlhA6atqlr5YMNLIS0uXTsl5U=
 github.com/lightningnetwork/lnd/actor v0.0.6 h1:Ge8N2wivARG+27qJBwTlB0vwsypStZYZy8vk4Zl38sU=
 github.com/lightningnetwork/lnd/actor v0.0.6/go.mod h1:YAsoniSbY/cAM9HTVNfZLvt7RI6swDxy6wzPspTcMZg=
 github.com/lightningnetwork/lnd/cert v1.2.2 h1:71YK6hogeJtxSxw2teq3eGeuy4rHGKcFf0d0Uy4qBjI=
