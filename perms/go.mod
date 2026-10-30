@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
-	github.com/lightningnetwork/lnd v0.21.5-beta
+	github.com/lightningnetwork/lnd v0.21.6-beta
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 )
