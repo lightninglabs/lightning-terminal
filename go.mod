@@ -36,7 +36,7 @@ require (
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets v0.8.8
 	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
-	github.com/lightningnetwork/lnd v0.21.5-beta
+	github.com/lightningnetwork/lnd v0.21.6-beta
 	github.com/lightningnetwork/lnd/cert v1.2.2
 	github.com/lightningnetwork/lnd/clock v1.1.1
 	github.com/lightningnetwork/lnd/fn v1.2.5
