@@ -71,6 +71,48 @@ jobs:
         run: yarn test:ci
 
   ########################
+  # frontend dependency risk report
+  ########################
+  # Lists the supply-chain risks in a pull request's app/yarn.lock changes:
+  # packages from outside the npm registry, integrity mismatches, very recent
+  # releases, new install scripts, new packages, dropped provenance, and
+  # publisher changes. The report goes in the job summary, and the job fails
+  # only on the blocking problems, which a legitimate update never has.
+  # app/scripts/dep-risk-report.mjs describes each flag. It never installs
+  # dependencies, so no package code runs.
+  frontend-dep-risk:
+    name: frontend dependency risk report
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+        with:
+          # The report diffs the lockfile against the PR's merge base.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: setup nodejs ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      # The script comes from the base branch when it exists there, so a pull
+      # request cannot weaken the check that reviews it.
+      - name: report dependency risks
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          script="$RUNNER_TEMP/dep-risk-report.mjs"
+          git show "origin/$BASE_REF:app/scripts/dep-risk-report.mjs" > "$script" 2> /dev/null ||
+            cp app/scripts/dep-risk-report.mjs "$script"
+          status=0
+          node "$script" --base "$(git merge-base HEAD "origin/$BASE_REF")" \
+            --lockfile app/yarn.lock > "$RUNNER_TEMP/report.md" || status=$?
+          tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/report.md"
+          exit "$status"
+
+  ########################
   # backend build checks
   ########################
   backend:
