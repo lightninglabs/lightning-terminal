@@ -70,7 +70,11 @@ func (p *poolSubServer) RemoteConfig() *RemoteDaemonConfig {
 func (p *poolSubServer) Start(lnClient lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
-	return p.StartAsSubserver(lnClient, lndGrpc, withMacaroonService)
+	// Pool only borrows the shared lnd connection, so it gets the
+	// non-closable view. LiT owns the connection and closes it on shutdown.
+	return p.StartAsSubserver(
+		lnClient, &lndGrpc.LndServices, withMacaroonService,
+	)
 }
 
 // RegisterGrpcService must register the sub-server's GRPC server with the given
