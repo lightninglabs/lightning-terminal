@@ -174,7 +174,7 @@ func (h *HistoryLimit) checkers() map[string]mid.RoundTripChecker {
 					"time before %s", startDate)
 			},
 		),
-		"lnrpc.Lightning/ListInvoices": mid.NewResponseRewriter(
+		"/lnrpc.Lightning/ListInvoices": mid.NewResponseRewriter(
 			&lnrpc.ListInvoiceRequest{},
 			&lnrpc.ListInvoiceResponse{},
 			func(ctx context.Context,
