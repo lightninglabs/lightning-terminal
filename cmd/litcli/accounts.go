@@ -31,6 +31,7 @@ var accountsCommands = []cli.Command{
 			accountInfoCommand,
 			removeAccountCommand,
 			accountPaymentsCommand,
+			accountInvoicesCommand,
 		},
 		Description: "Manage accounts.",
 	},
@@ -616,6 +617,87 @@ func accountPayments(cli *cli.Context) error {
 		CountTotalPayments: cli.Bool("count_total_payments"),
 	}
 	resp, err := client.AccountPayments(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	printRespJSON(resp)
+	return nil
+}
+
+var accountInvoicesCommand = cli.Command{
+	Name:      "invoices",
+	ShortName: "i",
+	Usage: "Show detailed invoice history for a single " +
+		"off-chain account.",
+	ArgsUsage: "[id | label]",
+	Description: "Returns the detailed invoice history for an " +
+		"account by fetching their stored hashes and querying " +
+		"LND. The results are returned paginated and " +
+		"sorted in ascending lexicographical order of their " +
+		"payment hash.",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  idName,
+			Usage: "The ID of the account.",
+		},
+		cli.StringFlag{
+			Name:  labelName,
+			Usage: "(optional) The unique label of the account.",
+		},
+		cli.Uint64Flag{
+			Name: "max_invoices",
+			Usage: fmt.Sprintf("The maximum number of invoices to "+
+				"return. The default value is %d and "+
+				"the maximum is %d.",
+				accounts.DefaultMaxPayments,
+				accounts.MaxPaymentsLimit),
+			Value: accounts.DefaultMaxPayments,
+		},
+		cli.Uint64Flag{
+			Name: "index_offset",
+			Usage: "The row offset into the list of invoices " +
+				"that will be used as the start of the " +
+				"query.",
+		},
+		cli.BoolFlag{
+			Name: "count_total_invoices",
+			Usage: "If true, the total number of invoices " +
+				"matching the query will be returned.",
+		},
+	},
+	Action: accountInvoices,
+}
+
+func accountInvoices(cli *cli.Context) error {
+	ctx := getContext()
+	clientConn, cleanup, err := connectClient(cli, false)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	client := litrpc.NewAccountsClient(clientConn)
+
+	account, _, err := parseAccountIdentifier(cli)
+	if err != nil {
+		return err
+	}
+
+	maxInvoices := cli.Uint64("max_invoices")
+	if maxInvoices > accounts.MaxPaymentsLimit {
+		return fmt.Errorf(
+			"max_invoices cannot exceed %d",
+			accounts.MaxPaymentsLimit,
+		)
+	}
+
+	req := &litrpc.AccountInvoicesRequest{
+		Account:            account,
+		MaxInvoices:        maxInvoices,
+		IndexOffset:        cli.Uint64("index_offset"),
+		CountTotalInvoices: cli.Bool("count_total_invoices"),
+	}
+	resp, err := client.AccountInvoices(ctx, req)
 	if err != nil {
 		return err
 	}
