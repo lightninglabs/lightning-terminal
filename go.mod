@@ -269,3 +269,10 @@ tool github.com/lightninglabs/taproot-assets/cmd/tapcli
 
 // Use the locally patched TLV module until the upstream fix is released.
 replace github.com/lightningnetwork/lnd/tlv => ./third_party/lnd/tlv
+
+// NOTE: drop these and bump to tagged releases once loop#1272 and
+// pool#528 are merged and tagged. Until then, pin the connection-ownership fix
+// backported onto the currently pinned loop v0.35.2-beta / pool v0.7.2-beta.
+replace github.com/lightninglabs/loop => github.com/litbot-9000/loop v0.32.1-beta.0.20261030222623-d72d75fb1ca1
+
+replace github.com/lightninglabs/pool => github.com/litbot-9000/pool v0.7.2-beta.0.20261030222405-5b777bbd9744

@@ -71,7 +71,9 @@ func (l *loopSubServer) RemoteConfig() *RemoteDaemonConfig {
 func (l *loopSubServer) Start(_ lnrpc.LightningClient,
 	lndGrpc *lndclient.GrpcLndServices, withMacaroonService bool) error {
 
-	return l.StartAsSubserver(lndGrpc, withMacaroonService)
+	// Loop only borrows the shared lnd connection, so it gets the
+	// non-closable view. LiT owns the connection and closes it on shutdown.
+	return l.StartAsSubserver(&lndGrpc.LndServices, withMacaroonService)
 }
 
 // Stop stops the sub-server in integrated mode.
