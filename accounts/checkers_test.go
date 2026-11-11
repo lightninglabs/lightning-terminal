@@ -13,6 +13,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntypes"
 	"github.com/lightningnetwork/lnd/lnwire"
+	paymentsdb "github.com/lightningnetwork/lnd/payments/db"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -41,6 +42,10 @@ var (
 	}
 	testHash4 = lntypes.Hash{
 		4, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+	}
+	testPreimage = lntypes.Preimage{
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
 	}
 
@@ -108,8 +113,12 @@ func (m *mockService) AssociatePayment(_ context.Context, id AccountID,
 	return nil
 }
 
-func (m *mockService) PaymentErrored(_ context.Context, id AccountID,
-	hash lntypes.Hash) error {
+func (m *mockService) PaymentErrored(_ context.Context, _ AccountID,
+	hash lntypes.Hash, rpcErr error) error {
+
+	if isAlreadyExistsErr(rpcErr) {
+		delete(m.trackedPayments, hash)
+	}
 
 	return nil
 }
@@ -628,15 +637,22 @@ func TestSendPaymentV2(t *testing.T) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 3000)
 
-	// Now return an error response.
+	// Now return an error response. The error on the RPC doesn't prove
+	// that the payment itself never happened, so the reservation is kept
+	// and the payment is tracked until lnd reports its final state.
 	_, err = service.checkers.handleErrorResponse(ctx, uri, nil)
 	require.NoError(t, err)
 
-	// The balance should have gone back to what it was before the payment
-	// was initiated.
-	assertBalance(acct.ID, 4000)
+	assertBalance(acct.ID, 3000)
 
-	routerMock.assertNoPaymentRequest(t)
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+		testHash2: {},
+	})
+
+	// lnd reports that the payment was never initiated, so the reservation
+	// can be released now.
+	routerMock.failPayment(t, testHash2, paymentsdb.ErrPaymentNotInitiated)
+	assertBalanceEventually(t, service, ctx, acct.ID, 4000)
 
 	// The final test we will do is to have two send requests initiated
 	// before the response for the first one has been received.
@@ -672,11 +688,24 @@ func TestSendPaymentV2(t *testing.T) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 0)
 
-	// Let the first request error.
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+		testHash4: {},
+	})
+
+	// Let the first request error. The payment is tracked until lnd
+	// reports that it was never initiated, and only then is the
+	// reservation released.
 	ctx = AddRequestIDToContext(ctxWithAcct, reqID3)
 	_, err = service.checkers.handleErrorResponse(ctx, uri, nil)
 	require.NoError(t, err)
-	assertBalance(acct.ID, 2000)
+	assertBalance(acct.ID, 0)
+
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+		testHash3: {},
+	})
+
+	routerMock.failPayment(t, testHash3, paymentsdb.ErrPaymentNotInitiated)
+	assertBalanceEventually(t, service, ctx, acct.ID, 2000)
 
 	// Finally, replicate the streaming scenario. Since SendPaymentV2 is a
 	// streaming endpoint, the request values are deleted as soon as a
@@ -859,15 +888,22 @@ func TestSendToRouteV2(t *testing.T) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 3000)
 
-	// Now return an error response.
+	// Now return an error response. The error on the RPC doesn't prove
+	// that the payment itself never happened, so the reservation is kept
+	// and the payment is tracked until lnd reports its final state.
 	_, err = service.checkers.handleErrorResponse(ctx, uri, nil)
 	require.NoError(t, err)
 
-	// The balance should have gone back to what it was before the payment
-	// was initiated.
-	assertBalance(acct.ID, 4000)
+	assertBalance(acct.ID, 3000)
 
-	routerMock.assertNoPaymentRequest(t)
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+		testHash2: {},
+	})
+
+	// lnd reports that the payment was never initiated, so the reservation
+	// can be released now.
+	routerMock.failPayment(t, testHash2, paymentsdb.ErrPaymentNotInitiated)
+	assertBalanceEventually(t, service, ctx, acct.ID, 4000)
 
 	// The final test we will do is to have two send requests initiated
 	// before the response for the first one has been received.
@@ -905,11 +941,41 @@ func TestSendToRouteV2(t *testing.T) {
 	require.NoError(t, err)
 	assertBalance(acct.ID, 0)
 
-	// Let the first request error.
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+		testHash4: {},
+	})
+
+	// Let the first request error. The payment is tracked until lnd
+	// reports that it was never initiated, and only then is the
+	// reservation released.
 	ctx = AddRequestIDToContext(ctxWithAcct, reqID3)
 	_, err = service.checkers.handleErrorResponse(ctx, uri, nil)
 	require.NoError(t, err)
-	assertBalance(acct.ID, 2000)
+	assertBalance(acct.ID, 0)
+
+	routerMock.assertPaymentRequests(t, map[lntypes.Hash]struct{}{
+		testHash3: {},
+	})
+
+	routerMock.failPayment(t, testHash3, paymentsdb.ErrPaymentNotInitiated)
+	assertBalanceEventually(t, service, ctx, acct.ID, 2000)
+}
+
+// assertBalanceEventually asserts that the available balance of the given
+// account eventually reaches the expected amount.
+func assertBalanceEventually(t *testing.T, service *InterceptorService,
+	ctx context.Context, id AccountID, expectedBalance int64) {
+
+	t.Helper()
+
+	assertEventually(t, func() bool {
+		acct, err := service.Account(ctx, id)
+		if err != nil {
+			return false
+		}
+
+		return calcAvailableAccountBalance(acct) == expectedBalance
+	})
 }
 
 // assertMessagesEqual makes sure two proto messages are equal by JSON

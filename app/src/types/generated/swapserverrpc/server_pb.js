@@ -976,7 +976,8 @@ proto.looprpc.ServerLoopOutRequest.toObject = function(includeInstance, msg) {
     swapPublicationDeadline: jspb.Message.getFieldWithDefault(msg, 4, "0"),
     protocolVersion: jspb.Message.getFieldWithDefault(msg, 5, 0),
     expiry: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    userAgent: jspb.Message.getFieldWithDefault(msg, 7, "")
+    userAgent: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    acceptBlindedInvoices: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -1040,6 +1041,10 @@ proto.looprpc.ServerLoopOutRequest.deserializeBinaryFromReader = function(msg, r
     case 7:
       var value = /** @type {string} */ (reader.readString());
       msg.setUserAgent(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setAcceptBlindedInvoices(value);
       break;
     default:
       reader.skipField();
@@ -1116,6 +1121,13 @@ proto.looprpc.ServerLoopOutRequest.serializeBinaryToWriter = function(message, w
   if (f.length > 0) {
     writer.writeString(
       7,
+      f
+    );
+  }
+  f = message.getAcceptBlindedInvoices();
+  if (f) {
+    writer.writeBool(
+      8,
       f
     );
   }
@@ -1296,6 +1308,24 @@ proto.looprpc.ServerLoopOutRequest.prototype.setUserAgent = function(value) {
 };
 
 
+/**
+ * optional bool accept_blinded_invoices = 8;
+ * @return {boolean}
+ */
+proto.looprpc.ServerLoopOutRequest.prototype.getAcceptBlindedInvoices = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.looprpc.ServerLoopOutRequest} returns this
+ */
+proto.looprpc.ServerLoopOutRequest.prototype.setAcceptBlindedInvoices = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 8, value);
+};
+
+
 
 
 
@@ -1332,7 +1362,8 @@ proto.looprpc.ServerLoopOutResponse.toObject = function(includeInstance, msg) {
     prepayInvoice: jspb.Message.getFieldWithDefault(msg, 2, ""),
     senderKey: msg.getSenderKey_asB64(),
     expiry: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    serverMessage: jspb.Message.getFieldWithDefault(msg, 5, "")
+    serverMessage: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    paymentAddress: msg.getPaymentAddress_asB64()
   };
 
   if (includeInstance) {
@@ -1388,6 +1419,10 @@ proto.looprpc.ServerLoopOutResponse.deserializeBinaryFromReader = function(msg, 
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setServerMessage(value);
+      break;
+    case 6:
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
+      msg.setPaymentAddress(value);
       break;
     default:
       reader.skipField();
@@ -1450,6 +1485,13 @@ proto.looprpc.ServerLoopOutResponse.serializeBinaryToWriter = function(message, 
   if (f.length > 0) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = message.getPaymentAddress_asU8();
+  if (f.length > 0) {
+    writer.writeBytes(
+      6,
       f
     );
   }
@@ -1567,6 +1609,48 @@ proto.looprpc.ServerLoopOutResponse.prototype.getServerMessage = function() {
  */
 proto.looprpc.ServerLoopOutResponse.prototype.setServerMessage = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
+ * optional bytes payment_address = 6;
+ * @return {!(string|Uint8Array)}
+ */
+proto.looprpc.ServerLoopOutResponse.prototype.getPaymentAddress = function() {
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * optional bytes payment_address = 6;
+ * This is a type-conversion wrapper around `getPaymentAddress()`
+ * @return {string}
+ */
+proto.looprpc.ServerLoopOutResponse.prototype.getPaymentAddress_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getPaymentAddress()));
+};
+
+
+/**
+ * optional bytes payment_address = 6;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getPaymentAddress()`
+ * @return {!Uint8Array}
+ */
+proto.looprpc.ServerLoopOutResponse.prototype.getPaymentAddress_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getPaymentAddress()));
+};
+
+
+/**
+ * @param {!(string|Uint8Array)} value
+ * @return {!proto.looprpc.ServerLoopOutResponse} returns this
+ */
+proto.looprpc.ServerLoopOutResponse.prototype.setPaymentAddress = function(value) {
+  return jspb.Message.setProto3BytesField(this, 6, value);
 };
 
 

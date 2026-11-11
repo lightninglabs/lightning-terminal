@@ -31,6 +31,9 @@ export class ServerLoopOutRequest extends jspb.Message {
   getUserAgent(): string;
   setUserAgent(value: string): void;
 
+  getAcceptBlindedInvoices(): boolean;
+  setAcceptBlindedInvoices(value: boolean): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopOutRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopOutRequest): ServerLoopOutRequest.AsObject;
@@ -50,6 +53,7 @@ export namespace ServerLoopOutRequest {
     protocolVersion: ProtocolVersionMap[keyof ProtocolVersionMap],
     expiry: number,
     userAgent: string,
+    acceptBlindedInvoices: boolean,
   }
 }
 
@@ -71,6 +75,11 @@ export class ServerLoopOutResponse extends jspb.Message {
   getServerMessage(): string;
   setServerMessage(value: string): void;
 
+  getPaymentAddress(): Uint8Array | string;
+  getPaymentAddress_asU8(): Uint8Array;
+  getPaymentAddress_asB64(): string;
+  setPaymentAddress(value: Uint8Array | string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerLoopOutResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ServerLoopOutResponse): ServerLoopOutResponse.AsObject;
@@ -88,6 +97,7 @@ export namespace ServerLoopOutResponse {
     senderKey: Uint8Array | string,
     expiry: number,
     serverMessage: string,
+    paymentAddress: Uint8Array | string,
   }
 }
 

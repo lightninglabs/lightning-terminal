@@ -21,4 +21,26 @@ var (
 	ErrPaymentNotAssociated = errors.New(
 		"payment not associated with account",
 	)
+
+	// ErrAMPNotSupported is returned when an account attempts to send an
+	// AMP payment. AMP payments are not supported for accounts.
+	ErrAMPNotSupported = errors.New(
+		"AMP payments are not supported with accounts",
+	)
+
+	// ErrMPPTotalTooLow is returned when an account sends a
+	// SendToRouteV2 request whose final hop declares an MPP total amount
+	// that is negative or smaller than the amount the final hop forwards
+	// to the receiver.
+	ErrMPPTotalTooLow = errors.New(
+		"MPP total amount is negative or smaller than the final hop " +
+			"amount",
+	)
+
+	// ErrAmpInvoicesNotSupported is returned when an account user tries to
+	// create an AMP invoice. AMP invoices are not supported for accounts.
+	ErrAmpInvoicesNotSupported = errors.New(
+		"AMP invoices are not supported with restricted account " +
+			"macaroons",
+	)
 )

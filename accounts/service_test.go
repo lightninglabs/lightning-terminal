@@ -146,19 +146,32 @@ type mockRouter struct {
 	paymentReq chan lntypes.Hash
 
 	trackPaymentErr error
-	paymentErrChan  chan error
+	paymentErrChans map[lntypes.Hash]chan error
 	paymentChans    map[lntypes.Hash]chan lndclient.PaymentStatus
 }
 
 func newMockRouter() *mockRouter {
 	return &mockRouter{
-		mainErrChan:    make(chan error, 10),
-		paymentReq:     make(chan lntypes.Hash, 10),
-		paymentErrChan: make(chan error, 10),
+		mainErrChan: make(chan error, 10),
+		paymentReq:  make(chan lntypes.Hash, 10),
+		paymentErrChans: make(
+			map[lntypes.Hash]chan error,
+		),
 		paymentChans: make(
 			map[lntypes.Hash]chan lndclient.PaymentStatus,
 		),
 	}
+}
+
+// failPayment sends the given error to the error channel of the given
+// payment's tracker, so that only that payment is affected.
+func (r *mockRouter) failPayment(t *testing.T, hash lntypes.Hash, err error) {
+	t.Helper()
+
+	errChan, ok := r.paymentErrChans[hash]
+	require.True(t, ok, "no payment error channel for hash %v", hash)
+
+	errChan <- err
 }
 
 // RawClientWithMacAuth returns a context with the proper macaroon
@@ -212,8 +225,9 @@ func (r *mockRouter) TrackPayment(_ context.Context,
 
 	r.paymentReq <- hash
 	r.paymentChans[hash] = make(chan lndclient.PaymentStatus, 1)
+	r.paymentErrChans[hash] = make(chan error, 1)
 
-	return r.paymentChans[hash], r.paymentErrChan, nil
+	return r.paymentChans[hash], r.paymentErrChans[hash], nil
 }
 
 // TestAccountService tests that the account service can track payments and
@@ -278,6 +292,7 @@ func TestAccountService(t *testing.T) {
 				AddIndex:    12,
 				SettleIndex: 12,
 				Hash:        testHash,
+				Preimage:    &testPreimage,
 				AmountPaid:  777,
 				State:       invpkg.ContractSettled,
 			}
@@ -495,7 +510,7 @@ func TestAccountService(t *testing.T) {
 
 			// Now let's send an error over the payment error
 			// channel. This should disable the service.
-			r.paymentErrChan <- testErr
+			r.failPayment(t, testHash, testErr)
 
 			// Ensure that the service was eventually disabled.
 			assertEventually(t, func() bool {
@@ -609,7 +624,10 @@ func TestAccountService(t *testing.T) {
 			require.ErrorIs(t, err, ErrAccBalanceInsufficient)
 
 			// Now signal that the payment was non-initiated.
-			r.paymentErrChan <- paymentsdb.ErrPaymentNotInitiated
+			r.failPayment(
+				t, testHash3,
+				paymentsdb.ErrPaymentNotInitiated,
+			)
 
 			// Once the error is handled in the service.TrackPayment
 			// goroutine, and therefore free up the 2000 in-flight
@@ -722,6 +740,7 @@ func TestAccountService(t *testing.T) {
 				AddIndex:    12,
 				SettleIndex: 12,
 				Hash:        testHash,
+				Preimage:    &testPreimage,
 				AmountPaid:  1000,
 				State:       invpkg.ContractSettled,
 			}
@@ -739,6 +758,7 @@ func TestAccountService(t *testing.T) {
 				AddIndex:    13,
 				SettleIndex: 13,
 				Hash:        testHash2,
+				Preimage:    &testPreimage,
 				AmountPaid:  777,
 				State:       invpkg.ContractSettled,
 			}
@@ -1099,6 +1119,7 @@ func TestRemoveAccountClearsInvoiceMapping(t *testing.T) {
 			AddIndex:    12,
 			SettleIndex: 12,
 			Hash:        testHash,
+			Preimage:    &testPreimage,
 			AmountPaid:  777,
 			State:       invpkg.ContractSettled,
 		}
@@ -1106,6 +1127,7 @@ func TestRemoveAccountClearsInvoiceMapping(t *testing.T) {
 			AddIndex:    13,
 			SettleIndex: 13,
 			Hash:        testHash2,
+			Preimage:    &testPreimage,
 			AmountPaid:  500,
 			State:       invpkg.ContractSettled,
 		}
