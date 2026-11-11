@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/btcsuite/btcd v0.25.1-0.20260310163610-1c55c7c18179
-	github.com/lightningnetwork/lnd v0.21.6-beta
+	github.com/lightningnetwork/lnd v0.21.8-beta
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/macaroon-bakery.v2 v2.3.0
 )
@@ -30,7 +30,7 @@ require (
 	github.com/btcsuite/btcd/wire/v2 v2.0.0 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b // indirect
-	github.com/btcsuite/btcwallet v0.16.20-0.20261020152346-4423f4716968 // indirect
+	github.com/btcsuite/btcwallet v0.16.20-0.20261108131155-245ce39ba343 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect
