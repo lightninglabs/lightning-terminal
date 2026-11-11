@@ -8,7 +8,7 @@ require (
 	github.com/lightninglabs/loop/looprpc v1.0.17
 	github.com/lightninglabs/pool/poolrpc v1.0.1
 	github.com/lightninglabs/taproot-assets/taprpc v1.3.3
-	github.com/lightningnetwork/lnd v0.21.6-beta
+	github.com/lightningnetwork/lnd v0.21.8-beta
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.11
 )
@@ -31,7 +31,7 @@ require (
 	github.com/btcsuite/btcd/wire/v2 v2.0.0 // indirect
 	github.com/btcsuite/btclog v1.0.0 // indirect
 	github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b // indirect
-	github.com/btcsuite/btcwallet v0.16.20-0.20261020152346-4423f4716968 // indirect
+	github.com/btcsuite/btcwallet v0.16.20-0.20261108131155-245ce39ba343 // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.5 // indirect

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -720,24 +721,42 @@ func (s *InterceptorService) AssociateInvoice(ctx context.Context, id AccountID,
 	return nil
 }
 
-// PaymentErrored removes a pending payment from the account's registered
-// payment list. This should only ever be called if we are sure that the payment
-// request errored out.
+// PaymentErrored handles a payment whose RPC returned the given error. The
+// payment may still be in flight, so its association is kept and the payment
+// is tracked until lnd reports a terminal state or that the payment was never
+// initiated. If lnd rejected the request because a payment with the same hash
+// already exists, nothing was dispatched for it and the association is removed
+// instead.
 func (s *InterceptorService) PaymentErrored(ctx context.Context, id AccountID,
-	hash lntypes.Hash) error {
+	hash lntypes.Hash, rpcErr error) error {
 
-	s.Lock()
-	defer s.Unlock()
+	if isAlreadyExistsErr(rpcErr) {
+		s.Lock()
+		defer s.Unlock()
 
-	// If we have already started tracking this payment, then RemovePayment
-	// should have been called instead.
-	_, ok := s.pendingPayments[hash]
-	if ok {
-		return fmt.Errorf("cannot disassociate payment if tracking " +
-			"has already started")
+		log.Debugf("Payment %v was not dispatched for this request, "+
+			"removing it from account %x", hash, id[:])
+
+		return s.store.DeleteAccountPayment(ctx, id, hash)
 	}
 
-	return s.store.DeleteAccountPayment(ctx, id, hash)
+	log.Warnf("Payment %v errored on its RPC, keeping it associated "+
+		"with account %x and tracking it", hash, id[:])
+
+	// A zero amount is fine here: the payment is already associated with
+	// the account, so TrackPayment preserves the reserved amount. It also
+	// returns early if the payment is already being tracked.
+	return s.TrackPayment(ctx, id, hash, 0)
+}
+
+// isAlreadyExistsErr returns true if the given error is the AlreadyExists
+// error that lnd returns when it refuses to start a payment because one with
+// the same hash already exists. The RPC middleware only forwards the message
+// of the original error (see rpcmiddleware.ParseResponseErr), so the status
+// code can only be recognised in the canonical gRPC error string.
+func isAlreadyExistsErr(err error) bool {
+	return err != nil &&
+		strings.Contains(err.Error(), "code = AlreadyExists")
 }
 
 // AssociatePayment associates a payment (hash) with the given account,
@@ -827,6 +846,20 @@ func (s *InterceptorService) invoiceUpdate(ctx context.Context,
 	// the invoice actually belongs to an account that we track.
 	acctID, ok := s.invoiceToAccount[invoice.Hash]
 	if !ok {
+		return nil
+	}
+
+	// AMP invoices have no invoice-level preimage, which makes them the
+	// only settled invoices that lndclient reports without one. AMP
+	// invoices are not supported for accounts, and hence we reject
+	// crediting the account here, and log a warning so that the operator
+	// can check the account manually if the user should be credited.
+	if invoice.Preimage == nil {
+		log.Warnf("Not crediting account %x for settled AMP invoice "+
+			"%v with %v paid in total, AMP invoices are not "+
+			"supported for accounts and need to be checked by "+
+			"hand", acctID[:], invoice.Hash, invoice.AmountPaid)
+
 		return nil
 	}
 

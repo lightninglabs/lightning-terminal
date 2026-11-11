@@ -88,9 +88,19 @@ func NewAccountChecker(service Service, chainParams *chaincfg.Params,
 	// nolint:ll
 	checkers := CheckerMap{
 		// Invoices:
-		"/lnrpc.Lightning/AddInvoice": mid.NewResponseRewriter(
+		"/lnrpc.Lightning/AddInvoice": mid.NewFullRewriter(
 			&lnrpc.Invoice{},
 			&lnrpc.AddInvoiceResponse{},
+			func(ctx context.Context,
+				r *lnrpc.Invoice) (proto.Message, error) {
+
+				// AMP invoices are not supported for accounts.
+				if r.IsAmp {
+					return nil, ErrAmpInvoicesNotSupported
+				}
+
+				return nil, nil
+			},
 			func(ctx context.Context,
 				t *lnrpc.AddInvoiceResponse) (proto.Message,
 				error) {
@@ -131,24 +141,15 @@ func NewAccountChecker(service Service, chainParams *chaincfg.Params,
 		"/lnrpc.Lightning/LookupInvoice": mid.NewRequestChecker(
 			&lnrpc.PaymentHash{},
 			&lnrpc.Invoice{},
-			func(ctx context.Context, t *lnrpc.PaymentHash) error {
-				acct, err := AccountFromContext(ctx)
+			func(ctx context.Context, req *lnrpc.PaymentHash) error {
+				// Check that the looked up invoice belongs to
+				// the account.
+				hash, err := lookupInvoiceHash(req)
 				if err != nil {
 					return err
 				}
 
-				hash, err := lntypes.MakeHash(t.RHash)
-				if err != nil {
-					return fmt.Errorf("error parsing "+
-						"payment hash: %v", err)
-				}
-
-				if _, ok := acct.Invoices[hash]; !ok {
-					return fmt.Errorf("invoice does not " +
-						"belong to this account")
-				}
-
-				return nil
+				return checkInvoiceOwner(ctx, hash)
 			},
 		),
 
@@ -158,6 +159,11 @@ func NewAccountChecker(service Service, chainParams *chaincfg.Params,
 			&lnrpc.Payment{},
 			func(ctx context.Context,
 				r *routerrpc.SendPaymentRequest) error {
+
+				// AMP payments are not supported for accounts.
+				if r.Amp {
+					return ErrAMPNotSupported
+				}
 
 				feeLimitMsat := r.FeeLimitMsat
 				if r.FeeLimitSat > 0 {
@@ -440,6 +446,62 @@ func filterInvoices(ctx context.Context,
 	return filteredInvoices, nil
 }
 
+// lookupInvoiceHash returns the payment hash that lnd uses to look up an
+// invoice. lnd prefers the hex encoded r_hash_str field whenever it is set and
+// only falls back to the raw r_hash bytes when it is empty. The accounts
+// system enforces that both fields must match if both are set.
+func lookupInvoiceHash(req *lnrpc.PaymentHash) (lntypes.Hash, error) {
+	// If the r_hash_str field is empty, we fall back to the raw r_hash
+	// bytes.
+	if req.RHashStr == "" {
+		hash, err := lntypes.MakeHash(req.RHash)
+		if err != nil {
+			return lntypes.Hash{}, fmt.Errorf("error parsing "+
+				"payment hash: %v", err)
+		}
+
+		return hash, nil
+	}
+
+	hash, err := lntypes.MakeHashFromStr(req.RHashStr)
+	if err != nil {
+		return lntypes.Hash{}, fmt.Errorf("error parsing payment "+
+			"hash: %v", err)
+	}
+
+	// If both the r_hash_str and r_hash fields are set they have to match.
+	if len(req.RHash) > 0 {
+		rawHash, err := lntypes.MakeHash(req.RHash)
+		if err != nil {
+			return lntypes.Hash{}, fmt.Errorf("error parsing "+
+				"payment hash: %v", err)
+		}
+
+		if rawHash != hash {
+			return lntypes.Hash{}, fmt.Errorf("r_hash and " +
+				"r_hash_str refer to different payment " +
+				"hashes")
+		}
+	}
+
+	return hash, nil
+}
+
+// checkInvoiceOwner makes sure the given invoice hash is associated with the
+// account in the request context.
+func checkInvoiceOwner(ctx context.Context, hash lntypes.Hash) error {
+	acct, err := AccountFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := acct.Invoices[hash]; !ok {
+		return fmt.Errorf("invoice does not belong to this account")
+	}
+
+	return nil
+}
+
 // filterPayments filters the total response of all payments returned by lnd and
 // only includes those that are related to the account in the context.
 func filterPayments(ctx context.Context,
@@ -652,6 +714,26 @@ func checkSendToRoute(ctx context.Context, service Service,
 		return fmt.Errorf("invalid route")
 	}
 
+	// AMP payments are not supported for accounts.
+	if hops := route.Hops; len(hops) > 0 && hops[len(hops)-1] != nil &&
+		hops[len(hops)-1].AmpRecord != nil {
+
+		return ErrAMPNotSupported
+	}
+
+	// The final hop's declared MPP total amount must not be negative and
+	// must cover the amount the final hop forwards to the receiver.
+	if hops := route.Hops; len(hops) > 0 && hops[len(hops)-1] != nil {
+		finalHop := hops[len(hops)-1]
+		if mpp := finalHop.MppRecord; mpp != nil {
+			if mpp.TotalAmtMsat < 0 ||
+				mpp.TotalAmtMsat < finalHop.AmtToForwardMsat {
+
+				return ErrMPPTotalTooLow
+			}
+		}
+	}
+
 	sendAmt := lnwire.NewMSatFromSatoshis(btcutil.Amount(route.TotalAmt)) // nolint
 	if lnwire.MilliSatoshi(route.TotalAmtMsat) > sendAmt {
 		sendAmt = lnwire.MilliSatoshi(route.TotalAmtMsat)
@@ -700,7 +782,7 @@ func checkSendToRoute(ctx context.Context, service Service,
 }
 
 // erroredPaymentHandler does some trace logging about the errored payment and
-// clears up any state we may have had for the payment.
+// makes sure the payment is tracked even though its RPC errored out.
 func erroredPaymentHandler(service Service) mid.ErrorHandler {
 	return func(ctx context.Context, respErr error) (error, error) {
 		log, acct, reqID, err := requestScopedValuesFromCtx(ctx)
@@ -726,7 +808,9 @@ func erroredPaymentHandler(service Service) mid.ErrorHandler {
 			"hash: %s and amount: %d", reqVals.PaymentHash,
 			reqVals.PaymentAmount)
 
-		err = service.PaymentErrored(ctx, acct.ID, reqVals.PaymentHash)
+		err = service.PaymentErrored(
+			ctx, acct.ID, reqVals.PaymentHash, respErr,
+		)
 		if err != nil {
 			return nil, err
 		}

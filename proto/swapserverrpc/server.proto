@@ -137,6 +137,10 @@ message ServerLoopOutRequest {
     //    loopd/v0.10.0-beta/commit=3b635821
     //    litd/v0.2.0-alpha/commit=326d754
     string user_agent = 7;
+
+    // The client accepts bLIP 39 invoices and a separate payment address for
+    // authenticating swap RPCs. Older clients must receive ordinary invoices.
+    bool accept_blinded_invoices = 8;
 }
 
 message ServerLoopOutResponse {
@@ -152,6 +156,11 @@ message ServerLoopOutResponse {
 
     // A human-readable message from the loop server.
     string server_message = 5;
+
+    // The 32-byte payment address used to authenticate swap RPCs. Required for
+    // blinded swap invoices, whose payment address is encrypted in the path.
+    // For ordinary invoices this may be omitted or must match the invoice.
+    bytes payment_address = 6;
 }
 
 message ServerLoopOutQuoteRequest {

@@ -2049,6 +2049,12 @@ func handleConnectPeerRequest(db firewalldb.PrivacyMapDB,
 		err := db.View(ctx, func(ctx context.Context,
 			tx firewalldb.PrivacyMapTx) error {
 
+			// There is nothing to reveal if no address is set. lnd
+			// rejects such a request itself.
+			if r.Addr == nil {
+				return nil
+			}
+
 			var err error
 
 			// Note, this only works if the pubkey alias was

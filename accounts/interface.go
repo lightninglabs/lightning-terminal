@@ -354,11 +354,13 @@ type Service interface {
 	AssociatePayment(ctx context.Context, id AccountID,
 		paymentHash lntypes.Hash, fullAmt lnwire.MilliSatoshi) error
 
-	// PaymentErrored removes a pending payment from the accounts
-	// registered payment list. This should only ever be called if we are
-	// sure that the payment request errored out.
-	PaymentErrored(ctx context.Context, id AccountID,
-		hash lntypes.Hash) error
+	// PaymentErrored handles a payment whose RPC returned the given error.
+	// The payment is kept associated with the account and tracked until
+	// lnd reports a terminal state or that the payment was never
+	// initiated. If lnd rejected the request because a payment with the
+	// same hash already exists, the association is removed instead.
+	PaymentErrored(ctx context.Context, id AccountID, hash lntypes.Hash,
+		rpcErr error) error
 
 	// CreditAccount increases the balance of an existing account in the
 	// database.

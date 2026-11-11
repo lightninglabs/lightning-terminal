@@ -668,8 +668,8 @@ github.com/btcsuite/btclog v1.0.0/go.mod h1:w7xnGOhwT3lmrS4H3b/D1XAXxvh+tbhUm8xe
 github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b h1:MQ+Q6sDy37V1wP1Yu79A5KqJutolqUGwA99UZWQDWZM=
 github.com/btcsuite/btclog/v2 v2.0.1-0.20250728225537-6090e87c6c5b/go.mod h1:XItGUfVOxotJL8kkuk2Hj3EVow5KCugXl3wWfQ6K0AE=
 github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d/go.mod h1:+5NJ2+qvTyV9exUAL/rxXi3DcLg2Ts+ymUAY5y4NvMg=
-github.com/btcsuite/btcwallet v0.16.20-0.20261020152346-4423f4716968 h1:f0l1LuenYj3+XFn0zDyv2fmq/1owfegMpWwHkiM2ui8=
-github.com/btcsuite/btcwallet v0.16.20-0.20261020152346-4423f4716968/go.mod h1:qhfYXizHFWUF+6UQb9EookQPQ+zY1fSTJopxvGY+b1s=
+github.com/btcsuite/btcwallet v0.16.20-0.20261108131155-245ce39ba343 h1:Bnp42CTZJIrOIQiqaCO7ywABE8mqnN+3AKScKRsx6mE=
+github.com/btcsuite/btcwallet v0.16.20-0.20261108131155-245ce39ba343/go.mod h1:qhfYXizHFWUF+6UQb9EookQPQ+zY1fSTJopxvGY+b1s=
 github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5 h1:Rr0njWI3r341nhSPesKQ2JF+ugDSzdPoeckS75SeDZk=
 github.com/btcsuite/btcwallet/wallet/txauthor v1.3.5/go.mod h1:+tXJ3Ym0nlQc/iHSwW1qzjmPs3ev+UVWMbGgfV1OZqU=
 github.com/btcsuite/btcwallet/wallet/txrules v1.2.2 h1:YEO+Lx1ZJJAtdRrjuhXjWrYsmAk26wLTlNzxt2q0lhk=
@@ -1056,8 +1056,8 @@ github.com/lightninglabs/taproot-assets/taprpc v1.3.3 h1:KwscIMQ7Nyy8SleDiUUTWPC
 github.com/lightninglabs/taproot-assets/taprpc v1.3.3/go.mod h1:0dBS6jLkddm8EvpJSpJjPUMWr294/YRoM/IAzdfo3pw=
 github.com/lightningnetwork/lightning-onion v1.3.0 h1:FqILgHjD6euc/Muo1VOzZ4+XDPuFnw6EYROBq0rR/5c=
 github.com/lightningnetwork/lightning-onion v1.3.0/go.mod h1:nP85zMHG7c0si/eHBbSQpuDCtnIXfSvFrK3tW6YWzmU=
-github.com/lightningnetwork/lnd v0.21.6-beta h1:3M0YRmDGrCG4PTMdjPRagTXETtIqJIq5ddQoOsEJWHw=
-github.com/lightningnetwork/lnd v0.21.6-beta/go.mod h1:yOVip0RTeIBGsazNORUlhA6atqlr5YMNLIS0uXTsl5U=
+github.com/lightningnetwork/lnd v0.21.8-beta h1:jCHqO0O8KV0Z4zhdq3MdA2jJYzP4QhLegyu7eMp2PEQ=
+github.com/lightningnetwork/lnd v0.21.8-beta/go.mod h1:5efX7D+EejW+VswjwV7JkrxLXgryvHPPSxZW/M1VFb8=
 github.com/lightningnetwork/lnd/actor v0.0.6 h1:Ge8N2wivARG+27qJBwTlB0vwsypStZYZy8vk4Zl38sU=
 github.com/lightningnetwork/lnd/actor v0.0.6/go.mod h1:YAsoniSbY/cAM9HTVNfZLvt7RI6swDxy6wzPspTcMZg=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
