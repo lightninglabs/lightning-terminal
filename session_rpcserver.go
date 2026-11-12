@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/lightninglabs/lightning-terminal/session"
 	"github.com/lightningnetwork/lnd/fn"
 	"github.com/lightningnetwork/lnd/macaroons"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/macaroon-bakery.v2/bakery"
@@ -280,7 +282,17 @@ func (s *sessionRpcServer) stop() error {
 func (s *sessionRpcServer) AddSession(ctx context.Context,
 	req *litrpc.AddSessionRequest) (*litrpc.AddSessionResponse, error) {
 
+	if req.ExpiryTimestampSeconds > uint64(math.MaxInt64) {
+		return nil, fmt.Errorf("expiry timestamp %d is not supported",
+			req.ExpiryTimestampSeconds)
+	}
+
 	expiry := time.Unix(int64(req.ExpiryTimestampSeconds), 0)
+	if expiry.After(sqldb.MaxValidSQLTime) {
+		return nil, fmt.Errorf("expiry timestamp %d is beyond the "+
+			"maximum supported time %v",
+			req.ExpiryTimestampSeconds, sqldb.MaxValidSQLTime)
+	}
 	if time.Now().After(expiry) {
 		return nil, fmt.Errorf("expiry must be in the future")
 	}
@@ -898,7 +910,17 @@ func (s *sessionRpcServer) AddAutopilotSession(ctx context.Context,
 		return nil, fmt.Errorf("must include at least one feature")
 	}
 
+	if req.ExpiryTimestampSeconds > uint64(math.MaxInt64) {
+		return nil, fmt.Errorf("expiry timestamp %d is not supported",
+			req.ExpiryTimestampSeconds)
+	}
+
 	expiry := time.Unix(int64(req.ExpiryTimestampSeconds), 0)
+	if expiry.After(sqldb.MaxValidSQLTime) {
+		return nil, fmt.Errorf("expiry timestamp %d is beyond the "+
+			"maximum supported time %v",
+			req.ExpiryTimestampSeconds, sqldb.MaxValidSQLTime)
+	}
 	if time.Now().After(expiry) {
 		return nil, fmt.Errorf("expiry must be in the future")
 	}
