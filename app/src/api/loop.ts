@@ -25,6 +25,15 @@ class LoopApi extends BaseApi<LoopEvents> {
   }
 
   /**
+   * call the Loop `GetInfo` RPC and return the response
+   */
+  async getInfo(): Promise<LOOP.GetInfoResponse.AsObject> {
+    const req = new LOOP.GetInfoRequest();
+    const res = await this._grpc.request(SwapClient.GetInfo, req, this._meta);
+    return res.toObject();
+  }
+
+  /**
    * call the Loop `ListSwaps` RPC and return the response
    */
   async listSwaps(): Promise<LOOP.ListSwapsResponse.AsObject> {
