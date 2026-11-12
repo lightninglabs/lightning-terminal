@@ -1,26 +1,33 @@
 package itest
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/btcsuite/btcd/btcutil"
+	terminal "github.com/lightninglabs/lightning-terminal"
+	"github.com/lightninglabs/lightning-terminal/accounts"
+	"github.com/lightninglabs/lightning-terminal/db/sqlc"
 	"github.com/lightninglabs/lightning-terminal/litrpc"
 	"github.com/lightninglabs/taproot-assets/rfqmath"
 	"github.com/lightninglabs/taproot-assets/rpcutils"
 	"github.com/lightninglabs/taproot-assets/taprpc/tapchannelrpc"
+	"github.com/lightningnetwork/lnd/clock"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/invoicesrpc"
 	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
 	"github.com/lightningnetwork/lnd/lntest"
 	"github.com/lightningnetwork/lnd/lntypes"
+	"github.com/lightningnetwork/lnd/sqldb/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -387,6 +394,140 @@ func runAccountSystemTest(t *harnessTest, node *HarnessNode, hostPort,
 	)
 	require.Error(t.t, err)
 	require.Contains(t.t, err.Error(), "index_offset out of range")
+
+	// Test AccountInvoices RPC for the account.
+	invoicesResp, err := acctClient.AccountInvoices(
+		ctxm, &litrpc.AccountInvoicesRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			CountTotalInvoices: true,
+		},
+	)
+	require.NoError(t.t, err)
+
+	// Sort returned invoices by value to ensure deterministic assertions.
+	sort.Slice(invoicesResp.Invoices, func(i, j int) bool {
+		valI := invoicesResp.Invoices[i].Value
+		valJ := invoicesResp.Invoices[j].Value
+		return valI > valJ
+	})
+
+	require.Len(t.t, invoicesResp.Invoices, 1)
+	require.EqualValues(t.t, 1, invoicesResp.TotalNumInvoices)
+	require.EqualValues(t.t, 0, invoicesResp.FirstIndexOffset)
+	require.EqualValues(t.t, 1, invoicesResp.LastIndexOffset)
+
+	// Verify settled invoice (7777 sat deposit from
+	// testAccountRestrictions).
+	require.Equal(t.t, int64(7777), invoicesResp.Invoices[0].Value)
+	require.Equal(
+		t.t, lnrpc.Invoice_SETTLED, invoicesResp.Invoices[0].State,
+	)
+	require.True(t.t, invoicesResp.Invoices[0].Settled)
+
+	// Query AccountInvoices by label.
+	invoicesResp, err = acctClient.AccountInvoices(
+		ctxm, &litrpc.AccountInvoicesRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Label{
+					Label: acctLabel,
+				},
+			},
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, invoicesResp.Invoices, 1)
+
+	// Query AccountInvoices with pagination limit.
+	invoicesResp, err = acctClient.AccountInvoices(
+		ctxm, &litrpc.AccountInvoicesRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			MaxInvoices: 1,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, invoicesResp.Invoices, 1)
+	require.EqualValues(t.t, 0, invoicesResp.FirstIndexOffset)
+	require.EqualValues(t.t, 1, invoicesResp.LastIndexOffset)
+
+	// Query AccountInvoices with pagination offset out of bounds.
+	invoicesResp, err = acctClient.AccountInvoices(
+		ctxm, &litrpc.AccountInvoicesRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			IndexOffset: 1,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Empty(t.t, invoicesResp.Invoices)
+	require.EqualValues(t.t, 0, invoicesResp.FirstIndexOffset)
+	require.EqualValues(t.t, 0, invoicesResp.LastIndexOffset)
+
+	// Query AccountInvoices with invalid max_invoices (> 50).
+	_, err = acctClient.AccountInvoices(
+		ctxm, &litrpc.AccountInvoicesRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			MaxInvoices: 51,
+		},
+	)
+	require.Error(t.t, err)
+	require.Contains(t.t, err.Error(), "max_invoices cannot exceed 50")
+
+	// Test desynchronized invoice hash handling when invoice is
+	// missing in LND.
+	var desyncHash lntypes.Hash
+	_, err = rand.Read(desyncHash[:])
+	require.NoError(t.t, err)
+
+	addDesyncedAccountInvoice(
+		t, net, node, acctResp.Account.Id, desyncHash,
+	)
+
+	// Re-establish gRPC connection after node restart.
+	rawConn, err = connectRPC(ctxt, hostPort, tlsCertPath)
+	require.NoError(t.t, err)
+
+	acctClient = litrpc.NewAccountsClient(rawConn)
+
+	invoicesResp, err = acctClient.AccountInvoices(
+		ctxm, &litrpc.AccountInvoicesRequest{
+			Account: &litrpc.AccountIdentifier{
+				Identifier: &litrpc.AccountIdentifier_Id{
+					Id: acctResp.Account.Id,
+				},
+			},
+			CountTotalInvoices: true,
+		},
+	)
+	require.NoError(t.t, err)
+	require.Len(t.t, invoicesResp.Invoices, 2)
+	require.EqualValues(t.t, 2, invoicesResp.TotalNumInvoices)
+
+	// Find the desynced invoice placeholder by matching RHash.
+	var desyncInvoice *lnrpc.Invoice
+	for _, inv := range invoicesResp.Invoices {
+		if bytes.Equal(inv.RHash, desyncHash[:]) {
+			desyncInvoice = inv
+			break
+		}
+	}
+	require.NotNil(t.t, desyncInvoice)
+	require.Equal(t.t, lnrpc.Invoice_OPEN, desyncInvoice.State)
+	require.False(t.t, desyncInvoice.Settled)
 
 	// Test the same account restrictions with an LNC session that is bound
 	// to the account.
@@ -888,6 +1029,85 @@ func getAssetPaymentResult(t *testing.T,
 
 		case payment.Status != lnrpc.Payment_IN_FLIGHT:
 			return result, nil
+		}
+	}
+}
+
+// addDesyncedAccountInvoice adds an invoice hash directly to an account's store
+// without creating a corresponding invoice in LND to simulate a desynced state.
+func addDesyncedAccountInvoice(t *harnessTest, net *NetworkHarness,
+	node *HarnessNode, accountIDStr string, hash lntypes.Hash) {
+
+	ctx := context.Background()
+	var accountID accounts.AccountID
+	decoded, err := hex.DecodeString(accountIDStr)
+	require.NoError(t.t, err)
+	copy(accountID[:], decoded)
+
+	// Stop node so that database files can be opened cleanly.
+	if *litDBBackend == terminal.DatabaseBackendBbolt {
+		require.NoError(t.t, node.Stop())
+	}
+
+	switch *litDBBackend {
+	case terminal.DatabaseBackendBbolt:
+		dbDir := filepath.Join(
+			node.Cfg.LitDir, node.Cfg.NetParams.Name,
+		)
+		boltStore, err := accounts.NewBoltStore(
+			dbDir, accounts.DBFilename, clock.NewDefaultClock(),
+		)
+		require.NoError(t.t, err)
+		err = boltStore.AddAccountInvoice(ctx, accountID, hash)
+		require.NoError(t.t, err)
+		require.NoError(t.t, boltStore.Close())
+
+	case terminal.DatabaseBackendSqlite:
+		dbPath := filepath.Join(
+			node.Cfg.LitDir, node.Cfg.NetParams.Name, "litd.db",
+		)
+		sqliteStore, err := sqldb.NewSqliteStore(&sqldb.SqliteConfig{
+			SkipMigrations:        true,
+			SkipMigrationDbBackup: true,
+		}, dbPath)
+		require.NoError(t.t, err)
+		queries := sqlc.NewForType(
+			sqliteStore.BaseDB, sqliteStore.BaseDB.BackendType,
+		)
+		sqlStore := accounts.NewSQLStore(
+			sqliteStore.BaseDB, queries, clock.NewDefaultClock(),
+		)
+		err = sqlStore.AddAccountInvoice(ctx, accountID, hash)
+		require.NoError(t.t, err)
+		require.NoError(t.t, sqliteStore.Close())
+
+	case terminal.DatabaseBackendPostgres:
+		pgConf := node.Cfg.PostgresConfig
+		require.NotNil(t.t, pgConf)
+		pgStore, err := sqldb.NewPostgresStore(&sqldb.PostgresConfig{
+			Dsn:            pgConf.DSN(false),
+			SkipMigrations: true,
+		})
+		require.NoError(t.t, err)
+		queries := sqlc.NewForType(
+			pgStore.BaseDB, pgStore.BaseDB.BackendType,
+		)
+		sqlStore := accounts.NewSQLStore(
+			pgStore.BaseDB, queries, clock.NewDefaultClock(),
+		)
+		err = sqlStore.AddAccountInvoice(ctx, accountID, hash)
+		require.NoError(t.t, err)
+		require.NoError(t.t, pgStore.Close())
+	}
+
+	// Restart node after adding the invoice hash using RestartNode to
+	// preserve node configuration options (such as disableui).
+	if *litDBBackend == terminal.DatabaseBackendBbolt {
+		err = net.RestartNode(node, nil, nil)
+		require.NoError(t.t, err)
+
+		if !node.Cfg.RemoteMode {
+			net.ConnectNodes(t.t, net.Alice, net.Bob)
 		}
 	}
 }
