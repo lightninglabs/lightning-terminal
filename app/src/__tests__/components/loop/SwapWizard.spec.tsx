@@ -80,7 +80,7 @@ describe('SwapWizard component', () => {
     it('should store the specified conf target', () => {
       const { getByText, getByPlaceholderText } = render();
       fireEvent.click(getByText('Additional Options'));
-      fireEvent.change(getByPlaceholderText('number of blocks (ex: 6)'), {
+      fireEvent.change(getByPlaceholderText('number of blocks (ex: 20)'), {
         target: { value: 20 },
       });
       expect(store.buildSwapView.confTarget).toBeUndefined();
@@ -99,10 +99,23 @@ describe('SwapWizard component', () => {
       expect(store.buildSwapView.loopOutAddress).toBe('abcdef');
     });
 
+    it('rejects the old example of 6 blocks for a loop out', () => {
+      const { getByText, getByPlaceholderText } = render();
+      fireEvent.click(getByText('Additional Options'));
+      fireEvent.change(getByPlaceholderText('number of blocks (ex: 20)'), {
+        target: { value: '6' },
+      });
+      fireEvent.click(getByText('Next'));
+      expect(values(store.appView.alerts)[0].message).toBe(
+        'Confirmation target must be between 20 and 60.',
+      );
+      expect(store.buildSwapView.confTarget).toBeUndefined();
+    });
+
     it('should handle invalid conf target', () => {
       const { getByText, getByPlaceholderText } = render();
       fireEvent.click(getByText('Additional Options'));
-      fireEvent.change(getByPlaceholderText('number of blocks (ex: 6)'), {
+      fireEvent.change(getByPlaceholderText('number of blocks (ex: 20)'), {
         target: { value: 'asdf' },
       });
       fireEvent.click(getByText('Next'));
