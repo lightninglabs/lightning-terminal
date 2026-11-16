@@ -33,6 +33,13 @@
   expiration date would overwrite it to 0 (never expires). It now correctly
   defaults to -1 (no change).
 
+* [Report remote sub-server disconnects at
+  runtime](https://github.com/lightninglabs/lightning-terminal/pull/1373): In
+  remote mode, a sub-server that disconnected after startup was still reported as
+  running by the status server, so `litcli status` kept showing it as healthy.
+  litd now watches each remote sub-server's connection and updates its status
+  when it disconnects or recovers.
+
 ### Functional Changes/Additions
 
 * [Support for SQL database
@@ -130,4 +137,5 @@
 * Calvin Zachman
 * Cyberguru1
 * darioAnongba
+* Vandit1604
 * Viktor-T11
