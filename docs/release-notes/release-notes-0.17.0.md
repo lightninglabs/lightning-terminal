@@ -33,6 +33,13 @@
   expiration date would overwrite it to 0 (never expires). It now correctly
   defaults to -1 (no change).
 
+* [Default the signet autopilot
+  server](https://github.com/lightninglabs/lightning-terminal/pull/1377):
+  Starting `litd` with `--network=signet` failed with `no autopilot server
+  address specified`, because the autopilot address was only defaulted for
+  mainnet and testnet. Signet now defaults to the public signet autopilot
+  server, so a signet node starts without extra configuration.
+
 ### Functional Changes/Additions
 
 * [Support for SQL database
@@ -130,4 +137,5 @@
 * Calvin Zachman
 * Cyberguru1
 * darioAnongba
+* Vandit1604
 * Viktor-T11
