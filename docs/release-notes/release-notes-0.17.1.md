@@ -41,6 +41,11 @@
   permanently, requiring a manual restart. The wait is now bounded by a
   configurable, generous timeout (`--lndreadytimeout`, defaulting to 10
   minutes) instead of a fixed attempt count.
+* [Hide unsupported flags from `litcli ln
+  addinvoice`](https://github.com/lightninglabs/lightning-terminal/pull/1335):
+  The `addinvoice` command no longer advertises the blinded-path flags or
+  `--cltv_expiry_delta`, which were inherited from `lncli` but have no effect on
+  Taproot Asset invoices.
 
 ### Functional Changes/Additions
 
