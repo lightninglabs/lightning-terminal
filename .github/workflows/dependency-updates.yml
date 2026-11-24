@@ -1,0 +1,69 @@
+name: dependency updates
+
+# Twice a month, Claude opens a draft PR that updates the app's dependencies with security
+# advisories, and a draft PR for each held-back update that needs code changes.
+# .github/dependency-updates/prompt.md holds its instructions. The PRs come from the
+# Claude GitHub App and the run bills the org's Claude API key, so the job does not
+# depend on anyone's personal account. A person reviews and merges every PR.
+on:
+  schedule:
+    # 13:00 UTC on the 1st and 15th of each month.
+    - cron: '0 13 1,15 * *'
+  workflow_dispatch:
+
+# A second run at the same time would open duplicate PRs.
+concurrency:
+  group: dependency-updates
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 24.x
+
+jobs:
+  update:
+    name: update frontend dependencies
+    runs-on: ubuntu-latest
+    # Each follow-up migration installs and runs every check again.
+    timeout-minutes: 300
+    # The workflow token only reads. The action exchanges the OIDC token for a
+    # Claude GitHub App token, which pushes the branches and opens the PRs.
+    # Unlike the workflow token, its PRs start the other workflows.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+        with:
+          # The risk report diffs the lockfile against the merge base with master.
+          fetch-depth: 0
+          # The action sets up git with the Claude GitHub App's token.
+          persist-credentials: false
+
+      - name: setup nodejs ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      # Both are copied out of the checkout before Claude starts, so nothing the
+      # run changes in the repo can change its instructions or the check it
+      # relies on.
+      - name: stage the instructions and the risk report
+        id: stage
+        run: |
+          mkdir -p "$RUNNER_TEMP/dependency-updates"
+          cp app/scripts/dep-risk-report.mjs "$RUNNER_TEMP/dependency-updates/"
+          {
+            echo 'prompt<<PROMPT_END'
+            cat .github/dependency-updates/prompt.md
+            echo 'PROMPT_END'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: update dependencies
+        uses: anthropics/claude-code-action@cc98b3ae241b0fcfb6a42a2690751afffecb4452 # v1.0.278
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.stage.outputs.prompt }}
+          # The follow-up PRs are made by subagents, which the Agent tool starts.
+          claude_args: '--model claude-opus-5-5 --allowedTools "Agent"'
+          display_report: true
