@@ -12,6 +12,7 @@ module.exports = function (app) {
         '/litrpc.Session',
         '/litrpc.Accounts',
         '/litrpc.Status',
+        '/litrpc.Proxy',
       ],
       {
         target: 'https://localhost:8443',
