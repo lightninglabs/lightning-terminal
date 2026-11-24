@@ -616,3 +616,181 @@ func notFoundPayment(hash lntypes.Hash) *lnrpc.Payment {
 			PaymentFailureReason_FAILURE_REASON_NONE,
 	}
 }
+
+// AccountInvoices returns the detailed invoice history for the given account.
+func (s *RPCServer) AccountInvoices(ctx context.Context,
+	req *litrpc.AccountInvoicesRequest) (
+	*litrpc.AccountInvoicesResponse, error) {
+
+	if req.GetAccount() == nil {
+		return nil, fmt.Errorf("account param must be specified")
+	}
+
+	var id, label string
+	switch idType := req.Account.Identifier.(type) {
+	case *litrpc.AccountIdentifier_Id:
+		id = idType.Id
+	case *litrpc.AccountIdentifier_Label:
+		label = idType.Label
+	}
+
+	log.Infof("[accountinvoices] id=%s, label=%v, max_invoices=%d, "+
+		"index_offset=%d, count_total_invoices=%v",
+		id, label, req.MaxInvoices, req.IndexOffset,
+		req.CountTotalInvoices)
+
+	accountID, err := s.findAccount(ctx, id, label)
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine limits.
+	limit := req.MaxInvoices
+	if limit == 0 {
+		limit = DefaultMaxPayments
+	} else if limit > MaxPaymentsLimit {
+		return nil, fmt.Errorf(
+			"max_invoices cannot exceed %d", MaxPaymentsLimit,
+		)
+	}
+
+	if req.IndexOffset > MaxIndexOffset {
+		return nil, fmt.Errorf("index_offset out of range")
+	}
+	offset := req.IndexOffset
+
+	// Fetch the paginated invoice hashes from the store.
+	invoicesFromStore, err := s.service.store.ListAccountInvoices(
+		ctx, accountID, int32(offset), int32(limit),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"unable to list account invoices: %w", err,
+		)
+	}
+
+	// Fetch total invoice count if requested.
+	var totalNumInvoices uint64
+	if req.CountTotalInvoices {
+		total, err := s.service.store.CountAccountInvoices(
+			ctx, accountID,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"unable to count account invoices: %w", err,
+			)
+		}
+
+		totalNumInvoices = total
+	}
+
+	// Fetch the detailed invoices concurrently from LND.
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		invoices = make(map[lntypes.Hash]*lnrpc.Invoice)
+		errs     []error
+		sem      = make(chan struct{}, MaxConcurrentTrackPayments)
+	)
+
+	rawCtx, _, client := s.service.lightningClient.RawClientWithMacAuth(ctx)
+
+	for _, hash := range invoicesFromStore {
+		hash := hash
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Bounded concurrency using semaphore.
+			select {
+			case sem <- struct{}{}:
+			case <-rawCtx.Done():
+				return
+			}
+			defer func() { <-sem }()
+
+			inv, err := client.LookupInvoice(
+				rawCtx, &lnrpc.PaymentHash{
+					RHash: hash[:],
+				},
+			)
+			if err != nil {
+				// Skip error logging and recording if the
+				// parent context was cancelled or timed out.
+				if rawCtx.Err() != nil {
+					return
+				}
+
+				sErr, ok := status.FromError(err)
+				if ok && sErr.Code() == codes.NotFound {
+					log.Warnf("Invoice %x not found in "+
+						"lnd, creating placeholder: %v",
+						hash[:], err)
+
+					mu.Lock()
+					invoices[hash] = notFoundInvoice(hash)
+					mu.Unlock()
+
+					return
+				}
+
+				log.Errorf("Failed to lookup invoice %x: %v",
+					hash[:], err)
+
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+
+				return
+			}
+
+			mu.Lock()
+			invoices[hash] = inv
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	// Return immediately if the parent context was cancelled or timed out.
+	if err := rawCtx.Err(); err != nil {
+		return nil, err
+	}
+
+	// If there were any errors looking up the invoices, return the
+	// error.
+	if len(errs) > 0 {
+		return nil, fmt.Errorf(
+			"failed to fetch invoice details: %w", errs[0],
+		)
+	}
+
+	var finalInvoices []*lnrpc.Invoice
+	for _, hash := range invoicesFromStore {
+		if inv, ok := invoices[hash]; ok {
+			finalInvoices = append(finalInvoices, inv)
+		}
+	}
+
+	var firstIndexOffset, lastIndexOffset uint64
+	if len(finalInvoices) > 0 {
+		firstIndexOffset = offset
+		lastIndexOffset = offset + uint64(len(finalInvoices))
+	}
+
+	return &litrpc.AccountInvoicesResponse{
+		Invoices:         finalInvoices,
+		FirstIndexOffset: firstIndexOffset,
+		LastIndexOffset:  lastIndexOffset,
+		TotalNumInvoices: totalNumInvoices,
+	}, nil
+}
+
+// notFoundInvoice creates a placeholder invoice for a desynced entry.
+func notFoundInvoice(hash lntypes.Hash) *lnrpc.Invoice {
+	return &lnrpc.Invoice{
+		RHash: hash[:],
+		State: lnrpc.Invoice_OPEN,
+	}
+}

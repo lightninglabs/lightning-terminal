@@ -10,8 +10,10 @@ import (
 )
 
 type Querier interface {
+	AccountInvoicesPaginated(ctx context.Context, arg AccountInvoicesPaginatedParams) ([]AccountInvoice, error)
 	AccountPaymentsPaginated(ctx context.Context, arg AccountPaymentsPaginatedParams) ([]AccountPayment, error)
 	AddAccountInvoice(ctx context.Context, arg AddAccountInvoiceParams) error
+	CountAccountInvoices(ctx context.Context, accountID int64) (int64, error)
 	CountAccountPayments(ctx context.Context, accountID int64) (int64, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	DeleteAccountPayment(ctx context.Context, arg DeleteAccountPaymentParams) error

@@ -1112,6 +1112,157 @@ func (x *AccountPaymentsResponse) GetTotalNumPayments() uint64 {
 	return 0
 }
 
+type AccountInvoicesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The identifier of the account to query invoices for.
+	Account *AccountIdentifier `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	// The maximum number of invoices to return. If set to 0, it will default
+	// to 20. Capped at 50.
+	MaxInvoices uint64 `protobuf:"varint,2,opt,name=max_invoices,json=maxInvoices,proto3" json:"max_invoices,omitempty"`
+	// The row offset into the list of invoices that will be used as the start of
+	// the query. The invoices are returned in ascending lexicographical order of
+	// their payment hash.
+	IndexOffset uint64 `protobuf:"varint,3,opt,name=index_offset,json=indexOffset,proto3" json:"index_offset,omitempty"`
+	// If set, the total number of invoices matching the query will be returned
+	// in the response.
+	CountTotalInvoices bool `protobuf:"varint,4,opt,name=count_total_invoices,json=countTotalInvoices,proto3" json:"count_total_invoices,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *AccountInvoicesRequest) Reset() {
+	*x = AccountInvoicesRequest{}
+	mi := &file_lit_accounts_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountInvoicesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountInvoicesRequest) ProtoMessage() {}
+
+func (x *AccountInvoicesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lit_accounts_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountInvoicesRequest.ProtoReflect.Descriptor instead.
+func (*AccountInvoicesRequest) Descriptor() ([]byte, []int) {
+	return file_lit_accounts_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AccountInvoicesRequest) GetAccount() *AccountIdentifier {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
+func (x *AccountInvoicesRequest) GetMaxInvoices() uint64 {
+	if x != nil {
+		return x.MaxInvoices
+	}
+	return 0
+}
+
+func (x *AccountInvoicesRequest) GetIndexOffset() uint64 {
+	if x != nil {
+		return x.IndexOffset
+	}
+	return 0
+}
+
+func (x *AccountInvoicesRequest) GetCountTotalInvoices() bool {
+	if x != nil {
+		return x.CountTotalInvoices
+	}
+	return false
+}
+
+type AccountInvoicesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The detailed invoices associated with the account, sorted in ascending
+	// lexicographical order of their payment hash.
+	Invoices []*lnrpc.Invoice `protobuf:"bytes,1,rep,name=invoices,proto3" json:"invoices,omitempty"`
+	// The row offset of the first invoice returned.
+	FirstIndexOffset uint64 `protobuf:"varint,2,opt,name=first_index_offset,json=firstIndexOffset,proto3" json:"first_index_offset,omitempty"`
+	// The row offset of the last invoice returned. This can be used as the
+	// index_offset in a subsequent query to paginate forwards.
+	LastIndexOffset uint64 `protobuf:"varint,3,opt,name=last_index_offset,json=lastIndexOffset,proto3" json:"last_index_offset,omitempty"`
+	// The total number of invoices matching the query (only set if
+	// count_total_invoices was true in the request).
+	TotalNumInvoices uint64 `protobuf:"varint,4,opt,name=total_num_invoices,json=totalNumInvoices,proto3" json:"total_num_invoices,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *AccountInvoicesResponse) Reset() {
+	*x = AccountInvoicesResponse{}
+	mi := &file_lit_accounts_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountInvoicesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountInvoicesResponse) ProtoMessage() {}
+
+func (x *AccountInvoicesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lit_accounts_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountInvoicesResponse.ProtoReflect.Descriptor instead.
+func (*AccountInvoicesResponse) Descriptor() ([]byte, []int) {
+	return file_lit_accounts_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *AccountInvoicesResponse) GetInvoices() []*lnrpc.Invoice {
+	if x != nil {
+		return x.Invoices
+	}
+	return nil
+}
+
+func (x *AccountInvoicesResponse) GetFirstIndexOffset() uint64 {
+	if x != nil {
+		return x.FirstIndexOffset
+	}
+	return 0
+}
+
+func (x *AccountInvoicesResponse) GetLastIndexOffset() uint64 {
+	if x != nil {
+		return x.LastIndexOffset
+	}
+	return 0
+}
+
+func (x *AccountInvoicesResponse) GetTotalNumInvoices() uint64 {
+	if x != nil {
+		return x.TotalNumInvoices
+	}
+	return 0
+}
+
 var File_lit_accounts_proto protoreflect.FileDescriptor
 
 const file_lit_accounts_proto_rawDesc = "" +
@@ -1181,7 +1332,17 @@ const file_lit_accounts_proto_rawDesc = "" +
 	"\bpayments\x18\x01 \x03(\v2\x0e.lnrpc.PaymentR\bpayments\x12,\n" +
 	"\x12first_index_offset\x18\x02 \x01(\x04R\x10firstIndexOffset\x12*\n" +
 	"\x11last_index_offset\x18\x03 \x01(\x04R\x0flastIndexOffset\x12,\n" +
-	"\x12total_num_payments\x18\x04 \x01(\x04R\x10totalNumPayments2\xda\x04\n" +
+	"\x12total_num_payments\x18\x04 \x01(\x04R\x10totalNumPayments\"\xc5\x01\n" +
+	"\x16AccountInvoicesRequest\x123\n" +
+	"\aaccount\x18\x01 \x01(\v2\x19.litrpc.AccountIdentifierR\aaccount\x12!\n" +
+	"\fmax_invoices\x18\x02 \x01(\x04R\vmaxInvoices\x12!\n" +
+	"\findex_offset\x18\x03 \x01(\x04R\vindexOffset\x120\n" +
+	"\x14count_total_invoices\x18\x04 \x01(\bR\x12countTotalInvoices\"\xcd\x01\n" +
+	"\x17AccountInvoicesResponse\x12*\n" +
+	"\binvoices\x18\x01 \x03(\v2\x0e.lnrpc.InvoiceR\binvoices\x12,\n" +
+	"\x12first_index_offset\x18\x02 \x01(\x04R\x10firstIndexOffset\x12*\n" +
+	"\x11last_index_offset\x18\x03 \x01(\x04R\x0flastIndexOffset\x12,\n" +
+	"\x12total_num_invoices\x18\x04 \x01(\x04R\x10totalNumInvoices2\xae\x05\n" +
 	"\bAccounts\x12L\n" +
 	"\rCreateAccount\x12\x1c.litrpc.CreateAccountRequest\x1a\x1d.litrpc.CreateAccountResponse\x12>\n" +
 	"\rUpdateAccount\x12\x1c.litrpc.UpdateAccountRequest\x1a\x0f.litrpc.Account\x12L\n" +
@@ -1190,7 +1351,8 @@ const file_lit_accounts_proto_rawDesc = "" +
 	"\fListAccounts\x12\x1b.litrpc.ListAccountsRequest\x1a\x1c.litrpc.ListAccountsResponse\x12:\n" +
 	"\vAccountInfo\x12\x1a.litrpc.AccountInfoRequest\x1a\x0f.litrpc.Account\x12L\n" +
 	"\rRemoveAccount\x12\x1c.litrpc.RemoveAccountRequest\x1a\x1d.litrpc.RemoveAccountResponse\x12R\n" +
-	"\x0fAccountPayments\x12\x1e.litrpc.AccountPaymentsRequest\x1a\x1f.litrpc.AccountPaymentsResponseB4Z2github.com/lightninglabs/lightning-terminal/litrpcb\x06proto3"
+	"\x0fAccountPayments\x12\x1e.litrpc.AccountPaymentsRequest\x1a\x1f.litrpc.AccountPaymentsResponse\x12R\n" +
+	"\x0fAccountInvoices\x12\x1e.litrpc.AccountInvoicesRequest\x1a\x1f.litrpc.AccountInvoicesResponseB4Z2github.com/lightninglabs/lightning-terminal/litrpcb\x06proto3"
 
 var (
 	file_lit_accounts_proto_rawDescOnce sync.Once
@@ -1204,7 +1366,7 @@ func file_lit_accounts_proto_rawDescGZIP() []byte {
 	return file_lit_accounts_proto_rawDescData
 }
 
-var file_lit_accounts_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_lit_accounts_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_lit_accounts_proto_goTypes = []any{
 	(*CreateAccountRequest)(nil),    // 0: litrpc.CreateAccountRequest
 	(*CreateAccountResponse)(nil),   // 1: litrpc.CreateAccountResponse
@@ -1224,7 +1386,10 @@ var file_lit_accounts_proto_goTypes = []any{
 	(*AccountIdentifier)(nil),       // 15: litrpc.AccountIdentifier
 	(*AccountPaymentsRequest)(nil),  // 16: litrpc.AccountPaymentsRequest
 	(*AccountPaymentsResponse)(nil), // 17: litrpc.AccountPaymentsResponse
-	(*lnrpc.Payment)(nil),           // 18: lnrpc.Payment
+	(*AccountInvoicesRequest)(nil),  // 18: litrpc.AccountInvoicesRequest
+	(*AccountInvoicesResponse)(nil), // 19: litrpc.AccountInvoicesResponse
+	(*lnrpc.Payment)(nil),           // 20: lnrpc.Payment
+	(*lnrpc.Invoice)(nil),           // 21: lnrpc.Invoice
 }
 var file_lit_accounts_proto_depIdxs = []int32{
 	2,  // 0: litrpc.CreateAccountResponse.account:type_name -> litrpc.Account
@@ -1236,28 +1401,32 @@ var file_lit_accounts_proto_depIdxs = []int32{
 	2,  // 6: litrpc.DebitAccountResponse.account:type_name -> litrpc.Account
 	2,  // 7: litrpc.ListAccountsResponse.accounts:type_name -> litrpc.Account
 	15, // 8: litrpc.AccountPaymentsRequest.account:type_name -> litrpc.AccountIdentifier
-	18, // 9: litrpc.AccountPaymentsResponse.payments:type_name -> lnrpc.Payment
-	0,  // 10: litrpc.Accounts.CreateAccount:input_type -> litrpc.CreateAccountRequest
-	5,  // 11: litrpc.Accounts.UpdateAccount:input_type -> litrpc.UpdateAccountRequest
-	6,  // 12: litrpc.Accounts.CreditAccount:input_type -> litrpc.CreditAccountRequest
-	8,  // 13: litrpc.Accounts.DebitAccount:input_type -> litrpc.DebitAccountRequest
-	10, // 14: litrpc.Accounts.ListAccounts:input_type -> litrpc.ListAccountsRequest
-	12, // 15: litrpc.Accounts.AccountInfo:input_type -> litrpc.AccountInfoRequest
-	13, // 16: litrpc.Accounts.RemoveAccount:input_type -> litrpc.RemoveAccountRequest
-	16, // 17: litrpc.Accounts.AccountPayments:input_type -> litrpc.AccountPaymentsRequest
-	1,  // 18: litrpc.Accounts.CreateAccount:output_type -> litrpc.CreateAccountResponse
-	2,  // 19: litrpc.Accounts.UpdateAccount:output_type -> litrpc.Account
-	7,  // 20: litrpc.Accounts.CreditAccount:output_type -> litrpc.CreditAccountResponse
-	9,  // 21: litrpc.Accounts.DebitAccount:output_type -> litrpc.DebitAccountResponse
-	11, // 22: litrpc.Accounts.ListAccounts:output_type -> litrpc.ListAccountsResponse
-	2,  // 23: litrpc.Accounts.AccountInfo:output_type -> litrpc.Account
-	14, // 24: litrpc.Accounts.RemoveAccount:output_type -> litrpc.RemoveAccountResponse
-	17, // 25: litrpc.Accounts.AccountPayments:output_type -> litrpc.AccountPaymentsResponse
-	18, // [18:26] is the sub-list for method output_type
-	10, // [10:18] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	20, // 9: litrpc.AccountPaymentsResponse.payments:type_name -> lnrpc.Payment
+	15, // 10: litrpc.AccountInvoicesRequest.account:type_name -> litrpc.AccountIdentifier
+	21, // 11: litrpc.AccountInvoicesResponse.invoices:type_name -> lnrpc.Invoice
+	0,  // 12: litrpc.Accounts.CreateAccount:input_type -> litrpc.CreateAccountRequest
+	5,  // 13: litrpc.Accounts.UpdateAccount:input_type -> litrpc.UpdateAccountRequest
+	6,  // 14: litrpc.Accounts.CreditAccount:input_type -> litrpc.CreditAccountRequest
+	8,  // 15: litrpc.Accounts.DebitAccount:input_type -> litrpc.DebitAccountRequest
+	10, // 16: litrpc.Accounts.ListAccounts:input_type -> litrpc.ListAccountsRequest
+	12, // 17: litrpc.Accounts.AccountInfo:input_type -> litrpc.AccountInfoRequest
+	13, // 18: litrpc.Accounts.RemoveAccount:input_type -> litrpc.RemoveAccountRequest
+	16, // 19: litrpc.Accounts.AccountPayments:input_type -> litrpc.AccountPaymentsRequest
+	18, // 20: litrpc.Accounts.AccountInvoices:input_type -> litrpc.AccountInvoicesRequest
+	1,  // 21: litrpc.Accounts.CreateAccount:output_type -> litrpc.CreateAccountResponse
+	2,  // 22: litrpc.Accounts.UpdateAccount:output_type -> litrpc.Account
+	7,  // 23: litrpc.Accounts.CreditAccount:output_type -> litrpc.CreditAccountResponse
+	9,  // 24: litrpc.Accounts.DebitAccount:output_type -> litrpc.DebitAccountResponse
+	11, // 25: litrpc.Accounts.ListAccounts:output_type -> litrpc.ListAccountsResponse
+	2,  // 26: litrpc.Accounts.AccountInfo:output_type -> litrpc.Account
+	14, // 27: litrpc.Accounts.RemoveAccount:output_type -> litrpc.RemoveAccountResponse
+	17, // 28: litrpc.Accounts.AccountPayments:output_type -> litrpc.AccountPaymentsResponse
+	19, // 29: litrpc.Accounts.AccountInvoices:output_type -> litrpc.AccountInvoicesResponse
+	21, // [21:30] is the sub-list for method output_type
+	12, // [12:21] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_lit_accounts_proto_init() }
@@ -1275,7 +1444,7 @@ func file_lit_accounts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lit_accounts_proto_rawDesc), len(file_lit_accounts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -48,6 +48,8 @@ type SQLQueries interface {
 	ListAccountPayments(ctx context.Context, id int64) ([]sqlc.AccountPayment, error)
 	AccountPaymentsPaginated(ctx context.Context, arg sqlc.AccountPaymentsPaginatedParams) ([]sqlc.AccountPayment, error)
 	CountAccountPayments(ctx context.Context, accountID int64) (int64, error)
+	AccountInvoicesPaginated(ctx context.Context, arg sqlc.AccountInvoicesPaginatedParams) ([]sqlc.AccountInvoice, error)
+	CountAccountInvoices(ctx context.Context, accountID int64) (int64, error)
 	ListAllAccounts(ctx context.Context) ([]sqlc.Account, error)
 	SetAccountIndex(ctx context.Context, arg sqlc.SetAccountIndexParams) error
 	UpdateAccountBalance(ctx context.Context, arg sqlc.UpdateAccountBalanceParams) (int64, error)
@@ -848,6 +850,70 @@ func (s *SQLStore) CountAccountPayments(ctx context.Context,
 		}
 
 		count, err = db.CountAccountPayments(ctx, id)
+
+		return err
+	}, sqldb.NoOpReset)
+
+	return uint64(count), err
+}
+
+// ListAccountInvoices returns a paginated list of invoice payment hashes
+// associated with the given account, sorted in ascending lexicographical
+// order of their payment hash.
+func (s *SQLStore) ListAccountInvoices(ctx context.Context, alias AccountID,
+	offset, limit int32) ([]lntypes.Hash, error) {
+
+	var (
+		readTxOpts = db.NewQueryReadTx()
+		invoices   []lntypes.Hash
+	)
+	err := s.db.ExecTx(ctx, &readTxOpts, func(db SQLQueries) error {
+		id, err := getAccountIDByAlias(ctx, db, alias)
+		if err != nil {
+			return err
+		}
+
+		var dbInvoices []sqlc.AccountInvoice
+		dbInvoices, err = db.AccountInvoicesPaginated(
+			ctx, sqlc.AccountInvoicesPaginatedParams{
+				AccountID: id,
+				Limit:     limit,
+				Offset:    offset,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		invoices = make([]lntypes.Hash, len(dbInvoices))
+		for i, inv := range dbInvoices {
+			var hash lntypes.Hash
+			copy(hash[:], inv.Hash)
+			invoices[i] = hash
+		}
+
+		return nil
+	}, sqldb.NoOpReset)
+
+	return invoices, err
+}
+
+// CountAccountInvoices returns the total number of invoices associated with
+// the given account.
+func (s *SQLStore) CountAccountInvoices(ctx context.Context,
+	alias AccountID) (uint64, error) {
+
+	var (
+		readTxOpts = db.NewQueryReadTx()
+		count      int64
+	)
+	err := s.db.ExecTx(ctx, &readTxOpts, func(db SQLQueries) error {
+		id, err := getAccountIDByAlias(ctx, db, alias)
+		if err != nil {
+			return err
+		}
+
+		count, err = db.CountAccountInvoices(ctx, id)
 
 		return err
 	}, sqldb.NoOpReset)
