@@ -1,0 +1,49 @@
+{
+        "version": "2.0.0",
+        "tasks": [
+                {
+                        "type": "shell",
+                        "label": "build itest",
+                        "command": "make build-itest",
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                },
+                {
+                        "type": "shell",
+                        "label": "clear itest logs",
+                        "options": {
+                                "cwd": "${workspaceFolder}/itest"
+                        },
+                        "command": "rm -rf ./*.log .logs*",
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                },
+                {
+                        "label": "reset before itest",
+                        "dependsOn": [
+                                "build itest",
+                                "clear itest logs"
+                        ],
+                        "presentation": {
+                                "echo": true,
+                                "reveal": "always",
+                                "focus": false,
+                                "panel": "shared",
+                                "clear": false
+                        },
+                        "problemMatcher": []
+                }
+        ]
+}
