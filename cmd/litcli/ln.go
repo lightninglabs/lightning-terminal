@@ -701,7 +701,7 @@ var addInvoiceCommand = cli.Command{
 	Taproot Assets.
 	`,
 	ArgsUsage: "[--asset_id=X | --group_key=X] --asset_amount=Y " +
-		"[--rfq_peer_pubkey=Z] ",
+		"[--rfq_peer_pubkey=Z] [--price_oracle_metadata=...]",
 	Flags: append(
 		commands.AddInvoiceCommand.Flags,
 		cli.StringFlag{
@@ -725,6 +725,12 @@ var addInvoiceCommand = cli.Command{
 				"sats for the invoice; must be set if there " +
 				"are multiple channels with the same " +
 				"asset ID present",
+		},
+		cli.StringFlag{
+			Name: "price_oracle_metadata",
+			Usage: "(optional) opaque metadata forwarded to the " +
+				"price oracle when creating the invoice; JSON " +
+				"is recommended. Maximum length is 32768 bytes",
 		},
 	),
 	Action: addInvoice,
@@ -789,7 +795,7 @@ func addInvoice(cli *cli.Context) error {
 	defer cleanup()
 
 	channelsClient := tchrpc.NewTaprootAssetChannelsClient(tapdConn)
-	resp, err := channelsClient.AddInvoice(ctx, &tchrpc.AddInvoiceRequest{
+	addReq := &tchrpc.AddInvoiceRequest{
 		AssetId:     assetIDBytes,
 		GroupKey:    groupKeyBytes,
 		AssetAmount: assetAmount,
@@ -805,7 +811,16 @@ func addInvoice(cli *cli.Context) error {
 			Private:         cli.Bool("private"),
 			IsAmp:           cli.Bool("amp"),
 		},
-	})
+	}
+	if cli.IsSet("price_oracle_metadata") {
+		metadata := cli.String("price_oracle_metadata")
+		if err := ValidatePriceOracleMetadata(metadata); err != nil {
+			return err
+		}
+		addReq.PriceOracleMetadata = metadata
+	}
+
+	resp, err := channelsClient.AddInvoice(ctx, addReq)
 	if err != nil {
 		return fmt.Errorf("error adding invoice: %w", err)
 	}
