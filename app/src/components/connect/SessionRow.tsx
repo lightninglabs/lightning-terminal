@@ -100,7 +100,7 @@ const RowHeader: React.FC = () => {
           {l('state')}
         </SortableHeader>
       </HeaderColumn>
-      <HeaderColumn>
+      <HeaderColumn cols={3}>
         <SortableHeader<Session>
           field="expiry"
           sort={settingsStore.sessionSort}
@@ -188,7 +188,9 @@ const SessionRow: React.FC<Props> = ({ session, style }) => {
       <Column cols={3}>{session.label}</Column>
       <Column>{session.typeLabel}</Column>
       <Column>{session.pairedLabel}</Column>
-      <Column>{session.expiryLabel}</Column>
+      <Column cols={3} truncate>
+        {session.expiryLabel}
+      </Column>
       <Column className="col-1" right>
         <Tip overlay={l('revoke')}>
           <CloseIcon size="large" onClick={handleRevoke} />
