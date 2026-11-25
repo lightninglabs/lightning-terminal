@@ -16,6 +16,15 @@
 
 ### Bug Fixes
 
+* [Match the `ListInvoices` history limit to the gRPC method
+  URI](https://github.com/lightninglabs/lightning-terminal/pull/1462):
+  session history limits registered their `ListInvoices` rewriter under
+  `lnrpc.Lightning/ListInvoices`, but the firewall looks checkers up with
+  lnd's `MethodFullUri`, which is the gRPC full method and includes a
+  leading slash. The rewrite was therefore never applied and invoices
+  created before the configured start date were still returned to the
+  session.
+
 ### Functional Changes/Additions
 
 ### Technical and Architectural Updates

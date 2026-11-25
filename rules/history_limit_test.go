@@ -110,8 +110,10 @@ func TestHistoryLimitCheckers(t *testing.T) {
 		{CreationDate: time.Now().Add(-time.Hour * 25).Unix()},
 	}
 
+	// The firewall passes lnd's MethodFullUri, which is the gRPC full
+	// method and always includes the leading slash.
 	respMsg, err := values.HandleResponse(
-		ctx, "lnrpc.Lightning/ListInvoices",
+		ctx, "/lnrpc.Lightning/ListInvoices",
 		&lnrpc.ListInvoiceResponse{
 			Invoices: invoices,
 		},
