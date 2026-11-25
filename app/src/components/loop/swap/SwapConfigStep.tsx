@@ -76,6 +76,12 @@ const SwapConfigStep: React.FC = () => {
   }, [buildSwapView, confTarget, destAddress, appView]);
 
   const { Wrapper, Summary, Config, Options, SmallInput } = Styled;
+  // Loop Out rejects targets outside the server's CLTV range. The example
+  // has to be inside that range. Loop In accepts the historical example.
+  const confTargetExample =
+    buildSwapView.direction === SwapDirection.OUT && buildSwapView.terms.out.minCltv
+      ? buildSwapView.terms.out.minCltv
+      : 6;
   return (
     <Wrapper data-tour="loop-amount">
       <Summary>
@@ -107,7 +113,7 @@ const SwapConfigStep: React.FC = () => {
               </Tip>
             </HeaderFour>
             <SmallInput
-              placeholder={l('confTargetHint')}
+              placeholder={l('confTargetHint', { blocks: confTargetExample })}
               value={confTarget}
               onChange={e => setConfTarget(e.target.value)}
             />
